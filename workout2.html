@@ -1,0 +1,1581 @@
+                // Set icon based on type
+                const icons = {
+                    danger: { bg: 'bg-red-600/20', text: 'text-red-400', icon: 'trash-2' },
+                    warning: { bg: 'bg-amber-600/20', text: 'text-amber-400', icon: 'alert-triangle' },
+                    info: { bg: 'bg-indigo-600/20', text: 'text-indigo-400', icon: 'help-circle' }
+                };
+
+                const iconStyle = icons[options.type] || icons.info;
+                iconDiv.className = `w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${iconStyle.bg}`;
+                
+                let iconEl = iconDiv.querySelector('i');
+                if (!iconEl) {
+                    iconEl = document.createElement('i');
+                    iconDiv.appendChild(iconEl);
+                }
+                
+                iconEl.setAttribute('data-lucide', iconStyle.icon);
+                iconEl.className = `w-8 h-8 ${iconStyle.text}`;
+
+                const confirmText = options.confirmText || 'Potwierdź';
+                const cancelText = options.cancelText || 'Anuluj';
+
+                const confirmBtnClass = options.type === 'danger' 
+                    ? 'w-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-semibold py-3 px-6 rounded-xl transition-all'
+                    : 'w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold py-3 px-6 rounded-xl transition-all';
+
+                buttonsDiv.innerHTML = `
+                    <button onclick="app.resolveConfirm(false)" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-3 px-6 rounded-xl transition-all border border-slate-700">
+                        ${cancelText}
+                    </button>
+                    <button onclick="app.resolveConfirm(true)" class="${confirmBtnClass}">
+                        ${confirmText}
+                    </button>
+                `;
+
+                this.confirmCallback = onConfirm;
+                modal.classList.remove('hidden');
+                lucide.createIcons();
+            }
+
+            resolveConfirm(result) {
+                document.getElementById('confirm-modal').classList.add('hidden');
+                if (this.confirmCallback) {
+                    this.confirmCallback(result);
+                    this.confirmCallback = null;
+                }
+            }
+
+            init() {
+                lucide.createIcons();
+                
+                // Only setup Supabase features if client is available
+                if (supabaseClient) {
+                    // Check for existing session
+                    supabaseClient.auth.getSession().then(({ data, error }) => {
+                        if (error) {
+                            console.error('Error getting session:', error);
+                            return;
+                        }
+                        const session = data?.session;
+                        if (session && session.user) {
+                            this.currentUser = session.user;
+                            this.setupRealtimeListener();
+                            this.showMainApp();
+                            this.loadWorkouts();
+                        }
+                    }).catch(err => {
+                        console.error('Session check failed:', err);
+                    });
+                    
+                    // Listen for auth changes
+                    supabaseClient.auth.onAuthStateChange((event, session) => {
+                        if (event === 'SIGNED_IN') {
+                            this.currentUser = session.user;
+                            this.setupRealtimeListener();
+                            this.showMainApp();
+                            this.loadWorkouts();
+                        } else if (event === 'SIGNED_OUT') {
+                            this.currentUser = null;
+                            document.getElementById('auth-screen').classList.remove('hidden');
+                            document.querySelector('header').classList.add('hidden');
+                            document.querySelector('main').classList.add('hidden');
+                        }
+                    });
+                }
+                
+                // Listen for online/offline status
+                window.addEventListener('online', () => {
+                    this.isOnline = true;
+                    this.updateConnectionStatus();
+                    this.showNotification('Połączono', 'Synchronizacja włączona', 'success');
+                });
+                
+                window.addEventListener('offline', () => {
+                    this.isOnline = false;
+                    this.updateConnectionStatus();
+                    this.showNotification('Offline', 'Dane będą zsynchronizowane po połączeniu', 'warning');
+                });
+                
+                // Search functionality
+                const searchInput = document.getElementById('exercise-search');
+                if (searchInput) {
+                    searchInput.addEventListener('input', (e) => {
+                        this.renderExerciseList(e.target.value);
+                    });
+                }
+            }
+            
+            updateDraftIndicator() {
+                if (!this.currentUser) return;
+                
+                const indicator = document.getElementById('draft-indicator');
+                if (!indicator) return;
+                
+                // Validate draft exists and is valid before showing indicator
+                let hasValidDraft = false;
+                try {
+                    const draft = localStorage.getItem(`silaforma_draft_${this.currentUser.id}`);
+                    if (draft && !this.currentWorkout) {
+                        const draftData = JSON.parse(draft);
+                        if (draftData && Array.isArray(draftData.exercises) && draftData.exercises.length > 0) {
+                            // Check if draft is less than 24h old
+                            const draftDate = new Date(draftData.date || Date.now());
+                            if (!isNaN(draftDate.getTime())) {
+                                const hoursSince = (Date.now() - draftDate.getTime()) / (1000 * 60 * 60);
+                                hasValidDraft = hoursSince < 24;
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error checking draft indicator:', error);
+                    hasValidDraft = false;
+                }
+                
+                if (hasValidDraft) {
+                    indicator.classList.remove('hidden');
+                } else {
+                    indicator.classList.add('hidden');
+                }
+            }
+            
+            clearDraft() {
+                if (this.currentUser) {
+                    localStorage.removeItem(`silaforma_draft_${this.currentUser.id}`);
+                }
+            }
+            
+            checkForDraft() {
+                if (!this.currentUser) return;
+                const draft = localStorage.getItem(`silaforma_draft_${this.currentUser.id}`);
+                
+                if (draft && !this.currentWorkout) {
+                    try {
+                        const draftData = JSON.parse(draft);
+                        
+                        // Strict validation
+                        if (!draftData || typeof draftData !== 'object' || !Array.isArray(draftData.exercises) || draftData.exercises.length === 0) {
+                            console.log('Invalid draft data in checkForDraft, clearing');
+                            this.clearDraft();
+                            this.updateDraftIndicator();
+                            return;
+                        }
+                        
+                        const draftDate = new Date(draftData.date || Date.now());
+                        if (isNaN(draftDate.getTime())) {
+                            this.clearDraft();
+                            this.updateDraftIndicator();
+                            return;
+                        }
+                        
+                        const hoursSince = (Date.now() - draftDate.getTime()) / (1000 * 60 * 60);
+                        
+                        if (hoursSince < 24) {
+                            this.showDraftModal(draftData);
+                        } else {
+                            this.clearDraft();
+                            this.updateDraftIndicator();
+                        }
+                    } catch (error) {
+                        console.error('Error parsing draft:', error);
+                        this.clearDraft();
+                        this.updateDraftIndicator();
+                    }
+                }
+            }
+            
+            showDraftModal(draftData) {
+                // Remove any existing draft modal first
+                const existingModal = document.getElementById('draft-modal');
+                if (existingModal) {
+                    existingModal.remove();
+                }
+                
+                // Validate draft data strictly
+                if (!draftData || typeof draftData !== 'object') {
+                    console.error('Invalid draft data passed to showDraftModal');
+                    this.clearDraft();
+                    this.updateDraftIndicator();
+                    return;
+                }
+                
+                // Ensure exercises is a valid non-empty array
+                if (!Array.isArray(draftData.exercises) || draftData.exercises.length === 0) {
+                    console.log('No valid exercises in draft, clearing');
+                    this.clearDraft();
+                    this.updateDraftIndicator();
+                    return;
+                }
+                
+                // Validate date
+                const draftDate = draftData.date ? new Date(draftData.date) : new Date();
+                if (isNaN(draftDate.getTime())) {
+                    console.log('Invalid draft date, clearing');
+                    this.clearDraft();
+                    this.updateDraftIndicator();
+                    return;
+                }
+                
+                // Check if draft is not too old (24h)
+                const hoursSince = (Date.now() - draftDate.getTime()) / (1000 * 60 * 60);
+                if (hoursSince >= 24) {
+                    console.log('Draft too old (>24h), clearing');
+                    this.clearDraft();
+                    this.updateDraftIndicator();
+                    return;
+                }
+                
+                // Store valid draft data
+                this.pendingDraft = {
+                    id: draftData.id || Date.now(),
+                    date: draftDate,
+                    name: draftData.name || 'Trening',
+                    startTime: draftData.startTime || Date.now(),
+                    exercises: draftData.exercises.filter(ex => ex && typeof ex === 'object').map(ex => ({
+                        id: ex.id || Date.now() + Math.random(),
+                        name: ex.name || 'Ćwiczenie',
+                        muscle: ex.muscle || 'Inne',
+                        requiredEquipment: ex.requiredEquipment || 'Brak danych',
+                        equipmentType: ex.equipmentType || 'other',
+                        singleDumbbell: ex.singleDumbbell === true,
+                        notes: ex.notes || '',
+                        sets: Array.isArray(ex.sets) ? ex.sets.filter(s => s && typeof s === 'object').map(s => ({
+                            weight: s.weight !== undefined ? s.weight : '',
+                            reps: s.reps !== undefined ? s.reps : '',
+                            completed: s.completed === true
+                        })) : [{ weight: '', reps: '', completed: false }]
+                    }))
+                };
+                
+                const modal = document.createElement('div');
+                modal.id = 'draft-modal';
+                modal.className = 'fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+                
+                // Calculate stats from validated draft
+                const exerciseCount = this.pendingDraft.exercises.length;
+                const setsCount = this.pendingDraft.exercises.reduce((sum, ex) => {
+                    return sum + (Array.isArray(ex.sets) ? ex.sets.length : 0);
+                }, 0);
+                
+                // Calculate total volume for display
+                let draftVolume = 0;
+                this.pendingDraft.exercises.forEach(ex => {
+                    if (ex.sets && Array.isArray(ex.sets)) {
+                        const isDumbbell = ex.equipmentType === 'dumbbell';
+                        const isSingle = ex.singleDumbbell === true;
+                        const multiplier = (isDumbbell && !isSingle) ? 2 : 1;
+                        
+                        ex.sets.forEach(set => {
+                            if (set.completed) {
+                                draftVolume += ((parseFloat(set.reps) || 0) * (parseFloat(set.weight) || 0) * multiplier);
+                            }
+                        });
+                    }
+                });
+                
+                const dateStr = draftDate.toLocaleDateString('pl-PL', { 
+                    weekday: 'long', 
+                    day: 'numeric', 
+                    month: 'long',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                modal.innerHTML = `
+                    <div class="glass-panel w-full max-w-md rounded-3xl overflow-hidden border border-slate-600 p-6 slide-in">
+                        <div class="text-center mb-6">
+                            <div class="w-16 h-16 bg-emerald-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i data-lucide="save" class="w-8 h-8 text-emerald-400"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-white mb-2">Odnaleziono zapisany trening</h3>
+                            <p class="text-slate-400 text-sm">
+                                Zapisano ${dateStr}
+                            </p>
+                            <p class="text-slate-400 text-sm mt-1">${exerciseCount} ćwiczeń, ${setsCount} serii${draftVolume > 0 ? ', ' + draftVolume.toLocaleString() + ' kg' : ''}</p>
+                        </div>
+                        <div class="space-y-3">
+                            <button id="draft-continue-btn" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold py-4 px-6 rounded-xl transition-all flex items-center justify-center gap-2">
+                                <i data-lucide="play" class="w-5 h-5"></i>
+                                Kontynuuj trening
+                            </button>
+                            <button id="draft-new-btn" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-4 px-6 rounded-xl transition-all border border-slate-700">
+                                Rozpocznij nowy trening
+                            </button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                
+                // Add event listeners directly instead of onclick to avoid scope issues
+                document.getElementById('draft-continue-btn').addEventListener('click', () => {
+                    this.resumeDraft();
+                });
+                
+                document.getElementById('draft-new-btn').addEventListener('click', () => {
+                    this.askDiscardDraft();
+                });
+                
+                lucide.createIcons();
+            }
+            
+            hideDraftModal() {
+                const modal = document.getElementById('draft-modal');
+                if (modal) {
+                    modal.remove();
+                }
+                this.pendingDraft = null;
+                this.updateDraftIndicator();
+            }
+            
+            resumeDraft() {
+                console.log('resumeDraft called, pendingDraft:', this.pendingDraft);
+                
+                if (!this.pendingDraft) {
+                    this.showNotification('Błąd', 'Nie znaleziono danych zapisanego treningu. Spróbuj odświeżyć stronę.', 'error');
+                    return;
+                }
+                
+                if (this.currentWorkout) {
+                    this.showNotification('Aktywny trening', 'Zakończ obecny trening przed wznowieniem zapisanego.', 'warning');
+                    return;
+                }
+                
+                // Store reference before hiding modal
+                const draftToRestore = this.pendingDraft;
+                
+                // Hide modal first
+                this.hideDraftModal();
+                
+                // Ensure exercises array exists and is valid
+                if (!Array.isArray(draftToRestore.exercises) || draftToRestore.exercises.length === 0) {
+                    this.showNotification('Błąd', 'Brak ćwiczeń w zapisanym treningu.', 'error');
+                    this.clearDraft();
+                    this.updateDraftIndicator();
+                    return;
+                }
+                
+                // Validate and sanitize exercises
+                const validExercises = draftToRestore.exercises.filter(ex => ex && typeof ex === 'object').map(ex => ({
+                    id: ex.id || Date.now() + Math.random(),
+                    name: ex.name || 'Ćwiczenie',
+                    muscle: ex.muscle || 'Inne',
+                    requiredEquipment: ex.requiredEquipment || 'Brak danych',
+                    equipmentType: ex.equipmentType || 'other',
+                    singleDumbbell: ex.singleDumbbell === true,
+                    notes: ex.notes || '',
+                    sets: Array.isArray(ex.sets) && ex.sets.length > 0 
+                        ? ex.sets.filter(s => s && typeof s === 'object').map(s => ({
+                            weight: s.weight !== undefined ? s.weight : '',
+                            reps: s.reps !== undefined ? s.reps : '',
+                            completed: s.completed === true
+                        }))
+                        : [{ weight: '', reps: '', completed: false }]
+                }));
+                
+                if (validExercises.length === 0) {
+                    this.showNotification('Błąd', 'Brak prawidłowych ćwiczeń w zapisanym treningu.', 'error');
+                    this.clearDraft();
+                    this.updateDraftIndicator();
+                    return;
+                }
+                
+                this.currentWorkout = {
+                    id: draftToRestore.id || Date.now(),
+                    date: new Date(),
+                    name: draftToRestore.name || 'Trening',
+                    startTime: Date.now(),
+                    exercises: validExercises
+                };
+                
+                document.getElementById('active-workout').classList.remove('hidden');
+                document.getElementById('workout-name').value = this.currentWorkout.name || 'Trening';
+                document.getElementById('workout-date').textContent = new Date().toLocaleDateString('pl-PL', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                document.getElementById('history-section').classList.add('hidden');
+                
+                this.renderExercises();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                lucide.createIcons();
+                
+                // UKRYJ wskaźnik draftu - trening jest teraz aktywny
+                this.updateDraftIndicator();
+                
+                this.showNotification('Trening przywrócony', 'Kontynuuj zapisaną sesję treningową!', 'success');
+            }
+            
+            askDiscardDraft() {
+                // If there's no active workout (only a saved draft), start new immediately without asking
+                if (!this.currentWorkout) {
+                    this.discardDraft();
+                    this.startNewWorkout();
+                    return;
+                }
+                
+                // Otherwise show confirmation (there's an active workout)
+                this.hideDraftModal(); // Close draft modal first to avoid conflicts
+                this.showConfirm(
+                    'Porzucić zapisany trening?',
+                    'Masz zapisany trening w pamięci. Czy na pewno chcesz rozpocząć nowy?\n\nObecny trening zostanie utracony.',
+                    (confirmed) => {
+                        if (confirmed) {
+                            this.discardDraft();
+                            this.startNewWorkout();
+                        }
+                    },
+                    { type: 'warning', confirmText: 'Rozpocznij nowy', cancelText: 'Kontynuuj stary' }
+                );
+            }
+
+            discardDraft() {
+                this.clearDraft();
+                this.hideDraftModal();
+                this.pendingDraft = null;
+                this.updateDraftIndicator();
+            }
+            
+            autoSave() {
+                if (this.saveTimeout) clearTimeout(this.saveTimeout);
+                this.saveTimeout = setTimeout(() => this.saveDraft(), 1000);
+            }
+
+            startNewWorkout() {
+                const now = new Date();
+                const defaultName = 'Trening ' + now.toLocaleDateString('pl-PL', { day: 'numeric', month: 'long' });
+                
+                this.currentWorkout = {
+                    id: Date.now(),
+                    date: now,
+                    name: defaultName,
+                    exercises: [],
+                    startTime: Date.now()
+                };
+                
+                document.getElementById('active-workout').classList.remove('hidden');
+                document.getElementById('workout-name').value = defaultName;
+                document.getElementById('workout-date').textContent = now.toLocaleDateString('pl-PL', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                document.getElementById('exercise-list').innerHTML = '';
+                document.getElementById('history-section').classList.add('hidden');
+                
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                lucide.createIcons();
+            }
+
+            updateWorkoutName(name) {
+                if (this.currentWorkout) {
+                    this.currentWorkout.name = name.trim() || 'Trening bez nazwy';
+                    this.autoSave();
+                }
+            }
+
+            cancelWorkout() {
+                if (!this.currentWorkout) {
+                    this.showNotification('Błąd', 'Brak aktywnego treningu do anulowania.', 'error');
+                    return;
+                }
+                
+                const hasProgress = this.currentWorkout && 
+                    Array.isArray(this.currentWorkout.exercises) && 
+                    this.currentWorkout.exercises.length > 0 &&
+                    this.currentWorkout.exercises.some(ex => ex && Array.isArray(ex.sets) && ex.sets.some(s => s && (s.weight !== '' || s.reps !== '' || s.completed)));
+                    
+                let message = 'Czy na pewno chcesz anulować trening?';
+                if (hasProgress) {
+                    message = 'Niezapisane postępy zostaną utracone.\n\nCzy na pewno chcesz anulować?';
+                }
+                
+                this.showConfirm('Anulować trening?', message, (confirmed) => {
+                    if (confirmed) {
+                        this.clearDraft();
+                        this.currentWorkout = null;
+                        document.getElementById('active-workout').classList.add('hidden');
+                        document.getElementById('history-section').classList.remove('hidden');
+                        this.stopTimer();
+                        this.updateDraftIndicator();
+                        this.showNotification('Trening anulowany', 'Rozpocznij nowy trening kiedy chcesz.', 'info');
+                    }
+                }, { type: hasProgress ? 'warning' : 'info', confirmText: 'Anuluj trening', cancelText: 'Kontynuuj' });
+            }
+
+            async finishWorkout() {
+                // Validate current workout exists with exercises array
+                if (!this.currentWorkout || !Array.isArray(this.currentWorkout.exercises) || this.currentWorkout.exercises.length === 0) {
+                    this.showNotification('Brak ćwiczeń', 'Dodaj przynajmniej jedno ćwiczenie!', 'warning');
+                    return;
+                }
+
+                // Validate that at least one exercise has valid sets
+                const hasValidSets = this.currentWorkout.exercises.some(ex => 
+                    ex && Array.isArray(ex.sets) && ex.sets.length > 0 && ex.sets.some(s => s && (s.weight !== '' || s.reps !== ''))
+                );
+                
+                if (!hasValidSets) {
+                    this.showNotification('Brak danych', 'Wprowadź przynajmniej jedną serię z ciężarem lub powtórzeniami.', 'warning');
+                    return;
+                }
+
+                this.currentWorkout.endTime = Date.now();
+                this.currentWorkout.duration = Math.round((this.currentWorkout.endTime - (this.currentWorkout.startTime || this.currentWorkout.endTime)) / 60000);
+                
+                // Calculate total volume (dumbbell exercises count as ×2 since user enters weight per dumbbell, except single dumbbell exercises)
+                let volume = 0;
+                this.currentWorkout.exercises.forEach(ex => {
+                    if (ex && ex.sets && Array.isArray(ex.sets)) {
+                        // Check if this is a dumbbell exercise using equipmentType, not requiredEquipment text
+                        const isDumbbellExercise = ex.equipmentType === 'dumbbell';
+                        // Check if it's a single dumbbell exercise (one arm only) - no multiplier
+                        const isSingleDumbbell = ex.singleDumbbell === true;
+                        // Only multiply by 2 if it's dumbbell exercise AND not single arm
+                        const multiplier = (isDumbbellExercise && !isSingleDumbbell) ? 2 : 1;
+                        
+                        ex.sets.forEach(set => {
+                            if (set && set.completed) {
+                                volume += ((parseFloat(set.reps) || 0) * (parseFloat(set.weight) || 0) * multiplier);
+                            }
+                        });
+                    }
+                });
+                this.currentWorkout.volume = volume;
+
+                try {
+                    // Save to Supabase Cloud
+                    await this.saveWorkoutToCloud();
+                    
+                    // Clear draft since workout is finished
+                    this.clearDraft();
+                    this.updateDraftIndicator();
+                    
+                    this.currentWorkout = null;
+                    document.getElementById('active-workout').classList.add('hidden');
+                    document.getElementById('history-section').classList.remove('hidden');
+                    this.stopTimer();
+                    
+                    this.showNotification('Trening zapisany w chmurze!', 'Synchronizacja zakończona 💪', 'success');
+                    
+                    // Odśwież stronę po 1.5s aby pokazać zaktualizowaną historię
+                    setTimeout(() => location.reload(), 1500);
+                } catch (error) {
+                    console.error('Error finishing workout:', error);
+                    const errorMsg = error && error.message ? error.message : 'Nieznany błąd';
+                    this.showNotification('Błąd zapisu', `Trening zapisany lokalnie. Błąd: ${errorMsg}`, 'warning');
+                    
+                    // Fallback to localStorage
+                    this.workouts.unshift({...this.currentWorkout});
+                    this.saveToLocalStorage();
+                    this.clearDraft();
+                    this.updateDraftIndicator();
+                    
+                    this.currentWorkout = null;
+                    document.getElementById('active-workout').classList.add('hidden');
+                    document.getElementById('history-section').classList.remove('hidden');
+                    this.stopTimer();
+                    
+                    this.updateStats();
+                    this.renderHistory();
+                    
+                    // Odśwież stronę również przy zapisie lokalnym (fallback)
+                    setTimeout(() => location.reload(), 1500);
+                }
+            }
+
+        renderHistory() {
+            const container = document.getElementById('workout-history');
+            if (!container) {
+                console.error('Workout history container not found!');
+                return;
+            }
+            
+            // Upewnij się że workouts to tablica
+            if (!Array.isArray(this.workouts)) {
+                console.error('Workouts is not an array:', this.workouts);
+                this.workouts = [];
+            }
+            
+            if (this.workouts.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 text-slate-500">
+                        <i data-lucide="dumbbell" class="w-12 h-12 mx-auto mb-3 opacity-30"></i>
+                        <p>Brak zapisanych treningów</p>
+                        <p class="text-sm mt-1">Rozpocznij pierwszy trening!</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+            
+            container.innerHTML = this.workouts.map((workout, index) => {
+                // Validate workout object
+                if (!workout || typeof workout !== 'object') {
+                    return '';
+                }
+                
+                const date = workout.date ? new Date(workout.date) : new Date();
+                const dateStr = isNaN(date.getTime()) ? 'Nieznana data' : date.toLocaleDateString('pl-PL', { 
+                    weekday: 'short', 
+                    day: 'numeric', 
+                    month: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                const exerciseCount = (workout.exercises && Array.isArray(workout.exercises)) ? workout.exercises.length : 0;
+                const volume = parseFloat(workout.volume) || 0;
+                const duration = parseInt(workout.duration) || 0;
+                
+                return `
+                    <div class="glass-panel rounded-2xl p-4 border border-slate-700 hover:border-slate-600 transition-all cursor-pointer" onclick="app.showWorkoutDetails(${index})">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h3 class="font-semibold text-white text-lg">${workout.name || 'Trening'}</h3>
+                                <p class="text-sm text-slate-400">${dateStr}</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="event.stopPropagation(); app.repeatWorkout(${index})" class="p-2 hover:bg-emerald-900/30 text-slate-400 hover:text-emerald-400 rounded-lg transition-colors" title="Powtórz trening">
+                                    <i data-lucide="repeat" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="event.stopPropagation(); app.deleteWorkout(${index})" class="p-2 hover:bg-red-900/30 text-slate-400 hover:text-red-400 rounded-lg transition-colors" title="Usuń trening">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex gap-4 text-sm text-slate-400">
+                            <span class="flex items-center gap-1">
+                                <i data-lucide="layers" class="w-4 h-4"></i>
+                                ${exerciseCount} ćwiczeń
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <i data-lucide="weight" class="w-4 h-4"></i>
+                                ${volume.toLocaleString()} kg
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <i data-lucide="clock" class="w-4 h-4"></i>
+                                ${duration} min
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            lucide.createIcons();
+        }
+
+        showWorkoutDetails(index) {
+            // Validate index
+            if (typeof index !== 'number' || index < 0 || index >= this.workouts.length) {
+                console.error('Invalid workout index:', index);
+                return;
+            }
+            
+            const workout = this.workouts[index];
+            if (!workout || typeof workout !== 'object') {
+                console.error('Workout not found or invalid:', index);
+                return;
+            }
+            
+            const date = workout.date ? new Date(workout.date) : new Date();
+            const dateStr = isNaN(date.getTime()) ? 'Nieznana data' : date.toLocaleDateString('pl-PL', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+            
+            // Safely build exercise list with detailed sets info
+            let exerciseList = 'Brak ćwiczeń';
+            if (workout.exercises && Array.isArray(workout.exercises) && workout.exercises.length > 0) {
+                const validExercises = workout.exercises.filter(ex => ex && typeof ex === 'object');
+                if (validExercises.length > 0) {
+                    exerciseList = validExercises.map(ex => {
+                        const name = ex.name || 'Ćwiczenie';
+                        let setsDetails = '';
+                        
+                        if (ex.sets && Array.isArray(ex.sets) && ex.sets.length > 0) {
+                            const validSets = ex.sets.filter(s => s && typeof s === 'object');
+                            if (validSets.length > 0) {
+                                setsDetails = '\n' + validSets.map((s, idx) => {
+                                    const weight = s.weight !== '' && s.weight !== undefined ? s.weight : '-';
+                                    const reps = s.reps !== '' && s.reps !== undefined ? s.reps : '-';
+                                    const check = s.completed ? ' ✓' : '';
+                                    return `   ${idx + 1}. ${weight}kg × ${reps}${check}`;
+                                }).join('\n');
+                            } else {
+                                setsDetails = '\n   Brak serii';
+                            }
+                        } else {
+                            setsDetails = '\n   Brak serii';
+                        }
+                        
+                        return `• ${name}${setsDetails}`;
+                    }).join('\n\n');
+                }
+            }
+            
+            const volume = parseFloat(workout.volume) || 0;
+            const duration = parseInt(workout.duration) || 0;
+            
+            this.showConfirm(
+                workout.name || 'Szczegóły treningu',
+                `${date.toLocaleDateString('pl-PL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}\n\n` +
+                `Wolumen: ${(workout.volume || 0).toLocaleString()} kg\n` +
+                `Czas: ${workout.duration || 0} minut\n\n` +
+                `Ćwiczenia:\n${exerciseList}`,
+                () => {},
+                { type: 'info', confirmText: 'Zamknij', cancelText: 'Anuluj' }
+            );
+            
+            // For info modal, hide the cancel button and X in header, make confirm button full width
+            setTimeout(() => {
+                const buttonsDiv = document.getElementById('confirm-buttons');
+                if (buttonsDiv) {
+                    // Hide cancel button
+                    if (buttonsDiv.children.length > 1) {
+                        buttonsDiv.children[0].style.display = 'none';
+                    }
+                    // Make confirm button full width and sticky at bottom
+                    const confirmBtn = buttonsDiv.children[1] || buttonsDiv.children[0];
+                    if (confirmBtn) {
+                        confirmBtn.classList.remove('col-span-1');
+                        confirmBtn.classList.add('col-span-2');
+                        confirmBtn.textContent = 'Zamknij';
+                    }
+                    buttonsDiv.classList.remove('grid-cols-2');
+                    buttonsDiv.classList.add('grid-cols-1');
+                }
+                
+                // Hide X button in header - we have sticky close button at bottom
+                const headerBtn = document.querySelector('#confirm-modal .glass-panel > div:first-child > button');
+                if (headerBtn) {
+                    headerBtn.style.display = 'none';
+                }
+            }, 10);
+        }
+
+        saveToLocalStorage() {
+            if (!this.currentUser) return;
+            localStorage.setItem(`silaforma_workouts_${this.currentUser.id}`, JSON.stringify(this.workouts));
+        }
+
+        loadFromLocalStorage() {
+            if (!this.currentUser) return;
+            const saved = localStorage.getItem(`silaforma_workouts_${this.currentUser.id}`);
+            if (saved) {
+                this.workouts = JSON.parse(saved).map(w => ({
+                    ...w,
+                    date: new Date(w.date)
+                }));
+            }
+        }
+
+        updateStats() {
+            const monthly = this.workouts.filter(w => {
+                const d = new Date(w.date);
+                const now = new Date();
+                return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+            }).length;
+            
+            const volume = this.workouts.reduce((sum, w) => sum + (w.volume || 0), 0);
+            
+            const last = this.workouts[0];
+            const lastStr = last ? new Date(last.date).toLocaleDateString('pl-PL', { day: 'numeric', month: 'long' }) : '-';
+            const lastDate = last ? new Date(last.date).toLocaleDateString('pl-PL', { weekday: 'long', hour: '2-digit', minute: '2-digit' }) : 'Brak danych';
+            
+            const monthlyEl = document.getElementById('monthly-workouts');
+            const volumeEl = document.getElementById('total-volume');
+            const lastEl = document.getElementById('last-workout');
+            const lastDateEl = document.getElementById('last-workout-date');
+            
+            if (monthlyEl) monthlyEl.textContent = monthly;
+            if (volumeEl) volumeEl.textContent = volume.toLocaleString() + ' kg';
+            if (lastEl) lastEl.textContent = lastStr;
+            if (lastDateEl) lastDateEl.textContent = lastDate;
+        }
+
+        showStats() {
+            if (this.workouts.length === 0) {
+                document.getElementById('top-exercise').textContent = '-';
+                document.getElementById('avg-duration').textContent = '-';
+                document.getElementById('pr-weight').textContent = '-';
+            } else {
+                // Find top exercise
+                const exerciseCounts = {};
+                this.workouts.forEach(w => {
+                    if (w.exercises) {
+                        w.exercises.forEach(e => {
+                            exerciseCounts[e.name] = (exerciseCounts[e.name] || 0) + 1;
+                        });
+                    }
+                });
+                
+                const topExercise = Object.entries(exerciseCounts)
+                    .sort((a, b) => b[1] - a[1])[0];
+                document.getElementById('top-exercise').textContent = topExercise ? 
+                    `${topExercise[0]} (${topExercise[1]}x)` : '-';
+                
+                // Average duration
+                const avgDuration = this.workouts.reduce((sum, w) => sum + (w.duration || 0), 0) / this.workouts.length;
+                document.getElementById('avg-duration').textContent = Math.round(avgDuration) + ' min';
+                
+                // PR for bench press
+                let maxBench = 0;
+                this.workouts.forEach(w => {
+                    if (w.exercises) {
+                        w.exercises.forEach(e => {
+                            if (e.name && e.name.toLowerCase().includes('wyciskanie') && e.sets) {
+                                e.sets.forEach(s => {
+                                    if (s.weight && s.weight > maxBench) {
+                                        maxBench = s.weight;
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+                document.getElementById('pr-weight').textContent = maxBench > 0 ? maxBench + ' kg' : '-';
+            }
+            
+            document.getElementById('stats-modal').classList.remove('hidden');
+        }
+
+        hideStats() {
+            document.getElementById('stats-modal').classList.add('hidden');
+        }
+
+        exportData() {
+            if (this.workouts.length === 0) {
+                this.showNotification('Brak danych', 'Nie masz jeszcze żadnych treningów do eksportu.', 'warning');
+                return;
+            }
+            
+            const data = {
+                version: '1.0',
+                exportDate: new Date().toISOString(),
+                user: this.currentUser ? this.currentUser.email : 'unknown',
+                workouts: this.workouts
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `silaforma_backup_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            this.showNotification('Eksport zakończony', 'Dane zostały pobrane na twój komputer.', 'success');
+            this.hideStats();
+        }
+
+        importData(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if (!data.workouts || !Array.isArray(data.workouts)) {
+                        throw new Error('Nieprawidłowy format pliku');
+                    }
+                    
+                    this.showConfirm(
+                        'Importować dane?',
+                        `Znaleziono ${data.workouts.length} treningów z backupu z ${new Date(data.exportDate).toLocaleDateString('pl-PL')}.\n\nCzy chcesz zaimportować te dane?\n\nTwoje obecne treningi pozostaną nietknięte.`,
+                        (confirmed) => {
+                            if (confirmed) {
+                                const newWorkouts = data.workouts.map(w => ({
+                                    ...w,
+                                    date: new Date(w.date),
+                                    id: Date.now() + Math.random()
+                                }));
+                                
+                                this.workouts = [...newWorkouts, ...this.workouts];
+                                this.saveToLocalStorage();
+                                this.updateStats();
+                                this.renderHistory();
+                                
+                                this.showNotification('Import zakończony', `Zaimportowano ${newWorkouts.length} treningów.`, 'success');
+                                this.hideStats();
+                            }
+                        },
+                        { type: 'info', confirmText: 'Importuj', cancelText: 'Anuluj' }
+                    );
+                } catch (error) {
+                    this.showNotification('Błąd importu', 'Nie można odczytać pliku. Upewnij się, że to prawidłowy backup.', 'error');
+                }
+            };
+            reader.readAsText(file);
+            input.value = '';
+        }
+
+        clearAllData() {
+            this.showConfirm(
+                'Wyczyścić wszystkie dane?',
+                'Czy na pewno chcesz usunąć WSZYSTKIE treningi?\n\nTej operacji nie można cofnąć!\n\nZalecane jest wykonanie backupu przed wyczyszczeniem danych.',
+                (confirmed) => {
+                    if (confirmed) {
+                        this.workouts = [];
+                        this.saveToLocalStorage();
+                        this.updateStats();
+                        this.renderHistory();
+                        this.hideStats();
+                        this.showNotification('Dane wyczyszczone', 'Wszystkie treningi zostały usunięte.', 'success');
+                    }
+                },
+                { type: 'danger', confirmText: 'Wyczyść wszystko', cancelText: 'Anuluj' }
+            );
+        }
+
+        
+
+        async deleteAccount() {
+            this.hideStats();
+            
+            this.showConfirm(
+                'Usunąć konto?',
+                'Czy na pewno chcesz trwale usunąć swoje konto?\n\n⚠️ Tej operacji NIE MOŻNA cofnąć!\n\n• Wszystkie treningi zostaną usunięte\n• Konto zostanie usunięte z systemu\n• Wszystkie dane lokalne zostaną wyczyszczone',
+                async (confirmed) => {
+                    if (confirmed) {
+                        try {
+                            if (!this.currentUser || !supabaseClient) {
+                                throw new Error('Brak zalogowanego użytkownika');
+                            }
+                            
+                            this.showNotification('Usuwanie...', 'Trwa usuwanie konta...', 'info');
+                            
+                            if (this.workoutSubscription) {
+                                supabaseClient.removeChannel(this.workoutSubscription);
+                            }
+                            
+                            // Wywołaj funkcję RPC delete_user (usuwa treningi + konto z auth.users)
+                            const { error } = await supabaseClient.rpc('delete_user');
+                            
+                            if (error) throw error;
+                            
+                            // Wyczyść localStorage
+                            const userId = this.currentUser.id;
+                            localStorage.removeItem(`silaforma_workouts_${userId}`);
+                            localStorage.removeItem(`silaforma_draft_${userId}`);
+                            localStorage.removeItem('silaforma_last_register');
+                            localStorage.removeItem('silaforma_last_login');
+                            
+                            // Reset stanu
+                            this.currentUser = null;
+                            this.workouts = [];
+                            this.currentWorkout = null;
+                            this.workoutSubscription = null;
+                            
+                            // Pokaż ekran logowania
+                            document.getElementById('auth-screen').classList.remove('hidden');
+                            document.querySelector('header').classList.add('hidden');
+                            document.querySelector('main').classList.add('hidden');
+                            
+                            // Wyczyść pola formularza
+                            document.getElementById('login-username').value = '';
+                            document.getElementById('login-password').value = '';
+                            document.getElementById('register-username').value = '';
+                            document.getElementById('register-password').value = '';
+                            
+                            this.showNotification('Konto usunięte', 'Twoje konto i wszystkie dane zostały trwale usunięte.', 'success');
+                            
+                        } catch (error) {
+                            console.error('Błąd usuwania konta:', error);
+                            this.showNotification('Błąd', error.message || 'Nie udało się usunąć konta', 'error');
+                        }
+                    }
+                },
+                { type: 'danger', confirmText: 'Usuń konto', cancelText: 'Anuluj' }
+            );
+        }
+
+        showHistory() {
+            document.getElementById('history-section').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        showExerciseModal() {
+            document.getElementById('exercise-modal').classList.remove('hidden');
+            document.getElementById('exercise-count').textContent = `Dostępne ćwiczenia: ${exerciseDB.length}`;
+            this.renderExerciseList();
+            document.getElementById('exercise-search').value = '';
+            document.getElementById('exercise-search').focus();
+        }
+
+        hideExerciseModal() {
+            document.getElementById('exercise-modal').classList.add('hidden');
+            this.pendingExercise = null;
+        }
+
+        renderExerciseList(searchTerm = '') {
+            const grid = document.getElementById('exercise-grid');
+            const term = searchTerm.toLowerCase();
+            
+            const filtered = exerciseDB.filter(ex => 
+                ex.name.toLowerCase().includes(term) || 
+                ex.muscle.toLowerCase().includes(term)
+            );
+            
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full text-center py-8 text-slate-500">
+                        <i data-lucide="search-x" class="w-12 h-12 mx-auto mb-3 opacity-30"></i>
+                        <p>Nie znaleziono ćwiczeń</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+            
+            // Group exercises by muscle
+            const grouped = filtered.reduce((acc, ex) => {
+                if (!acc[ex.muscle]) acc[ex.muscle] = [];
+                acc[ex.muscle].push(ex);
+                return acc;
+            }, {});
+            
+            // Define muscle group order and colors
+            const muscleOrder = [
+                { name: 'Klatka piersiowa', color: 'text-rose-400', bg: 'bg-rose-600/20', border: 'border-rose-500/30' },
+                { name: 'Plecy', color: 'text-cyan-400', bg: 'bg-cyan-600/20', border: 'border-cyan-500/30' },
+                { name: 'Nogi', color: 'text-violet-400', bg: 'bg-violet-600/20', border: 'border-violet-500/30' },
+                { name: 'Barki', color: 'text-amber-400', bg: 'bg-amber-600/20', border: 'border-amber-500/30' },
+                { name: 'Biceps', color: 'text-emerald-400', bg: 'bg-emerald-600/20', border: 'border-emerald-500/30' },
+                { name: 'Triceps', color: 'text-blue-400', bg: 'bg-blue-600/20', border: 'border-blue-500/30' },
+                { name: 'Brzuch', color: 'text-orange-400', bg: 'bg-orange-600/20', border: 'border-orange-500/30' },
+                { name: 'Łydki', color: 'text-pink-400', bg: 'bg-pink-600/20', border: 'border-pink-500/30' }
+            ];
+            
+            let html = '';
+            
+            muscleOrder.forEach(muscle => {
+                if (grouped[muscle.name]) {
+                    html += `
+                        <div class="col-span-full mb-2 mt-4 first:mt-0">
+                            <div class="flex items-center gap-2 mb-3">
+                                <div class="w-2 h-2 rounded-full ${muscle.bg.replace('/20', '')}"></div>
+                                <h4 class="text-sm font-bold ${muscle.color} uppercase tracking-wider">${muscle.name}</h4>
+                                <div class="flex-1 h-px bg-slate-700/50"></div>
+                                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-1 rounded-full">${grouped[muscle.name].length}</span>
+                            </div>
+                        </div>
+                    `;
+                    
+                    html += grouped[muscle.name].map(ex => `
+                        <button onclick="app.selectExercise('${ex.id}')" class="exercise-card bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-emerald-500/50 rounded-xl p-3 text-left transition-all w-full group">
+                            <div class="flex items-start gap-3">
+                                <div class="w-10 h-10 ${muscle.bg} rounded-lg flex items-center justify-center flex-shrink-0 border ${muscle.border}">
+                                    <i data-lucide="${ex.icon}" class="w-5 h-5 ${muscle.color}"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-white text-sm mb-0.5 leading-tight whitespace-normal">${ex.name}</h4>
+                                    <p class="text-xs text-slate-500 leading-tight">${ex.requiredEquipment}</p>
+                                </div>
+                            </div>
+                        </button>
+                    `).join('');
+                }
+            });
+            
+            grid.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        selectExercise(exerciseId) {
+            const exercise = exerciseDB.find(e => e.id === exerciseId);
+            if (!exercise) return;
+            
+            // If exercise has alternative equipment, show selection modal
+            if (exercise.altEquipment) {
+                this.showEquipmentModal(exercise);
+            } else {
+                this.addExerciseToWorkout(exercise);
+                this.hideExerciseModal();
+            }
+        }
+
+        showEquipmentModal(exercise) {
+            // Mapowanie typów sprzętu na dane wyświetlane
+            const equipmentMap = {
+                dumbbell: { name: 'Hantle', icon: 'circle-dot', borderColor: 'border-purple-500/50', bgColor: 'bg-purple-600/20', textColor: 'text-purple-400' },
+                barbell: { name: 'Sztanga', icon: 'align-horizontal-distribute-center', borderColor: 'border-blue-500/50', bgColor: 'bg-blue-600/20', textColor: 'text-blue-400' },
+                cable: { name: 'Wyciąg', icon: 'arrow-down-circle', borderColor: 'border-amber-500/50', bgColor: 'bg-amber-600/20', textColor: 'text-amber-400' },
+                machine: { name: 'Maszyna', icon: 'settings', borderColor: 'border-slate-500/50', bgColor: 'bg-slate-600/20', textColor: 'text-slate-400' },
+                bodyweight: { name: 'Masa własna', icon: 'user', borderColor: 'border-emerald-500/50', bgColor: 'bg-emerald-600/20', textColor: 'text-emerald-400' },
+                other: { name: 'Inne', icon: 'help-circle', borderColor: 'border-gray-500/50', bgColor: 'bg-gray-600/20', textColor: 'text-gray-400' }
+            };
+
+            const current = equipmentMap[exercise.equipmentType] || equipmentMap.other;
+            const alt = equipmentMap[exercise.altEquipment] || equipmentMap.other;
+
+            const modal = document.createElement('div');
+            modal.id = 'equipment-modal';
+            modal.className = 'fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+            
+            modal.innerHTML = `
+                <div class="glass-panel w-full max-w-md rounded-3xl overflow-hidden border border-slate-600 p-6 slide-in">
+                    <div class="text-center mb-6">
+                        <div class="w-16 h-16 bg-emerald-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i data-lucide="dumbbell" class="w-8 h-8 text-emerald-400"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-2">${exercise.name}</h3>
+                        <p class="text-slate-400 text-sm">Wybierz sprzęt do ćwiczenia:</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <button id="select-current-equipment" class="bg-slate-800 hover:bg-slate-700 border-2 ${current.borderColor} rounded-2xl p-4 transition-all flex flex-col items-center gap-2">
+                            <div class="w-12 h-12 ${current.bgColor} rounded-xl flex items-center justify-center">
+                                <i data-lucide="${current.icon}" class="w-6 h-6 ${current.textColor}"></i>
+                            </div>
+                            <span class="font-semibold text-white">${current.name}</span>
+                            <span class="text-xs text-slate-500">Standardowe</span>
+                        </button>
+                        <button id="select-alt-equipment" class="bg-slate-800 hover:bg-slate-700 border-2 ${alt.borderColor} rounded-2xl p-4 transition-all flex flex-col items-center gap-2">
+                            <div class="w-12 h-12 ${alt.bgColor} rounded-xl flex items-center justify-center">
+                                <i data-lucide="${alt.icon}" class="w-6 h-6 ${alt.textColor}"></i>
+                            </div>
+                            <span class="font-semibold text-white">${alt.name}</span>
+                            <span class="text-xs text-slate-500">Alternatywne</span>
+                        </button>
+                    </div>
+                    <button id="cancel-equipment" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-3 px-6 rounded-xl transition-all border border-slate-700">
+                        Anuluj
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            lucide.createIcons();
+            
+            // Event listeners
+            document.getElementById('select-current-equipment').addEventListener('click', () => {
+                this.addExerciseToWorkout(exercise);
+                this.hideEquipmentModal();
+                this.hideExerciseModal();
+            });
+            
+            document.getElementById('select-alt-equipment').addEventListener('click', () => {
+                // Find the alternative version of this exercise
+                const altExercise = exerciseDB.find(e => 
+                    e.name.replace(' hantlami', '').replace(' hantle', '').replace(' sztangą', '').replace(' sztanga', '').replace(' wyciąg', '').replace(' maszyna', '') === 
+                    exercise.name.replace(' hantlami', '').replace(' hantle', '').replace(' sztangą', '').replace(' sztanga', '').replace(' wyciąg', '').replace(' maszyna', '') && 
+                    e.equipmentType === exercise.altEquipment
+                );
+                
+                if (altExercise) {
+                    this.addExerciseToWorkout(altExercise);
+                } else {
+                    // If no alternative found, modify current exercise data
+                    const modifiedExercise = {
+                        ...exercise,
+                        equipmentType: exercise.altEquipment,
+                        requiredEquipment: alt.name,
+                        name: exercise.name + ` (${alt.name.toLowerCase()})`
+                    };
+                    this.addExerciseToWorkout(modifiedExercise);
+                }
+                this.hideEquipmentModal();
+                this.hideExerciseModal();
+            });
+            
+            document.getElementById('cancel-equipment').addEventListener('click', () => {
+                this.hideEquipmentModal();
+            });
+        }
+
+        hideEquipmentModal() {
+            const modal = document.getElementById('equipment-modal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        addExerciseToWorkout(exercise) {
+            if (!this.currentWorkout) return;
+            
+            const isDumbbell = exercise.equipmentType === 'dumbbell';
+            const isSingleDumbbell = exercise.singleDumbbell === true;
+            
+            const exerciseData = {
+                id: Date.now() + Math.random(),
+                name: exercise.name,
+                muscle: exercise.muscle,
+                requiredEquipment: exercise.requiredEquipment || 'Brak danych o sprzęcie',
+                equipmentType: exercise.equipmentType || 'other',
+                singleDumbbell: isSingleDumbbell,
+                notes: '',
+                sets: [{ weight: '', reps: '', completed: false }]
+            };
+            
+            this.currentWorkout.exercises.push(exerciseData);
+            this.renderExercises();
+            this.autoSave();
+            
+            setTimeout(() => {
+                const inputs = document.querySelectorAll('.set-row:last-child input');
+                if (inputs.length > 0) inputs[0].focus();
+            }, 100);
+        }
+
+        renderExercises() {
+            const container = document.getElementById('exercise-list');
+            if (!container || !this.currentWorkout) return;
+            
+            // Ensure exercises is an array
+            if (!Array.isArray(this.currentWorkout.exercises)) {
+                this.currentWorkout.exercises = [];
+            }
+            
+            container.innerHTML = this.currentWorkout.exercises.map((ex, exIndex) => {
+                // Validate exercise object
+                if (!ex || typeof ex !== 'object') {
+                    return '';
+                }
+                // Determine placeholder text based on equipment type
+                let placeholderText = 'kg';
+                let weightLabel = 'kg';
+                
+                if (ex.equipmentType === 'dumbbell') {
+                    if (ex.singleDumbbell) {
+                        placeholderText = 'kg (1 hantel)';
+                        weightLabel = 'kg (1x)';
+                    } else {
+                        placeholderText = '2x kg (każdy)';
+                        weightLabel = 'kg (2x)';
+                    }
+                } else if (ex.equipmentType === 'barbell') {
+                    placeholderText = 'kg (sztanga)';
+                    weightLabel = 'kg';
+                }
+                
+                // Safe property access with defaults
+                const exName = ex.name || 'Ćwiczenie';
+                const exMuscle = ex.muscle || 'Inne';
+                const exEquipment = ex.requiredEquipment || 'Brak danych o sprzęcie';
+                const exNotes = ex.notes || '';
+                
+                return `
+                <div class="bg-slate-800/50 rounded-2xl p-4 border border-slate-700 exercise-card">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex-1 mr-4 min-w-0">
+                            <h4 class="font-semibold text-white text-lg leading-tight break-words">${exName}</h4>
+                            <span class="muscle-badge text-xs px-2 py-1 rounded-full mt-1 inline-block">${exMuscle}</span>
+                            <p class="text-xs text-slate-400 mt-2 flex items-start gap-1.5 leading-tight">
+                                <i data-lucide="package" class="w-3.5 h-3.5 flex-shrink-0 mt-0.5"></i>
+                                <span class="break-words">${exEquipment}</span>
+                            </p>
+                            <textarea 
+                                placeholder="Notatka do ćwiczenia (opcjonalnie)..." 
+                                onchange="app.updateExerciseNotes(${exIndex}, this.value)"
+                                class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-300 placeholder-slate-500 focus:border-emerald-500 focus:outline-none resize-none mt-2"
+                                rows="2"
+                            >${exNotes}</textarea>
+                        </div>
+                        <div class="flex items-center gap-1 flex-shrink-0">
+                            <button onclick="app.moveExerciseUp(${exIndex})" ${exIndex === 0 ? 'disabled' : ''} class="p-2 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed" title="Przesuń w górę">
+                                <i data-lucide="arrow-up" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="app.moveExerciseDown(${exIndex})" ${exIndex === this.currentWorkout.exercises.length - 1 ? 'disabled' : ''} class="p-2 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed" title="Przesuń w dół">
+                                <i data-lucide="arrow-down" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="app.removeExercise(${exIndex})" class="p-2 hover:bg-red-900/30 text-slate-400 hover:text-red-400 rounded-lg transition-colors ml-1" title="Usuń ćwiczenie">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2 mb-4">
+                        <div class="grid grid-cols-12 gap-2 text-xs text-slate-500 font-medium mb-1 px-2">
+                            <div class="col-span-1 text-center">Seria</div>
+                            <div class="col-span-5 text-center">Akcja</div>
+                            <div class="col-span-3 text-center">Kg</div>
+                            <div class="col-span-3 text-center">Powt.</div>
+                        </div>
+                        ${(ex.sets && Array.isArray(ex.sets) ? ex.sets : [{weight: '', reps: '', completed: false}]).map((set, setIndex) => `
+                            <div class="grid grid-cols-12 gap-2 items-center set-row ${set && set.completed ? 'completed' : ''} bg-slate-800/50 rounded-lg p-2">
+                                <div class="col-span-1 text-center text-slate-400 font-medium">${setIndex + 1}</div>
+                                <div class="col-span-5">
+                                    <button onclick="app.toggleSetComplete(${exIndex}, ${setIndex})" class="w-full px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${set && set.completed ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-emerald-600/50 hover:text-white border border-slate-600 hover:border-emerald-500'}">
+                                        ${set && set.completed ? '<i data-lucide="check" class="w-3 h-3 inline mr-1"></i>' : ''}zatwierdź serię
+                                    </button>
+                                </div>
+                                <div class="col-span-3 relative">
+                                    <input type="number" value="${set && set.weight !== undefined ? set.weight : ''}" placeholder="${placeholderText}"
+                                        onchange="app.updateSet(${exIndex}, ${setIndex}, 'weight', this.value)"
+                                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-center text-white text-sm focus:border-emerald-500 focus:outline-none">
+                                    ${ex.equipmentType === 'dumbbell' && !ex.singleDumbbell ? '<span class="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] text-slate-500 pointer-events-none">×2</span>' : ''}
+                                </div>
+                                <div class="col-span-3">
+                                    <input type="number" value="${set && set.reps !== undefined ? set.reps : ''}" placeholder="0" 
+                                        onchange="app.updateSet(${exIndex}, ${setIndex}, 'reps', this.value)"
+                                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-center text-white text-sm focus:border-emerald-500 focus:outline-none">
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <button onclick="app.addSet(${exIndex})" class="w-full py-2 border border-dashed border-slate-600 hover:border-emerald-500 hover:bg-emerald-500/10 rounded-xl text-slate-400 hover:text-emerald-400 transition-all flex items-center justify-center gap-2 text-sm font-medium">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        Dodaj serię
+                    </button>
+                </div>
+            `}).join('');
+            
+            lucide.createIcons();
+        }
+
+        removeExercise(exIndex) {
+            if (!this.currentWorkout || !Array.isArray(this.currentWorkout.exercises)) return;
+            if (exIndex < 0 || exIndex >= this.currentWorkout.exercises.length) return;
+            
+            this.currentWorkout.exercises.splice(exIndex, 1);
+            this.renderExercises();
+            this.autoSave();
+        }
+
+        moveExerciseUp(exIndex) {
+            if (!this.currentWorkout || !Array.isArray(this.currentWorkout.exercises)) return;
+            if (exIndex <= 0 || exIndex >= this.currentWorkout.exercises.length) return;
+            
+            const temp = this.currentWorkout.exercises[exIndex];
+            this.currentWorkout.exercises[exIndex] = this.currentWorkout.exercises[exIndex - 1];
+            this.currentWorkout.exercises[exIndex - 1] = temp;
+            this.renderExercises();
+            this.autoSave();
+        }
+
+        moveExerciseDown(exIndex) {
+            if (!this.currentWorkout || !Array.isArray(this.currentWorkout.exercises)) return;
+            if (exIndex < 0 || exIndex >= this.currentWorkout.exercises.length - 1) return;
+            
+            const temp = this.currentWorkout.exercises[exIndex];
+            this.currentWorkout.exercises[exIndex] = this.currentWorkout.exercises[exIndex + 1];
+            this.currentWorkout.exercises[exIndex + 1] = temp;
+            this.renderExercises();
+            this.autoSave();
+        }
+
+        addSet(exIndex) {
+            if (!this.currentWorkout || !Array.isArray(this.currentWorkout.exercises)) return;
+            const exercise = this.currentWorkout.exercises[exIndex];
+            if (!exercise) return;
+            
+            if (!Array.isArray(exercise.sets)) {
+                exercise.sets = [];
+            }
+            
+            exercise.sets.push({ weight: '', reps: '', completed: false });
+            this.renderExercises();
+            this.autoSave();
+        }
+
+        toggleSetComplete(exIndex, setIndex) {
+            if (!this.currentWorkout || !Array.isArray(this.currentWorkout.exercises)) return;
+            const exercise = this.currentWorkout.exercises[exIndex];
+            if (!exercise || !Array.isArray(exercise.sets)) return;
+            
+            const set = exercise.sets[setIndex];
+            if (!set) return;
+            
+            set.completed = !set.completed;
+            this.renderExercises();
+            this.autoSave();
+        }
+
+        removeSet(exIndex, setIndex) {
+            if (!this.currentWorkout || !Array.isArray(this.currentWorkout.exercises)) return;
+            const exercise = this.currentWorkout.exercises[exIndex];
+            if (!exercise || !Array.isArray(exercise.sets)) return;
+            
+            exercise.sets.splice(setIndex, 1);
+            this.renderExercises();
+            this.autoSave();
+        }
+
+        repeatWorkout(index) {
+            // Validate index
+            if (typeof index !== 'number' || index < 0 || index >= this.workouts.length) {
+                console.error('Invalid index in repeatWorkout:', index);
+                return;
+            }
+            
+            const workoutToRepeat = this.workouts[index];
+            if (!workoutToRepeat || typeof workoutToRepeat !== 'object') {
+                console.error('Workout not found at index:', index);
+                return;
+            }
+            
+            // Check if current workout has exercises safely
+            const currentHasExercises = this.currentWorkout && 
+                Array.isArray(this.currentWorkout.exercises) && 
+                this.currentWorkout.exercises.length > 0;
+                
+            if (currentHasExercises) {
+                this.showConfirm(
+                    'Masz aktywny trening',
+                    'Czy chcesz zastąpić obecny trening powtórzeniem wybranego treningu z historii?\n\nObecny trening zostanie utracony.',
+                    (confirmed) => {
+                        if (confirmed) {
+                            this.startRepeatedWorkout(workoutToRepeat);
+                        }
+                    },
+                    { type: 'warning', confirmText: 'Powtórz', cancelText: 'Anuluj' }
+                );
+            } else {
+                this.startRepeatedWorkout(workoutToRepeat);
+            }
+        }
+
+        startRepeatedWorkout(workoutToRepeat) {
+            if (!workoutToRepeat || typeof workoutToRepeat !== 'object') {
+                console.error('Invalid workout to repeat');
+                return;
+            }
+            
+            const now = new Date();
+            const defaultName = `${workoutToRepeat.name || 'Trening'} - powtórzenie`;
+            
+            // Copy exercises with reset sets (not completed) - including equipment info for volume calculation
+            // Filter out invalid exercises and ensure all required properties exist
+            const copiedExercises = [];
+            
+            if (Array.isArray(workoutToRepeat.exercises)) {
+                workoutToRepeat.exercises.forEach(ex => {
+                    if (!ex || typeof ex !== 'object') return;
+                    
+                    const validSets = [];
+                    if (Array.isArray(ex.sets)) {
+                        ex.sets.forEach(set => {
+                            if (set && typeof set === 'object') {
+                                validSets.push({
+                                    weight: set.weight !== undefined ? set.weight : '',
+                                    reps: set.reps !== undefined ? set.reps : '',
+                                    completed: false
+                                });
+                            }
+                        });
+                    }
+                    
+                    // Always add at least one empty set
+                    if (validSets.length === 0) {
+                        validSets.push({ weight: '', reps: '', completed: false });
+                    }
+                    
+                    copiedExercises.push({
+                        id: Date.now() + Math.random(),
+                        name: ex.name || 'Ćwiczenie',
+                        muscle: ex.muscle || 'Inne',
+                        requiredEquipment: ex.requiredEquipment || 'Brak danych o sprzęcie',
+                        equipmentType: ex.equipmentType || 'other',
+                        singleDumbbell: ex.singleDumbbell === true,
+                        sets: validSets
+                    });
+                });
+            }
+            
+            this.currentWorkout = {
+                id: Date.now(),
+                date: now,
+                name: defaultName,
+                exercises: copiedExercises,
+                startTime: Date.now()
+            };
+            
+            document.getElementById('active-workout').classList.remove('hidden');
+            document.getElementById('workout-name').value = defaultName;
+            document.getElementById('workout-date').textContent = now.toLocaleDateString('pl-PL', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            document.getElementById('history-section').classList.add('hidden');
+            
+            this.renderExercises();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            lucide.createIcons();
+            
+            this.showNotification('Trening powtórzony!', `Rozpoczęto powtórzenie treningu z ${new Date(workoutToRepeat.date).toLocaleDateString('pl-PL')}`, 'success');
+        }
+
+        updateSet(exIndex, setIndex, field, value) {
+            if (!this.currentWorkout || !Array.isArray(this.currentWorkout.exercises)) return;
+            const exercise = this.currentWorkout.exercises[exIndex];
+            if (!exercise || !Array.isArray(exercise.sets)) return;
+            
+            const set = exercise.sets[setIndex];
+            if (!set) return;
+            
+            set[field] = value === '' ? '' : parseFloat(value);
+            this.autoSave();
+        }
+
+        updateExerciseNotes(exIndex, value) {
+            if (!this.currentWorkout || !Array.isArray(this.currentWorkout.exercises)) return;
+            const exercise = this.currentWorkout.exercises[exIndex];
+            if (!exercise) return;
+            
+            exercise.notes = value.trim();
+            this.autoSave();
+        }
+
+        startTimer(seconds) {
+            this.stopTimer();
+            this.timerSeconds = seconds;
+            this.updateTimerDisplay();
+            
+            const icon = document.getElementById('timer-icon');
+            if (icon) icon.classList.add('timer-active');
+            
+            this.timer = setInterval(() => {
+                this.timerSeconds--;
+                this.updateTimerDisplay();
+                
+                if (this.timerSeconds <= 0) {
+                    this.stopTimer();
+                    this.showNotification('Koniec odpoczynku!', 'Czas na następną serię 💪', 'success');
+                    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                }
+            }, 1000);
+        }
+
+        stopTimer() {
+            if (this.timer) {
+                clearInterval(this.timer);
+                this.timer = null;
+            }
+            this.timerSeconds = 0;
+            this.updateTimerDisplay();
+            
+            const icon = document.getElementById('timer-icon');
+            if (icon) icon.classList.remove('timer-active');
+        }
+
+        updateTimerDisplay() {
+            const display = document.getElementById('rest-timer');
+            if (!display) return;
+            
+            const mins = Math.floor(this.timerSeconds / 60);
+            const secs = this.timerSeconds % 60;
+            display.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+    }
+
+    // Initialize app when DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+        app = new TrainingPlanner();
+    });
+    </script>
+</body>
+</html>
