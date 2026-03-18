@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { SetLog } from '../types';
 
 interface SetTrackerProps {
@@ -11,7 +11,7 @@ interface SetTrackerProps {
   onChange: (logs: SetLog[]) => void;
 }
 
-function syncLogs(existing: SetLog[], count: number, defaultReps: string, defaultWeight: number | null): SetLog[] {
+function buildLogs(existing: SetLog[], count: number, defaultReps: string, defaultWeight: number | null): SetLog[] {
   const result: SetLog[] = [];
   for (let i = 0; i < count; i++) {
     if (existing[i]) {
@@ -39,16 +39,38 @@ export default function SetTracker({
   duration,
   onChange,
 }: SetTrackerProps) {
-  const synced = syncLogs(setLogs, sets, defaultReps, defaultWeight);
+  // Local copy of logs — never re-synced from props while editing
+  const [localLogs, setLocalLogs] = useState<SetLog[]>(() =>
+    buildLogs(setLogs, sets, defaultReps, defaultWeight)
+  );
+
+  // Track previous sets count to detect structural changes only
+  const prevSetsRef = useRef(sets);
+  const isEditingRef = useRef(false);
+
+  // Only rebuild when NUMBER of sets changes (structural change), not on every prop update
+  useEffect(() => {
+    if (prevSetsRef.current !== sets) {
+      prevSetsRef.current = sets;
+      setLocalLogs(prev => buildLogs(prev, sets, defaultReps, defaultWeight));
+    }
+  }, [sets, defaultReps, defaultWeight]);
+
+  // Editing cell state
   const [editingCell, setEditingCell] = useState<{ setIdx: number; field: 'reps' | 'weight' } | null>(null);
   const [tempValue, setTempValue] = useState('');
 
   const updateLog = (idx: number, updates: Partial<SetLog>) => {
-    const next = synced.map((s, i) => (i === idx ? { ...s, ...updates } : s));
-    onChange(next);
+    setLocalLogs(prev => {
+      const next = prev.map((s, i) => (i === idx ? { ...s, ...updates } : s));
+      // Push to parent after state update
+      setTimeout(() => onChange(next), 0);
+      return next;
+    });
   };
 
   const startEdit = (setIdx: number, field: 'reps' | 'weight', current: string) => {
+    isEditingRef.current = true;
     setEditingCell({ setIdx, field });
     setTempValue(current);
   };
@@ -63,26 +85,33 @@ export default function SetTracker({
     }
     setEditingCell(null);
     setTempValue('');
+    isEditingRef.current = false;
+  };
+
+  const cancelEdit = () => {
+    setEditingCell(null);
+    setTempValue('');
+    isEditingRef.current = false;
   };
 
   const toggleDone = (idx: number) => {
-    updateLog(idx, { done: !synced[idx].done });
+    updateLog(idx, { done: !localLogs[idx].done });
   };
 
-  const completedSets = synced.filter(s => s.done).length;
-  const totalVolume = synced
+  const completedSets = localLogs.filter(s => s.done).length;
+  const totalVolume = localLogs
     .filter(s => s.done && s.actualReps != null && s.weight != null)
     .reduce((acc, s) => acc + (s.actualReps! * s.weight!), 0);
 
   const avgReps = (() => {
-    const done = synced.filter(s => s.done && s.actualReps != null);
+    const done = localLogs.filter(s => s.done && s.actualReps != null);
     return done.length > 0
       ? (done.reduce((a, s) => a + s.actualReps!, 0) / done.length).toFixed(1)
       : null;
   })();
 
   const maxWeight = (() => {
-    const done = synced.filter(s => s.done && s.weight != null);
+    const done = localLogs.filter(s => s.done && s.weight != null);
     return done.length > 0 ? Math.max(...done.map(s => s.weight!)) : null;
   })();
 
@@ -122,8 +151,8 @@ export default function SetTracker({
       </div>
 
       {/* Column headers */}
-      <div className="grid grid-cols-[40px_28px_1fr_1fr_1fr] gap-x-1 px-2 py-1.5 border-b border-slate-100 bg-white/70">
-        <div />
+      <div className="grid grid-cols-[44px_28px_1fr_1fr_1fr] gap-x-1 px-2 py-1.5 border-b border-slate-100 bg-white/70">
+        <div className="text-[10px] font-bold text-slate-400 text-center">✓</div>
         <div className="text-[10px] font-bold text-slate-400 text-center">#</div>
         <div className="text-[10px] font-bold text-slate-400 text-center">Plan</div>
         <div className="text-[10px] font-bold text-slate-400 text-center">Powt.</div>
@@ -132,30 +161,32 @@ export default function SetTracker({
 
       {/* Rows */}
       <div className="divide-y divide-slate-100">
-        {synced.map((log, idx) => {
+        {localLogs.map((log, idx) => {
           const isEditingReps = editingCell?.setIdx === idx && editingCell.field === 'reps';
           const isEditingWeight = editingCell?.setIdx === idx && editingCell.field === 'weight';
 
           return (
             <div
               key={log.id}
-              className={`grid grid-cols-[40px_28px_1fr_1fr_1fr] gap-x-1 items-center px-2 py-2.5 transition-colors ${
-                log.done ? 'bg-emerald-50/70' : 'bg-white/50 hover:bg-white'
+              className={`grid grid-cols-[44px_28px_1fr_1fr_1fr] gap-x-1 items-center px-2 py-1.5 transition-colors ${
+                log.done ? 'bg-emerald-50/70' : 'bg-white/50'
               }`}
             >
-              {/* Checkbox — larger touch target */}
-              <button
-                onClick={() => toggleDone(idx)}
-                className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all cursor-pointer border-2 ${
-                  log.done
-                    ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm shadow-emerald-200'
-                    : 'border-slate-200 bg-white text-transparent hover:border-violet-400 active:scale-95'
-                }`}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              </button>
+              {/* Checkbox */}
+              <div className="flex justify-center">
+                <button
+                  onClick={() => toggleDone(idx)}
+                  className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all cursor-pointer border-2 active:scale-95 ${
+                    log.done
+                      ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm shadow-emerald-200'
+                      : 'border-slate-200 bg-white text-transparent hover:border-violet-400'
+                  }`}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </button>
+              </div>
 
               {/* Set number */}
               <div className={`text-xs font-bold text-center ${log.done ? 'text-emerald-600' : 'text-slate-400'}`}>
@@ -179,15 +210,15 @@ export default function SetTracker({
                     onChange={e => setTempValue(e.target.value)}
                     onBlur={commitEdit}
                     onKeyDown={e => {
-                      if (e.key === 'Enter' || e.key === 'Tab') commitEdit();
-                      if (e.key === 'Escape') setEditingCell(null);
+                      if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); commitEdit(); }
+                      if (e.key === 'Escape') cancelEdit();
                     }}
-                    className="w-full text-center text-xs font-bold px-1 py-2 rounded-lg border-2 border-violet-400 bg-white focus:outline-none text-slate-800"
+                    className="w-full text-center text-xs font-bold px-1 py-2.5 rounded-lg border-2 border-violet-400 bg-white focus:outline-none text-slate-800"
                   />
                 ) : (
                   <button
                     onClick={() => startEdit(idx, 'reps', log.actualReps != null ? String(log.actualReps) : '')}
-                    className={`w-full text-center text-xs font-bold py-2 px-1 rounded-lg border-2 transition-all cursor-pointer active:scale-95 ${
+                    className={`w-full text-center text-xs font-bold py-2.5 px-1 rounded-lg border-2 transition-all cursor-pointer active:scale-95 ${
                       log.actualReps != null
                         ? log.done
                           ? 'border-emerald-200 bg-emerald-100 text-emerald-800'
@@ -213,15 +244,15 @@ export default function SetTracker({
                     onChange={e => setTempValue(e.target.value)}
                     onBlur={commitEdit}
                     onKeyDown={e => {
-                      if (e.key === 'Enter' || e.key === 'Tab') commitEdit();
-                      if (e.key === 'Escape') setEditingCell(null);
+                      if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); commitEdit(); }
+                      if (e.key === 'Escape') cancelEdit();
                     }}
-                    className="w-full text-center text-xs font-bold px-1 py-2 rounded-lg border-2 border-amber-400 bg-white focus:outline-none text-slate-800"
+                    className="w-full text-center text-xs font-bold px-1 py-2.5 rounded-lg border-2 border-amber-400 bg-white focus:outline-none text-slate-800"
                   />
                 ) : (
                   <button
                     onClick={() => startEdit(idx, 'weight', log.weight != null ? String(log.weight) : '')}
-                    className={`w-full text-center text-xs font-bold py-2 px-1 rounded-lg border-2 transition-all cursor-pointer active:scale-95 ${
+                    className={`w-full text-center text-xs font-bold py-2.5 px-1 rounded-lg border-2 transition-all cursor-pointer active:scale-95 ${
                       log.weight != null
                         ? log.done
                           ? 'border-emerald-200 bg-emerald-100 text-emerald-800'
@@ -240,39 +271,41 @@ export default function SetTracker({
 
       {/* Footer summary */}
       {completedSets > 0 && (
-        <div className="px-3 py-2 border-t border-slate-100 bg-white/70 flex items-center justify-between flex-wrap gap-1.5">
-          <div className="flex items-center gap-3 flex-wrap">
-            {avgReps && (
-              <span className="text-[10px] text-slate-500">
-                Śr.: <span className="font-bold text-violet-700">{avgReps} powt.</span>
-              </span>
-            )}
-            {maxWeight != null && (
-              <span className="text-[10px] text-slate-500">
-                Maks: <span className="font-bold text-amber-600">{maxWeight} kg</span>
-              </span>
-            )}
-            {totalVolume > 0 && (
-              <span className="text-[10px] text-slate-500">
-                Obj.: <span className="font-bold text-indigo-600">{totalVolume.toLocaleString()} kg</span>
+        <div className="px-3 py-2 border-t border-slate-100 bg-white/70">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-3 flex-wrap">
+              {avgReps && (
+                <span className="text-[10px] text-slate-500">
+                  Śr.: <span className="font-bold text-violet-700">{avgReps} powt.</span>
+                </span>
+              )}
+              {maxWeight != null && (
+                <span className="text-[10px] text-slate-500">
+                  Maks: <span className="font-bold text-amber-600">{maxWeight} kg</span>
+                </span>
+              )}
+              {totalVolume > 0 && (
+                <span className="text-[10px] text-slate-500">
+                  Obj.: <span className="font-bold text-indigo-600">{totalVolume.toLocaleString()} kg</span>
+                </span>
+              )}
+            </div>
+            {completedSets === sets && (
+              <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Ukończone!
               </span>
             )}
           </div>
-          {completedSets === sets && (
-            <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-              Ukończone!
-            </span>
-          )}
         </div>
       )}
 
       {/* Hint */}
-      <div className="px-3 py-1.5 bg-slate-50 border-t border-slate-100">
-        <p className="text-[10px] text-slate-400">
-          Dotknij <span className="font-semibold">Powt.</span> lub <span className="font-semibold">Kg</span> aby wpisać · Zaznacz ✓ gdy seria gotowa
+      <div className="px-3 py-1.5 bg-slate-50/80 border-t border-slate-100">
+        <p className="text-[10px] text-slate-400 text-center">
+          Dotknij <span className="font-semibold">Powt.</span> lub <span className="font-semibold">Kg</span> aby wpisać · ✓ gdy seria gotowa
         </p>
       </div>
     </div>

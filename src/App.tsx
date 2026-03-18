@@ -128,30 +128,30 @@ export default function App() {
     <div className="min-h-screen bg-slate-50">
       <Sidebar activeView={activeView} onViewChange={setActiveView} />
 
-      {/* Offline banner — fixed pod sidebar na desktop */}
-      {!isSupabaseConfigured && !offlineDismissed && (
-        <div className="main-content">
+      <div className="main-content">
+        {/* Offline banner */}
+        {!isSupabaseConfigured && !offlineDismissed && (
           <OfflineBanner onDismiss={() => setOfflineDismissed(true)} />
-        </div>
-      )}
+        )}
 
-      {/* Sync indicator */}
-      {syncing && isSupabaseConfigured && (
-        <div className="main-content bg-violet-500/10 border-b border-violet-500/20 px-4 py-1.5 flex items-center gap-2">
-          <svg className="w-3.5 h-3.5 text-violet-400 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-          <p className="text-violet-400 text-xs">Synchronizowanie danych...</p>
-        </div>
-      )}
+        {/* Sync indicator */}
+        {syncing && isSupabaseConfigured && (
+          <div className="bg-violet-500/10 border-b border-violet-500/20 px-4 py-2 flex items-center gap-2">
+            <svg className="w-3.5 h-3.5 text-violet-400 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            <p className="text-violet-400 text-xs font-medium">Synchronizowanie danych...</p>
+          </div>
+        )}
 
-      {/* Main content — naturalny scroll body (wymagane przez Safari) */}
-      <main className="main-content">
-        <div className="max-w-5xl mx-auto px-3 sm:px-5 lg:px-8 py-5 md:py-6">
-          {renderView()}
-        </div>
-      </main>
+        {/* Main content */}
+        <main>
+          <div className="max-w-5xl mx-auto px-3 sm:px-5 lg:px-8 py-4 sm:py-6">
+            {renderView()}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
