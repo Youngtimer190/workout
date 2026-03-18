@@ -125,45 +125,33 @@ export default function App() {
   };
 
   return (
-    <div
-      className="flex bg-slate-50 overflow-hidden"
-      style={{ height: '100dvh' }}
-    >
+    <div className="min-h-screen bg-slate-50">
       <Sidebar activeView={activeView} onViewChange={setActiveView} />
 
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {/* Offline banner */}
-        {!isSupabaseConfigured && !offlineDismissed && (
+      {/* Offline banner — fixed pod sidebar na desktop */}
+      {!isSupabaseConfigured && !offlineDismissed && (
+        <div className="main-content">
           <OfflineBanner onDismiss={() => setOfflineDismissed(true)} />
-        )}
+        </div>
+      )}
 
-        {/* Sync indicator */}
-        {syncing && isSupabaseConfigured && (
-          <div className="bg-violet-500/10 border-b border-violet-500/20 px-4 py-1.5 flex items-center gap-2 flex-shrink-0">
-            <svg className="w-3.5 h-3.5 text-violet-400 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            <p className="text-violet-400 text-xs">Synchronizowanie danych...</p>
-          </div>
-        )}
+      {/* Sync indicator */}
+      {syncing && isSupabaseConfigured && (
+        <div className="main-content bg-violet-500/10 border-b border-violet-500/20 px-4 py-1.5 flex items-center gap-2">
+          <svg className="w-3.5 h-3.5 text-violet-400 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          <p className="text-violet-400 text-xs">Synchronizowanie danych...</p>
+        </div>
+      )}
 
-        {/* Main content */}
-        <main
-          className="flex-1 overflow-y-auto min-h-0"
-          id="main-scroll"
-          style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
-        >
-          <div
-            className="max-w-5xl mx-auto px-3 sm:px-5 lg:px-8 py-5 md:py-6"
-            style={{
-              paddingBottom: 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 1.25rem)',
-            }}
-          >
-            {renderView()}
-          </div>
-        </main>
-      </div>
+      {/* Main content — naturalny scroll body (wymagane przez Safari) */}
+      <main className="main-content">
+        <div className="max-w-5xl mx-auto px-3 sm:px-5 lg:px-8 py-5 md:py-6">
+          {renderView()}
+        </div>
+      </main>
     </div>
   );
 }

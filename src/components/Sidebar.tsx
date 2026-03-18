@@ -68,8 +68,8 @@ export default function Sidebar({ activeView, onViewChange }: SidebarProps) {
 
   return (
     <>
-      {/* ── Desktop Sidebar ── */}
-      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-slate-100 shadow-sm flex-shrink-0 sticky top-0" style={{ height: '100dvh' }}>
+      {/* ── Desktop Sidebar — fixed, scrolluje niezależnie od body ── */}
+      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-slate-100 shadow-sm fixed left-0 top-0 z-20" style={{ height: '100dvh' }}>
         {/* Logo */}
         <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200 flex-shrink-0">

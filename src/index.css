@@ -8,26 +8,23 @@
 }
 
 /* ── Prevent horizontal overflow ── */
-html, body {
+html {
   overflow-x: hidden;
-  /* NIE używaj scroll-behavior: smooth — laguje na iOS */
 }
 
-/* ── Pełna wysokość na iOS Safari (dynamic viewport height) ── */
-/* Zwykłe 100vh na iOS Safari = za dużo (nie uwzględnia paska URL) */
-html {
-  /* Fallback dla starszych przeglądarek */
+/* ── KLUCZOWE DLA SAFARI: body musi scrollować naturalnie ── */
+/* Safari chowa pasek adresu TYLKO gdy scrolluje window/body */
+html, body {
+  width: 100%;
   height: 100%;
-  /* dvh uwzględnia chowanie/pokazanie paska URL w Safari */
-  height: 100dvh;
+  /* NIE ustawiamy overflow:hidden ani fixed height na body */
 }
 
 body {
-  height: 100%;
-  /* Wyłącz bounce scroll na body — scroll tylko w wyznaczonych elementach */
-  overscroll-behavior: none;
-  /* Poprawia renderowanie na iOS */
-  -webkit-overflow-scrolling: touch;
+  /* Pozwól body scrollować normalnie na mobile */
+  overscroll-behavior-x: none; /* tylko blokuj poziomy bounce */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 /* ── Safe area CSS variables (iOS notch / Dynamic Island / home indicator) ── */
@@ -36,19 +33,14 @@ body {
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
-  /* Wysokość bottom nav + home indicator */
-  --bottom-nav-height: 64px;
-  --bottom-nav-total: calc(var(--bottom-nav-height) + var(--safe-bottom));
+  --bottom-nav-height: 60px;
+  --bottom-nav-total: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+  --sidebar-width: 256px;
 }
 
 /* ── Prevent iOS input zoom (font-size < 16px powoduje zoom) ── */
 input, textarea, select {
   font-size: 16px !important;
-}
-
-/* Ale zachowaj mniejszy font dla nie-interaktywnych elementów */
-input.text-sm, textarea.text-sm {
-  font-size: 16px !important; /* Musi pozostać 16px na iOS */
 }
 
 /* ── Prevent text size adjust on orientation change ── */
@@ -60,7 +52,6 @@ body {
 /* ── Tap highlight off ── */
 button, a, [role="button"] {
   -webkit-tap-highlight-color: transparent;
-  /* Szybsze tapnięcia na iOS */
   touch-action: manipulation;
 }
 
@@ -74,7 +65,7 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
-/* ── Scrollbars ── */
+/* ── Scrollbars — eleganckie i wąskie ── */
 
 /* Firefox */
 * {
@@ -82,35 +73,25 @@ input[type="number"] {
   scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
 }
 
-/* Chrome / Safari / Edge */
-::-webkit-scrollbar {
-  width: 3px;
-  height: 3px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.4);
-  border-radius: 99px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(139, 92, 246, 0.6);
-}
-::-webkit-scrollbar-corner {
-  background: transparent;
-}
-
-/* Główny scroll container */
-#main-scroll::-webkit-scrollbar {
-  width: 3px;
-}
-#main-scroll::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.35);
-  border-radius: 99px;
-}
-#main-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(139, 92, 246, 0.55);
+/* Chrome / Safari / Edge — tylko na nie-mobile */
+@media (hover: hover) {
+  ::-webkit-scrollbar {
+    width: 3px;
+    height: 3px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.4);
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(139, 92, 246, 0.6);
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
 }
 
 /* ── Hide scrollbars utility ── */
@@ -120,13 +101,6 @@ input[type="number"] {
 }
 .no-scrollbar::-webkit-scrollbar {
   display: none;
-}
-
-/* ── Smooth scroll (tylko nie-iOS) ── */
-@supports not (-webkit-touch-callout: none) {
-  html {
-    scroll-behavior: smooth;
-  }
 }
 
 /* ── Line clamp ── */
@@ -168,18 +142,10 @@ input[type="number"] {
   animation: fadeIn 0.2s ease-out forwards;
 }
 
-/* ── iOS Safari: fix dla position:fixed w modals ── */
-/* Gdy modal jest otwarty, zablokuj scroll body */
+/* ── iOS Safari: modal open — zablokuj scroll body ── */
 body.modal-open {
   overflow: hidden;
-  position: fixed;
-  width: 100%;
-}
-
-/* ── Fix dla Safari: min-height w flex children ── */
-.flex-col-safari {
-  /* Safari wymaga min-height: 0 dla flex children z overflow */
-  min-height: 0;
+  /* NIE używamy position:fixed — to resetuje scroll position */
 }
 
 /* ── Safe area padding utilities ── */
@@ -189,46 +155,45 @@ body.modal-open {
 .pt-safe {
   padding-top: env(safe-area-inset-top, 0px);
 }
-.pl-safe {
-  padding-left: env(safe-area-inset-left, 0px);
-}
-.pr-safe {
-  padding-right: env(safe-area-inset-right, 0px);
-}
 
-/* Bottom nav uwzględniający safe area */
-.bottom-nav-pad {
+/* Padding pod bottom nav + safe area */
+.pb-nav {
   padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 1rem);
 }
 
-/* ── Fix dla Safari: backdrop-filter ── */
-.backdrop-blur-safari {
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
+/* ── Fix dla Safari: position sticky ── */
+.sticky {
+  position: -webkit-sticky;
+  position: sticky;
 }
 
-/* ── Modals na iOS: scroll wewnątrz modalu ── */
+/* ── iOS touch scroll w modalach ── */
 .modal-scroll {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
 }
 
-/* Wszystkie overflow-y-auto/scroll mają touch scrolling na iOS */
-[class*="overflow-y-auto"],
-[class*="overflow-y-scroll"] {
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
-}
-
-/* Fix dla Safari: flex dzieci muszą mieć min-height: 0 żeby overflow działało */
-.flex-col > .overflow-y-auto,
-.flex-col > .overflow-y-scroll,
-[class*="flex-col"] > [class*="overflow-y"] {
+/* ── Fix dla Safari: flex min-height ── */
+.min-h-0 {
   min-height: 0;
 }
 
-/* iOS Safari: fix dla position sticky w scroll container */
-.sticky {
-  position: -webkit-sticky;
-  position: sticky;
+/* ── Backdrop blur fix dla Safari ── */
+.backdrop-blur-safari {
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+/* ── Desktop: main content z marginesem na sidebar ── */
+@media (min-width: 768px) {
+  .main-content {
+    margin-left: var(--sidebar-width);
+  }
+}
+
+/* ── Mobile: main content z paddingiem pod bottom nav ── */
+@media (max-width: 767px) {
+  .main-content {
+    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 1rem);
+  }
 }

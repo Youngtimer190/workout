@@ -2,18 +2,22 @@
 <html lang="pl">
   <head>
     <meta charset="UTF-8" />
-    <!-- viewport-fit=cover: treść sięga pod notch i home indicator na iPhone -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0" />
+    <!--
+      viewport-fit=cover — treść sięga pod notch/home indicator na iPhone
+      WAŻNE: NIE dodajemy maximum-scale=1.0 ani user-scalable=no
+      — blokują chowanie paska adresu w Safari
+    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
     <title>FitPlaner – Generator & Planer Treningowy</title>
 
-    <!-- iOS PWA / Safari meta tagi -->
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="FitPlaner" />
+    <!-- iOS Safari meta tagi -->
+    <!-- apple-mobile-web-app-capable=no — działamy w przeglądarce (nie standalone PWA) -->
+    <!-- W trybie standalone Safari inaczej obsługuje pasek adresu -->
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
+    <meta name="apple-mobile-web-app-title" content="FitPlaner" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="theme-color" content="#f8fafc" />
 
     <!-- Prevent iOS from styling phone numbers/links -->
     <meta name="format-detection" content="telephone=no" />
