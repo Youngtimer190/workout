@@ -50,9 +50,15 @@ function ExerciseDetailModal({
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div
+        className="relative bg-white sm:rounded-2xl rounded-t-2xl shadow-2xl w-full sm:max-w-md overflow-hidden"
+        style={{
+          maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 0.5rem)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        }}
+      >
         {/* Header */}
         <div className={`bg-gradient-to-r ${muscleGroupColors[exercise.muscleGroup] || 'from-slate-500 to-slate-600'} p-6`}>
           <button

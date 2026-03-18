@@ -69,7 +69,7 @@ export default function Sidebar({ activeView, onViewChange }: SidebarProps) {
   return (
     <>
       {/* ── Desktop Sidebar ── */}
-      <aside className="hidden md:flex flex-col w-64 h-screen bg-white border-r border-slate-100 shadow-sm flex-shrink-0 sticky top-0">
+      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-slate-100 shadow-sm flex-shrink-0 sticky top-0" style={{ height: '100dvh' }}>
         {/* Logo */}
         <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200 flex-shrink-0">
@@ -114,8 +114,14 @@ export default function Sidebar({ activeView, onViewChange }: SidebarProps) {
 
       {/* ── Mobile Bottom Nav ── */}
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-slate-100 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 border-t border-slate-100 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]"
+        style={{
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          paddingLeft: 'env(safe-area-inset-left, 0px)',
+          paddingRight: 'env(safe-area-inset-right, 0px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          backdropFilter: 'blur(12px)',
+        }}
       >
         <div className="flex items-stretch justify-around h-16">
           {navItems.map(item => {

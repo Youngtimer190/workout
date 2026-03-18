@@ -182,8 +182,13 @@ export default function AddExerciseModal({ dayName, onAdd, onClose, customExerci
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal — sheet on mobile, centered on desktop */}
-      <div className="relative bg-white w-full sm:rounded-2xl sm:max-w-2xl shadow-2xl flex flex-col overflow-hidden"
-        style={{ maxHeight: 'calc(100dvh - 0px)', height: '100dvh' }}
+      <div
+        className="relative bg-white w-full sm:rounded-2xl sm:max-w-2xl shadow-2xl flex flex-col overflow-hidden"
+        style={{
+          height: '100dvh',
+          maxHeight: '100dvh',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        }}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-slate-100 flex-shrink-0">

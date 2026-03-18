@@ -27,8 +27,14 @@ export default function DeleteAccountModal({ onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-slate-800 rounded-2xl border border-red-500/20 shadow-2xl w-full max-w-md overflow-hidden">
+    <div
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+    >
+      <div
+        className="bg-slate-800 sm:rounded-2xl rounded-t-2xl border border-red-500/20 shadow-2xl w-full sm:max-w-md overflow-hidden"
+        style={{ maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 1rem)' }}
+      >
 
         {/* Header */}
         <div className="bg-gradient-to-r from-red-600/20 to-red-500/10 border-b border-red-500/20 p-5 flex items-start gap-3">

@@ -50,7 +50,7 @@ export default function App() {
   // ── Loading screen while auth initializes ──
   if (isSupabaseConfigured && !initialized) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 flex items-center justify-center">
+      <div className="bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 flex items-center justify-center" style={{ minHeight: '100dvh' }}>
         <div className="text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 shadow-2xl shadow-violet-500/30 mb-6">
             <span className="text-3xl">🏋️</span>
@@ -125,10 +125,13 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <div
+      className="flex bg-slate-50 overflow-hidden"
+      style={{ height: '100dvh' }}
+    >
       <Sidebar activeView={activeView} onViewChange={setActiveView} />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Offline banner */}
         {!isSupabaseConfigured && !offlineDismissed && (
           <OfflineBanner onDismiss={() => setOfflineDismissed(true)} />
@@ -136,8 +139,8 @@ export default function App() {
 
         {/* Sync indicator */}
         {syncing && isSupabaseConfigured && (
-          <div className="bg-violet-500/10 border-b border-violet-500/20 px-4 py-1.5 flex items-center gap-2">
-            <svg className="w-3.5 h-3.5 text-violet-400 animate-spin" fill="none" viewBox="0 0 24 24">
+          <div className="bg-violet-500/10 border-b border-violet-500/20 px-4 py-1.5 flex items-center gap-2 flex-shrink-0">
+            <svg className="w-3.5 h-3.5 text-violet-400 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
@@ -146,10 +149,16 @@ export default function App() {
         )}
 
         {/* Main content */}
-        <main className="flex-1 overflow-y-scroll" id="main-scroll">
+        <main
+          className="flex-1 overflow-y-auto min-h-0"
+          id="main-scroll"
+          style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+        >
           <div
             className="max-w-5xl mx-auto px-3 sm:px-5 lg:px-8 py-5 md:py-6"
-            style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
+            style={{
+              paddingBottom: 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 1.25rem)',
+            }}
           >
             {renderView()}
           </div>
