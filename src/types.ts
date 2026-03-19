@@ -85,6 +85,7 @@ export interface GeneratorPreferences {
   goal: TrainingGoal;
   fitnessLevel: FitnessLevel;
   daysPerWeek: number;
+  trainingDays: number[]; // 0=Pn, 1=Wt, 2=Śr, 3=Cz, 4=Pt, 5=Sb, 6=Nd
   equipment: EquipmentType;
   equipmentList: EquipmentItem[];
   trainingStyle: TrainingStyle;

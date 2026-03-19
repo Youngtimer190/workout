@@ -954,7 +954,8 @@ function getPlanMeta(prefs: GeneratorPreferences, totalSets: number) {
     advanced:     'Zaawansowany',
   };
 
-  const name = `${goalLabels[prefs.goal]} — ${styleLabels[prefs.trainingStyle]} (${prefs.daysPerWeek}×/tydz.)`;
+  const actualDays = prefs.trainingDays.length > 0 ? prefs.trainingDays.length : prefs.daysPerWeek;
+  const name = `${goalLabels[prefs.goal]} — ${styleLabels[prefs.trainingStyle]} (${actualDays}×/tydz.)`;
 
   const descriptions: Record<TrainingGoal, string> = {
     muscle_gain:
@@ -977,8 +978,9 @@ function getPlanMeta(prefs: GeneratorPreferences, totalSets: number) {
     endurance: 8.0,
     general_fitness: 6.0,
   };
+  const actualDaysCount = prefs.trainingDays.length > 0 ? prefs.trainingDays.length : prefs.daysPerWeek;
   const kcalPerSession = Math.round(metValues[prefs.goal] * 75 * (prefs.sessionDuration / 60));
-  const estimatedCalories = kcalPerSession * prefs.daysPerWeek;
+  const estimatedCalories = kcalPerSession * actualDaysCount;
 
   return {
     name,
@@ -999,8 +1001,12 @@ export function generatePlan(prefs: GeneratorPreferences, excludedIds: Set<strin
     color: dayColors[i],
   }));
 
-  const trainingDayIndices = assignDayIndices(prefs.daysPerWeek);
-  const split = getSplit(prefs.trainingStyle, prefs.daysPerWeek, prefs.fitnessLevel);
+  // Użyj dni wybranych przez użytkownika — posortowane rosnąco (Pn → Nd)
+  const trainingDayIndices = prefs.trainingDays.length > 0
+    ? [...prefs.trainingDays].sort((a, b) => a - b)
+    : assignDayIndices(prefs.daysPerWeek); // fallback dla starych preferencji bez trainingDays
+
+  const split = getSplit(prefs.trainingStyle, trainingDayIndices.length, prefs.fitnessLevel);
 
   // Filtruj dostępne ćwiczenia
   let availableExercises = filterByEquipment(exerciseLibrary, prefs.equipmentList);
@@ -1055,7 +1061,7 @@ export function generatePlan(prefs: GeneratorPreferences, excludedIds: Set<strin
     description: meta.description,
     goal: prefs.goal,
     fitnessLevel: prefs.fitnessLevel,
-    daysPerWeek: prefs.daysPerWeek,
+    daysPerWeek: prefs.trainingDays.length > 0 ? prefs.trainingDays.length : prefs.daysPerWeek,
     days: allDays,
     createdAt: new Date().toISOString(),
     estimatedCalories: meta.estimatedCalories,

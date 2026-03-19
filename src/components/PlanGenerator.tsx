@@ -14,6 +14,7 @@ const defaultPrefs: GeneratorPreferences = {
   goal: 'muscle_gain',
   fitnessLevel: 'intermediate',
   daysPerWeek: 4,
+  trainingDays: [0, 1, 3, 4], // Pn, Wt, Cz, Pt
   equipment: 'full_gym',
   equipmentList: ['barbell', 'dumbbells', 'bench', 'cable_machine', 'pull_up_bar', 'leg_press', 'leg_curl_machine', 'dip_bars', 'treadmill', 'stationary_bike'],
   trainingStyle: 'push_pull_legs',
