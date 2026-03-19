@@ -9,11 +9,7 @@ interface StatsProps {
   days: WorkoutDay[];
 }
 
-const difficultyBg: Record<string, string> = {
-  'Początkujący': 'bg-emerald-100 text-emerald-700',
-  'Średniozaawansowany': 'bg-amber-100 text-amber-700',
-  'Zaawansowany': 'bg-red-100 text-red-700',
-};
+
 
 export default function Stats({ days }: StatsProps) {
   const { user, signOut, loading } = useAuthStore();
@@ -199,15 +195,32 @@ export default function Stats({ days }: StatsProps) {
       {allExercises.length > 0 && (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-5">
           <h2 className="text-base font-bold text-slate-800 mb-4">Poziom trudności ćwiczeń</h2>
-          <div className="grid grid-cols-3 gap-2 sm:gap-3">
-            {['Początkujący', 'Średniozaawansowany', 'Zaawansowany'].map(d => {
-              const cnt = difficultyCount[d] || 0;
+          <div className="flex flex-col gap-3">
+            {[
+              { label: 'Początkujący', emoji: '🌱', bar: 'bg-emerald-400', bg: 'bg-emerald-50', text: 'text-emerald-700' },
+              { label: 'Średniozaawansowany', emoji: '⚙️', bar: 'bg-amber-400', bg: 'bg-amber-50', text: 'text-amber-700' },
+              { label: 'Zaawansowany', emoji: '🚀', bar: 'bg-red-400', bg: 'bg-red-50', text: 'text-red-700' },
+            ].map(({ label, emoji, bar, bg, text }) => {
+              const cnt = difficultyCount[label] || 0;
               const pct = allExercises.length ? Math.round((cnt / allExercises.length) * 100) : 0;
               return (
-                <div key={d} className={`rounded-xl p-3 sm:p-4 text-center ${difficultyBg[d]} bg-opacity-50`}>
-                  <p className="text-xl sm:text-2xl font-bold">{cnt}</p>
-                  <p className="text-[10px] sm:text-xs font-semibold mt-1 opacity-80 leading-tight">{d}</p>
-                  <p className="text-xs opacity-60 mt-0.5">{pct}%</p>
+                <div key={label} className={`rounded-xl p-3 ${bg}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-base flex-shrink-0">{emoji}</span>
+                      <span className={`text-sm font-semibold ${text} truncate`}>{label}</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                      <span className={`text-sm font-bold ${text}`}>{cnt}</span>
+                      <span className="text-xs text-slate-400">({pct}%)</span>
+                    </div>
+                  </div>
+                  <div className="w-full bg-white rounded-full h-2">
+                    <div
+                      className={`${bar} h-2 rounded-full transition-all duration-500`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
                 </div>
               );
             })}
