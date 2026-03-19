@@ -1212,10 +1212,10 @@ export const exerciseLibrary: Exercise[] = [
   },
   {
     id: 'shoulders-12',
-    name: 'Wznosy hantli na wyciągu bocznym (cable lateral)',
+    name: 'Wznosy na wyciągu bocznym (cable lateral raise)',
     muscleGroup: 'Barki',
     difficulty: 'Początkujący',
-    description: 'Boczne unoszenie na wyciągu dolnym — w przeciwieństwie do hantlil wyciąg daje napięcie przez cały zakres ruchu, włącznie z dolną fazą.',
+    description: 'Boczne unoszenie uchwytu wyciągu dolnym — w przeciwieństwie do hantli, wyciąg daje napięcie przez cały zakres ruchu, włącznie z dolną fazą.',
     sets: 3,
     reps: '15-20',
     restTime: 45,

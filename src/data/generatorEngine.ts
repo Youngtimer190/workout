@@ -131,7 +131,7 @@ const EXERCISE_CLASSIFICATION: Record<string, { role: ExerciseRole; priority: nu
   'Press za głowę (behind neck press)':             { role: 'compound_secondary',  priority: 6  },
   'Wyciskanie na wyciągu (cable shoulder press)':   { role: 'compound_secondary',  priority: 6  },
   'Unoszenie hantli bokiem (lateral raise)':        { role: 'isolation_primary',   priority: 7  },
-  'Wznosy hantli na wyciągu bocznym (cable lateral)': { role: 'isolation_primary', priority: 7 },
+  'Wznosy na wyciągu bocznym (cable lateral raise)': { role: 'isolation_primary', priority: 7 },
   'Unoszenie hantli bokiem w opadzie (tylny bark)': { role: 'isolation_primary',   priority: 6  },
   'Odwrotne rozpiętki na maszynie (pec deck odwrotny)': { role: 'isolation_primary', priority: 6 },
   'Face Pulls na wyciągu':                          { role: 'isolation_primary',   priority: 6  },
