@@ -250,11 +250,15 @@ export default function ReplaceExerciseModal({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div
-        className="relative bg-white w-full sm:max-w-3xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden"
-        style={{ height: '92dvh', maxHeight: '700px' }}
+        className="relative bg-white w-full sm:rounded-2xl sm:max-w-2xl shadow-2xl flex flex-col overflow-hidden"
+        style={{
+          height: '100dvh',
+          maxHeight: '100dvh',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        }}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-slate-100 flex-shrink-0">
