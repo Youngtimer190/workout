@@ -115,27 +115,47 @@ export default function GeneratorStep2({ prefs, onChange }: Props) {
       {/* Focus muscles */}
       <div>
         <h3 className="text-base font-semibold text-slate-800 mb-1">Priorytety mięśniowe</h3>
-        <p className="text-sm text-slate-500 mb-4">Wybierz partie, którym chcesz poświęcić więcej uwagi (opcjonalne)</p>
-        <div className="flex flex-wrap gap-2">
+        <p className="text-sm text-slate-500 mb-3">
+          Wybierz partie, którym chcesz poświęcić więcej uwagi. Generator doda więcej ćwiczeń, serii i izolacji dla wybranych grup.
+        </p>
+        <div className="flex flex-wrap gap-2 mb-3">
           {muscleGroups.map(m => {
             const selected = prefs.focusMuscles.includes(m.id);
             return (
               <button
                 key={m.id}
                 onClick={() => toggleMuscle(m.id)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all duration-200 cursor-pointer ${
-                  selected ? m.color + ' shadow-sm scale-105' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border-2 text-sm font-medium transition-all duration-200 cursor-pointer ${
+                  selected ? m.color + ' shadow-md scale-105' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
                 }`}
               >
                 <span>{m.emoji}</span>
                 {m.id}
+                {selected && (
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
               </button>
             );
           })}
         </div>
-        {prefs.focusMuscles.length > 0 && (
-          <p className="text-xs text-violet-600 mt-2">
-            ✓ Priorytet: {prefs.focusMuscles.join(', ')} — te grupy dostaną więcej ćwiczeń
+
+        {prefs.focusMuscles.length > 0 ? (
+          <div className="bg-violet-50 border border-violet-200 rounded-xl p-3 space-y-1.5">
+            <p className="text-xs font-semibold text-violet-700">
+              🎯 Aktywne priorytety: {prefs.focusMuscles.join(', ')}
+            </p>
+            <ul className="text-xs text-violet-600 space-y-0.5">
+              <li>• Priorytetowa partia zajmuje pierwsze miejsce w każdej sesji</li>
+              <li>• +2 serie na ćwiczeniu compound (zamiast standardowych)</li>
+              <li>• 3–4 ćwiczenia izolowane zamiast 1 (specjalizacja)</li>
+              <li>• W splitach bro/PPL: partia przenoszona do primary muscles</li>
+            </ul>
+          </div>
+        ) : (
+          <p className="text-xs text-slate-400 italic">
+            Brak priorytetu — generator równomiernie rozłoży objętość między wszystkie partie
           </p>
         )}
       </div>

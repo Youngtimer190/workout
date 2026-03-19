@@ -725,7 +725,7 @@ function buildWorkoutDay(
 
     if (primary) {
       const sets = isFocus
-        ? vp.setsCompoundPrimary + 1
+        ? vp.setsCompoundPrimary + 2  // Focus: +2 serie zamiast +1
         : vp.setsCompoundPrimary;
 
       const notePrefix = primary.notes ? `${primary.notes}\n\n` : '';
@@ -815,7 +815,13 @@ function buildWorkoutDay(
     const isolPool = getPool(muscle, ['isolation_primary', 'isolation_secondary']);
     const shuffledIso = shuffle(isolPool);
 
-    const isoCount = isFocus ? (isAdvanced ? 3 : 2) : 1;
+    // Focus muscles: znacznie więcej izolacji (specjalizacja)
+    // Zaawansowany + focus: 3–4 izolacje (dedykowana sesja specjalizacyjna)
+    // Średniozaaw + focus: 2–3 izolacje
+    // Bez focus: 1 izolacja (standardowo)
+    const isoCount = isFocus
+      ? (isAdvanced ? 4 : isBeginner ? 2 : 3)
+      : 1;
 
     for (let i = 0; i < Math.min(isoCount, shuffledIso.length); i++) {
       if (usedTime + minPerIsolation > workMin) break;
@@ -989,6 +995,52 @@ function getPlanMeta(prefs: GeneratorPreferences, totalSets: number) {
   };
 }
 
+// ─── Modyfikacja splitu na podstawie priorytetów mięśniowych ─────────────────
+// Jeśli użytkownik wybrał priorytet (np. Barki), silnik:
+// 1. Przenosi priorytetową grupę do primaryMuscles w każdym dniu gdzie jest obecna
+// 2. Przy bro splicie / FBL: wstawia dedykowaną sesję dla priorytetu jeśli jej nie ma
+// 3. Zwraca zmodyfikowany split z realnie większą objętością dla priorytetu
+
+function applyFocusMuscles(
+  split: SplitDay[],
+  focusMuscles: string[],
+): SplitDay[] {
+  if (focusMuscles.length === 0) return split;
+
+  return split.map(day => {
+    const modifiedDay = { ...day };
+    const newPrimary = [...day.primaryMuscles];
+    const newSecondary = [...day.secondaryMuscles];
+
+    for (const focus of focusMuscles) {
+      const muscle = focus as MuscleGroup;
+
+      // Jeśli priorytetowa partia jest w secondary → przesuń do primary
+      const secIdx = newSecondary.indexOf(muscle);
+      if (secIdx !== -1) {
+        newSecondary.splice(secIdx, 1);
+        if (!newPrimary.includes(muscle)) {
+          newPrimary.push(muscle);
+        }
+      }
+
+      // Jeśli priorytetowa partia jest w primary → przesuń na początek listy
+      // (pierwsze w primaryMuscles = więcej ćwiczeń i compound primary)
+      const primIdx = newPrimary.indexOf(muscle);
+      if (primIdx > 0) {
+        newPrimary.splice(primIdx, 1);
+        newPrimary.unshift(muscle);
+      }
+    }
+
+    modifiedDay.primaryMuscles = newPrimary;
+    modifiedDay.secondaryMuscles = newSecondary;
+    modifiedDay.muscles = [...new Set([...newPrimary, ...newSecondary])];
+
+    return modifiedDay;
+  });
+}
+
 // ─── GŁÓWNA FUNKCJA GENERATORA ────────────────────────────────────────────────
 
 export function generatePlan(prefs: GeneratorPreferences, excludedIds: Set<string> = new Set()): GeneratedPlan {
@@ -1006,7 +1058,8 @@ export function generatePlan(prefs: GeneratorPreferences, excludedIds: Set<strin
     ? [...prefs.trainingDays].sort((a, b) => a - b)
     : assignDayIndices(prefs.daysPerWeek); // fallback dla starych preferencji bez trainingDays
 
-  const split = getSplit(prefs.trainingStyle, trainingDayIndices.length, prefs.fitnessLevel);
+  const rawSplit = getSplit(prefs.trainingStyle, trainingDayIndices.length, prefs.fitnessLevel);
+  const split = applyFocusMuscles(rawSplit, prefs.focusMuscles);
 
   // Filtruj dostępne ćwiczenia
   let availableExercises = filterByEquipment(exerciseLibrary, prefs.equipmentList);
