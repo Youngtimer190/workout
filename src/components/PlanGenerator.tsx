@@ -57,9 +57,14 @@ export default function PlanGenerator({ onApplyPlan, onGoToPlanner }: Props) {
     return ids;
   };
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleGenerate = () => {
     setIsGenerating(true);
-    setLastPlanExerciseIds(new Set()); // reset przy pierwszym generowaniu
+    setLastPlanExerciseIds(new Set());
+    scrollToTop();
     setTimeout(() => {
       const plan = generatePlan(prefs, new Set());
       setGeneratedPlan(plan);
@@ -71,8 +76,8 @@ export default function PlanGenerator({ onApplyPlan, onGoToPlanner }: Props) {
 
   const handleRegenerate = () => {
     setIsGenerating(true);
+    scrollToTop();
     setTimeout(() => {
-      // Przekaż ID poprzedniego planu — silnik wybierze inne ćwiczenia
       const plan = generatePlan(prefs, lastPlanExerciseIds);
       setGeneratedPlan(plan);
       setLastPlanExerciseIds(extractBaseIds(plan));
@@ -84,10 +89,14 @@ export default function PlanGenerator({ onApplyPlan, onGoToPlanner }: Props) {
     if (!generatedPlan) return;
     onApplyPlan(generatedPlan.days);
     setApplied(true);
+    scrollToTop();
   };
 
   const handleBack = () => {
-    if (step > 1) setStep(s => s - 1);
+    if (step > 1) {
+      setStep(s => s - 1);
+      scrollToTop();
+    }
   };
 
   const handleNext = () => {
@@ -95,6 +104,7 @@ export default function PlanGenerator({ onApplyPlan, onGoToPlanner }: Props) {
       handleGenerate();
     } else if (step < 3) {
       setStep(s => s + 1);
+      scrollToTop();
     }
   };
 
