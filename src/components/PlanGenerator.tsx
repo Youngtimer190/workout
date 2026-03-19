@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { GeneratorPreferences, GeneratedPlan, WorkoutDay } from '../types';
 import { generatePlan } from '../data/generatorEngine';
 import GeneratorStep1 from './generator/GeneratorStep1';
@@ -57,14 +57,27 @@ export default function PlanGenerator({ onApplyPlan, onGoToPlanner }: Props) {
     return ids;
   };
 
+  const topRef = useRef<HTMLDivElement>(null);
+
   const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Najbardziej niezawodna metoda dla Safari iOS
+    topRef.current?.scrollIntoView({ block: 'start' });
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
   };
+
+  // useEffect reaguje NA PEWNO po re-renderze — gwarantowany scroll po zmianie kroku
+  useEffect(() => {
+    topRef.current?.scrollIntoView({ block: 'start' });
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [step]);
 
   const handleGenerate = () => {
     setIsGenerating(true);
     setLastPlanExerciseIds(new Set());
-    scrollToTop();
     setTimeout(() => {
       const plan = generatePlan(prefs, new Set());
       setGeneratedPlan(plan);
@@ -89,13 +102,11 @@ export default function PlanGenerator({ onApplyPlan, onGoToPlanner }: Props) {
     if (!generatedPlan) return;
     onApplyPlan(generatedPlan.days);
     setApplied(true);
-    scrollToTop();
   };
 
   const handleBack = () => {
     if (step > 1) {
       setStep(s => s - 1);
-      scrollToTop();
     }
   };
 
@@ -104,7 +115,6 @@ export default function PlanGenerator({ onApplyPlan, onGoToPlanner }: Props) {
       handleGenerate();
     } else if (step < 3) {
       setStep(s => s + 1);
-      scrollToTop();
     }
   };
 
@@ -138,6 +148,8 @@ export default function PlanGenerator({ onApplyPlan, onGoToPlanner }: Props) {
 
   return (
     <div className="max-w-4xl mx-auto">
+      {/* Niewidoczny anchor do scrollowania — musi być na samej górze */}
+      <div ref={topRef} style={{ position: 'relative', top: '-80px', height: 0, visibility: 'hidden' }} aria-hidden="true" />
       {/* Header */}
       <div className="mb-5 sm:mb-8">
         <div className="flex items-center gap-3 mb-2">
