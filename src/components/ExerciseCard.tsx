@@ -1,20 +1,17 @@
 import { useState, useRef, useCallback } from 'react';
 import { Exercise, SetLog } from '../types';
 import { muscleGroupBgColors } from '../data/exercises';
-import ReplaceExerciseModal from './ReplaceExerciseModal';
 import SetTracker from './SetTracker';
 
 interface ExerciseCardProps {
   exercise: Exercise;
   onRemove: () => void;
   onUpdate: (updates: Partial<Exercise>) => void;
-  onReplace: (newExercise: Exercise) => void;
-  customExercises?: Exercise[];
+  onReplace: () => void;
 }
 
-export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace, customExercises = [] }: ExerciseCardProps) {
+export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }: ExerciseCardProps) {
   const [editing, setEditing] = useState(false);
-  const [showReplaceModal, setShowReplaceModal] = useState(false);
   const [showSets, setShowSets] = useState(false);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
 
@@ -36,7 +33,6 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace, 
     setReps(exercise.reps || '8-12');
     setWeight(String(exercise.weight ?? ''));
     setNotes(exercise.notes || '');
-    setShowReplaceModal(false);
     setShowSets(false);
     setEditing(true);
   };
@@ -147,7 +143,7 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace, 
               <div className="flex items-center gap-0.5 flex-shrink-0 -mt-0.5 -mr-0.5">
                 {/* Replace */}
                 <button
-                  onClick={() => { setEditing(false); setShowSets(false); setShowReplaceModal(true); }}
+                  onClick={() => { setEditing(false); setShowSets(false); onReplace(); }}
                   className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-amber-50 active:bg-amber-100 text-slate-300 hover:text-amber-500 transition-colors cursor-pointer"
                   title="Zamień ćwiczenie"
                 >
@@ -371,14 +367,7 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace, 
         )}
       </div>
 
-      {showReplaceModal && (
-        <ReplaceExerciseModal
-          currentExercise={exercise}
-          onReplace={onReplace}
-          onClose={() => setShowReplaceModal(false)}
-          customExercises={customExercises}
-        />
-      )}
+
     </>
   );
 }

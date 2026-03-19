@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { WorkoutDay, Exercise } from '../types';
 import { WeekMeta } from '../store/weekStore';
 import DayColumn from './DayColumn';
 import WeekNavigator from './WeekNavigator';
+import AddExerciseModal from './AddExerciseModal';
+import ReplaceExerciseModal from './ReplaceExerciseModal';
+import CreateExerciseModal from './CreateExerciseModal';
 
 interface WorkoutPlannerProps {
   days: WorkoutDay[];
@@ -23,6 +26,13 @@ interface WorkoutPlannerProps {
   onDeleteCustomExercise?: (id: string) => void;
 }
 
+// Modal state type
+type ModalState =
+  | { type: 'none' }
+  | { type: 'add'; dayId: string; dayName: string }
+  | { type: 'replace'; dayId: string; exercise: Exercise }
+  | { type: 'create'; dayId: string };
+
 export default function WorkoutPlanner({
   days,
   weekMeta,
@@ -42,10 +52,52 @@ export default function WorkoutPlanner({
   onDeleteCustomExercise,
 }: WorkoutPlannerProps) {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [modal, setModal] = useState<ModalState>({ type: 'none' });
 
   const totalExercises = days.reduce((acc, d) => acc + d.exercises.length, 0);
   const trainingDays = days.filter(d => !d.isRestDay && d.exercises.length > 0).length;
   const restDays = days.filter(d => d.isRestDay).length;
+
+  // Stable callbacks for DayColumn — won't cause re-renders
+  const handleRequestAdd = useCallback((dayId: string, dayName: string) => {
+    setModal({ type: 'add', dayId, dayName });
+  }, []);
+
+  const handleRequestReplace = useCallback((dayId: string, exercise: Exercise) => {
+    setModal({ type: 'replace', dayId, exercise });
+  }, []);
+
+  const handleRequestCreate = useCallback((dayId: string) => {
+    setModal({ type: 'create', dayId });
+  }, []);
+
+  const closeModal = useCallback(() => {
+    setModal({ type: 'none' });
+  }, []);
+
+  const handleAdd = useCallback((exercise: Exercise) => {
+    if (modal.type === 'add') {
+      onAddExercise(modal.dayId, exercise);
+      closeModal();
+    }
+  }, [modal, onAddExercise, closeModal]);
+
+  const handleReplace = useCallback((newExercise: Exercise) => {
+    if (modal.type === 'replace') {
+      onReplaceExercise(modal.dayId, modal.exercise.id, newExercise);
+      closeModal();
+    }
+  }, [modal, onReplaceExercise, closeModal]);
+
+  const handleSaveCustom = useCallback((exercise: Exercise) => {
+    onSaveCustomExercise?.(exercise);
+    // After creating custom exercise, go back to add modal if we came from there
+    if (modal.type === 'create') {
+      const dayId = modal.dayId;
+      const day = days.find(d => d.id === dayId);
+      setModal({ type: 'add', dayId, dayName: day?.name ?? '' });
+    }
+  }, [modal, onSaveCustomExercise, days]);
 
   return (
     <div className="space-y-4">
@@ -120,17 +172,53 @@ export default function WorkoutPlanner({
             day={day}
             index={index}
             onToggleRest={() => onToggleRest(day.id)}
-            onAddExercise={ex => onAddExercise(day.id, ex)}
-            onRemoveExercise={exId => onRemoveExercise(day.id, exId)}
+            onRemoveExercise={(exId) => onRemoveExercise(day.id, exId)}
             onUpdateExercise={(exId, updates) => onUpdateExercise(day.id, exId, updates)}
-            onReplaceExercise={(exId, newEx) => onReplaceExercise(day.id, exId, newEx)}
             onMoveExercise={(exId, dir) => onMoveExercise(day.id, exId, dir)}
-            customExercises={customExercises}
-            onSaveCustomExercise={onSaveCustomExercise}
-            onDeleteCustomExercise={onDeleteCustomExercise}
+            onRequestAdd={() => handleRequestAdd(day.id, day.name)}
+            onRequestReplace={(exercise) => handleRequestReplace(day.id, exercise)}
           />
         ))}
       </div>
+
+      {/* ── Global Modals — rendered once at WorkoutPlanner level ── */}
+
+      {modal.type === 'add' && (
+        <AddExerciseModal
+          key={`add-${modal.dayId}`}
+          dayName={modal.dayName}
+          onAdd={handleAdd}
+          onClose={closeModal}
+          customExercises={customExercises}
+          onSaveCustom={onSaveCustomExercise}
+          onDeleteCustom={onDeleteCustomExercise}
+          onRequestCreate={() => handleRequestCreate(modal.dayId)}
+        />
+      )}
+
+      {modal.type === 'replace' && (
+        <ReplaceExerciseModal
+          key={`replace-${modal.exercise.id}`}
+          currentExercise={modal.exercise}
+          onReplace={handleReplace}
+          onClose={closeModal}
+          customExercises={customExercises}
+        />
+      )}
+
+      {modal.type === 'create' && (
+        <CreateExerciseModal
+          key="create"
+          onSave={handleSaveCustom}
+          onClose={() => {
+            const dayId = modal.dayId;
+            const day = days.find(d => d.id === dayId);
+            setModal({ type: 'add', dayId, dayName: day?.name ?? '' });
+          }}
+        />
+      )}
     </div>
   );
 }
+
+

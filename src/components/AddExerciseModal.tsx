@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Exercise } from '../types';
 import { exerciseLibrary, muscleGroupBgColors } from '../data/exercises';
-import CreateExerciseModal from './CreateExerciseModal';
 
 interface AddExerciseModalProps {
   dayName: string;
@@ -10,6 +9,7 @@ interface AddExerciseModalProps {
   customExercises?: Exercise[];
   onSaveCustom?: (exercise: Exercise) => void;
   onDeleteCustom?: (id: string) => void;
+  onRequestCreate?: () => void;
 }
 
 const ALL_GROUPS = 'Wszystkie';
@@ -19,10 +19,10 @@ export default function AddExerciseModal({
   onAdd,
   onClose,
   customExercises = [],
-  onSaveCustom,
+  onSaveCustom: _onSaveCustom,
   onDeleteCustom,
+  onRequestCreate,
 }: AddExerciseModalProps) {
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<string>(ALL_GROUPS);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
@@ -34,14 +34,7 @@ export default function AddExerciseModal({
   const [mobileStep, setMobileStep] = useState<'list' | 'config'>('list');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  const handleSaveCustom = (exercise: Exercise) => {
-    onSaveCustom?.(exercise);
-    setShowCreateModal(false);
-    setSelectedExercise(exercise);
-    setSets(String(exercise.sets || 3));
-    setReps(exercise.reps || '10-12');
-    setDuration(String(exercise.duration || 30));
-  };
+
 
   const allExercises = useMemo(() => [...exerciseLibrary, ...customExercises], [customExercises]);
   const groups = [ALL_GROUPS, ...Array.from(new Set(allExercises.map(e => e.muscleGroup)))];
@@ -311,7 +304,7 @@ export default function AddExerciseModal({
           </div>
           <div className="flex items-center gap-2 flex-shrink-0 ml-2">
             <button
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => onRequestCreate?.()}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-violet-50 hover:bg-violet-100 text-violet-700 text-xs font-semibold transition-all cursor-pointer border border-violet-200"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 flex-shrink-0">
@@ -468,13 +461,7 @@ export default function AddExerciseModal({
         </div>
       </div>
 
-      {/* Sub-modal: Create custom exercise */}
-      {showCreateModal && (
-        <CreateExerciseModal
-          onSave={handleSaveCustom}
-          onClose={() => setShowCreateModal(false)}
-        />
-      )}
+
     </div>
   );
 }
