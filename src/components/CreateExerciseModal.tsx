@@ -136,6 +136,7 @@ export default function CreateExerciseModal({ onSave, onClose, editExercise }: C
 
   const isCardio = form.muscleGroup === 'Cardio';
   const gradientClass = muscleGroupColors[form.muscleGroup] || 'from-violet-500 to-indigo-600';
+  const step1Valid = form.name.trim().length >= 1 && form.description.trim().length >= 1;
 
   return (
     <div
@@ -374,9 +375,14 @@ export default function CreateExerciseModal({ onSave, onClose, editExercise }: C
           {step === 1 ? (
             <button
               onClick={handleNext}
-              className="flex-1 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 text-white font-semibold text-sm shadow-md shadow-indigo-200 hover:shadow-indigo-300 hover:scale-[1.01] transition-all cursor-pointer"
+              disabled={!step1Valid}
+              className={`flex-1 py-3 rounded-xl font-semibold text-sm transition-all ${
+                step1Valid
+                  ? 'bg-gradient-to-r from-violet-500 to-indigo-600 text-white shadow-md shadow-indigo-200 hover:shadow-indigo-300 hover:scale-[1.01] cursor-pointer'
+                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+              }`}
             >
-              Dalej →
+              {step1Valid ? 'Dalej →' : '✏️ Wypełnij wymagane pola'}
             </button>
           ) : (
             <button
