@@ -11,11 +11,7 @@ interface ReplaceExerciseModalProps {
 
 const ALL_GROUPS = 'Wszystkie';
 
-const difficultyColor = (d: string) => {
-  if (d === 'Początkujący') return 'bg-emerald-100 text-emerald-700';
-  if (d === 'Średniozaawansowany') return 'bg-amber-100 text-amber-700';
-  return 'bg-red-100 text-red-700';
-};
+
 
 export default function ReplaceExerciseModal({
   currentExercise,
@@ -50,13 +46,7 @@ export default function ReplaceExerciseModal({
     });
   }, [search, selectedGroup, allExercises]);
 
-  const handleSelect = (ex: Exercise) => {
-    setSelectedExercise(ex);
-    setSets(String(ex.sets || currentExercise.sets || 3));
-    setReps(ex.reps || currentExercise.reps || '10-12');
-    setDuration(String(ex.duration || currentExercise.duration || 30));
-    setMobileStep('config');
-  };
+
 
   const handleReplace = () => {
     if (!selectedExercise) return;
@@ -74,94 +64,109 @@ export default function ReplaceExerciseModal({
 
   const isCardioSelected = selectedExercise?.muscleGroup === 'Cardio';
 
-  const ConfigPanel = () => (
+  // Inline JSX zamiast sub-komponentu — zapobiega remontowaniu przy re-renderze
+  const configPanelJsx = (
     <div className="flex flex-col h-full">
-      {/* Mobile back */}
       <div className="md:hidden flex items-center gap-2 px-4 py-3 border-b border-slate-100 flex-shrink-0">
         <button
           onClick={() => setMobileStep('list')}
-          className="flex items-center gap-1.5 text-amber-600 text-sm font-semibold cursor-pointer"
+          className="flex items-center gap-1 text-violet-600 text-sm font-medium cursor-pointer"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
             <path d="M15 18l-6-6 6-6" />
           </svg>
           Wróć do listy
         </button>
       </div>
 
-      <div className="flex flex-col flex-1 p-4 sm:p-5 overflow-y-auto">
-        <div className="mb-4">
-          <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full mb-1 ${muscleGroupBgColors[selectedExercise!.muscleGroup] || 'bg-slate-100 text-slate-500'}`}>
-            {selectedExercise!.muscleGroup}
-          </span>
-          <h3 className="font-bold text-slate-800 text-base leading-tight">{selectedExercise!.name}</h3>
-          <p className="text-sm text-slate-500 mt-1 leading-relaxed">{selectedExercise!.description}</p>
-        </div>
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {selectedExercise && (
+          <div className={`p-3 rounded-xl ${muscleGroupBgColors[selectedExercise.muscleGroup] || 'bg-slate-100'} bg-opacity-60`}>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Nowe ćwiczenie</p>
+            <p className="text-sm font-bold text-slate-800">{selectedExercise.name}</p>
+            <p className="text-xs text-slate-500">{selectedExercise.muscleGroup}</p>
+          </div>
+        )}
 
-        <div className="flex-1 space-y-3">
-          {isCardioSelected ? (
+        {!isCardioSelected ? (
+          <>
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Czas (minuty)</label>
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Serie</label>
               <input
-                type="number" min="1" value={duration}
-                onChange={e => setDuration(e.target.value)}
-                className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
+                type="number"
+                value={sets}
+                onChange={e => setSets(e.target.value)}
+                min={1} max={10}
+                inputMode="numeric"
+                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-300"
               />
             </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">Serie</label>
-                  <input
-                    type="number" min="1" value={sets}
-                    onChange={e => setSets(e.target.value)}
-                    className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-center focus:outline-none focus:ring-2 focus:ring-amber-300"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">Powtórzenia</label>
-                  <input
-                    type="text" value={reps} placeholder="np. 8-12"
-                    onChange={e => setReps(e.target.value)}
-                    className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-center focus:outline-none focus:ring-2 focus:ring-amber-300"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1.5">Ciężar (kg) — opcjonalnie</label>
-                <input
-                  type="number" min="0" step="0.5" placeholder="np. 60" value={weight}
-                  onChange={e => setWeight(e.target.value)}
-                  className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
-                />
-              </div>
-            </>
-          )}
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Powtórzenia</label>
+              <input
+                type="text"
+                value={reps}
+                onChange={e => setReps(e.target.value)}
+                placeholder="np. 8-12"
+                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-300"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                Ciężar (kg) <span className="text-slate-400 font-normal">opcjonalnie</span>
+              </label>
+              <input
+                type="number"
+                value={weight}
+                onChange={e => setWeight(e.target.value)}
+                min={0} step={0.5}
+                inputMode="decimal"
+                placeholder="np. 80"
+                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-300"
+              />
+            </div>
+          </>
+        ) : (
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1.5">Notatki — opcjonalnie</label>
-            <textarea
-              rows={2} placeholder="np. Powolne opuszczanie..." value={notes}
-              onChange={e => setNotes(e.target.value)}
-              className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-amber-300"
+            <label className="block text-xs font-semibold text-slate-600 mb-1.5">Czas (min)</label>
+            <input
+              type="number"
+              value={duration}
+              onChange={e => setDuration(e.target.value)}
+              min={1} max={120}
+              inputMode="numeric"
+              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-300"
             />
           </div>
-        </div>
+        )}
 
+        <div>
+          <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+            Notatki <span className="text-slate-400 font-normal">opcjonalnie</span>
+          </label>
+          <textarea
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+            placeholder="Wskazówki, tempo, technika..."
+            rows={2}
+            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 resize-none focus:outline-none focus:ring-2 focus:ring-violet-300"
+          />
+        </div>
+      </div>
+
+      <div className="p-4 border-t border-slate-100 flex-shrink-0">
         <button
           onClick={handleReplace}
-          className="mt-4 w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold text-sm shadow-md shadow-amber-200 hover:shadow-amber-300 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2"
+          disabled={!selectedExercise}
+          className="w-full py-3 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-sm"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-            <path d="M7 16V4m0 0L3 8m4-4l4 4" /><path d="M17 8v12m0 0l4-4m-4 4l-4-4" />
-          </svg>
           Zamień ćwiczenie
         </button>
       </div>
     </div>
   );
 
-  const ExerciseList = () => (
+  const listPanel = (
     <div className="flex flex-col flex-1 overflow-hidden">
       {/* Search */}
       <div className="px-4 pt-3 pb-2 flex-shrink-0">
@@ -170,13 +175,14 @@ export default function ReplaceExerciseModal({
             <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
           </svg>
           <input
-            type="text" placeholder="Szukaj ćwiczenia..." value={search}
+            type="text"
+            placeholder="Szukaj ćwiczenia..."
+            value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-300"
+            className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-transparent"
           />
         </div>
       </div>
-
       {/* Filters */}
       <div className="px-4 pb-2 flex-shrink-0 flex flex-wrap gap-1.5">
         {groups.map(g => (
@@ -184,92 +190,77 @@ export default function ReplaceExerciseModal({
             key={g}
             onClick={() => setSelectedGroup(g)}
             className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-              selectedGroup === g ? 'bg-amber-500 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+              selectedGroup === g ? 'bg-violet-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
             }`}
           >
             {g}
-            {g === (currentExercise.muscleGroup as string) && g !== ALL_GROUPS && (
-              <span className="ml-1 opacity-60 text-[9px]">●</span>
-            )}
           </button>
         ))}
       </div>
-
-      {/* Same group hint */}
-      {selectedGroup === (currentExercise.muscleGroup as string) && (
-        <div className="mx-4 mb-2 px-3 py-1.5 bg-amber-50 border border-amber-100 rounded-lg flex-shrink-0">
-          <p className="text-[11px] text-amber-700 font-medium">💡 Pokazuję alternatywy tej samej partii mięśniowej</p>
-        </div>
-      )}
-
       {/* List */}
       <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-2">
         {filtered.map(ex => {
           const isCustom = customExercises.some(c => c.id === ex.id);
-          const isSameGroup = ex.muscleGroup === currentExercise.muscleGroup;
+          const isSelected = selectedExercise?.id === ex.id;
           return (
             <button
               key={ex.id}
-              onClick={() => handleSelect(ex)}
-              className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer ${
-                selectedExercise?.id === ex.id
-                  ? 'border-amber-400 bg-amber-50'
-                  : 'border-slate-100 hover:border-amber-200 hover:bg-amber-50/30 active:bg-amber-50'
+              onClick={() => {
+                setSelectedExercise(ex);
+                setSets(String(ex.sets || currentExercise.sets || 3));
+                setReps(ex.reps || currentExercise.reps || '10-12');
+                setDuration(String(ex.duration || currentExercise.duration || 30));
+                setMobileStep('config');
+              }}
+              className={`w-full text-left p-3 rounded-xl border transition-all cursor-pointer ${
+                isSelected
+                  ? 'border-violet-400 bg-violet-50'
+                  : 'border-slate-100 bg-white hover:border-violet-200 hover:bg-slate-50'
               }`}
             >
-              <div className="flex items-start justify-between gap-2">
-                <p className="text-sm font-semibold text-slate-800 leading-tight">{ex.name}</p>
-                <div className="flex gap-1 flex-shrink-0 items-center">
-                  {isSameGroup && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-600">🎯</span>}
-                  {isCustom && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-600">✨</span>}
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${difficultyColor(ex.difficulty)}`}>
-                    {ex.difficulty === 'Początkujący' ? 'P' : ex.difficulty === 'Średniozaawansowany' ? 'Ś' : 'Z'}
-                  </span>
+              <div className="flex items-start gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-sm font-semibold text-slate-800 leading-tight">{ex.name}</span>
+                    {isCustom && <span className="text-[10px] bg-violet-100 text-violet-600 px-1.5 py-0.5 rounded-full font-semibold">✨</span>}
+                  </div>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    <span className="text-xs text-slate-500">{ex.muscleGroup}</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${
+                      ex.difficulty === 'Początkujący' ? 'bg-emerald-100 text-emerald-700' :
+                      ex.difficulty === 'Średniozaawansowany' ? 'bg-amber-100 text-amber-700' :
+                      'bg-red-100 text-red-700'
+                    }`}>{ex.difficulty}</span>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center justify-between mt-1.5">
-                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${muscleGroupBgColors[ex.muscleGroup] || 'bg-slate-100 text-slate-500'}`}>
-                  {ex.muscleGroup}
-                </span>
-                <span className="text-[10px] text-slate-400 font-medium hidden md:block">Konfiguruj →</span>
+                {isSelected && (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-violet-600 flex-shrink-0 mt-0.5">
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                )}
               </div>
             </button>
           );
         })}
         {filtered.length === 0 && (
-          <div className="text-center py-10 text-slate-400 text-sm">
-            <div className="text-3xl mb-2">🔍</div>
-            Brak ćwiczeń spełniających kryteria
-          </div>
+          <div className="text-center py-8 text-slate-400 text-sm">Brak ćwiczeń spełniających kryteria</div>
         )}
       </div>
     </div>
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div
-        className="relative bg-white w-full sm:rounded-2xl sm:max-w-2xl shadow-2xl flex flex-col overflow-hidden"
-        style={{
-          height: '100dvh',
-          maxHeight: '100dvh',
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        }}
+        className="relative bg-white w-full sm:max-w-3xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+        style={{ height: '92dvh', maxHeight: '700px' }}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-slate-100 flex-shrink-0">
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-amber-600">
-                <path d="M7 16V4m0 0L3 8m4-4l4 4" /><path d="M17 8v12m0 0l4-4m-4 4l-4-4" />
-              </svg>
-            </div>
-            <div className="min-w-0">
-              <h2 className="text-base font-bold text-slate-800 leading-tight">Zamień ćwiczenie</h2>
-              <p className="text-xs text-slate-400 truncate">Aktualnie: <span className="font-semibold text-slate-600">{currentExercise.name}</span></p>
-            </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-base font-bold text-slate-800 leading-tight">Zamień ćwiczenie</h2>
+            <p className="text-xs text-slate-400 truncate">Zamieniane: {currentExercise.name}</p>
           </div>
           <button
             onClick={onClose}
@@ -284,25 +275,22 @@ export default function ReplaceExerciseModal({
         {/* Body */}
         <div className="flex flex-1 overflow-hidden">
 
-          {/* ── Mobile step-based ── */}
+          {/* ── MOBILE ── */}
           <div className="flex flex-col w-full md:hidden overflow-hidden">
-            {mobileStep === 'list' && <ExerciseList />}
-            {mobileStep === 'config' && selectedExercise && <ConfigPanel />}
+            {mobileStep === 'list' && listPanel}
+            {mobileStep === 'config' && selectedExercise && configPanelJsx}
           </div>
 
-          {/* ── Desktop side-by-side ── */}
+          {/* ── DESKTOP ── */}
           <div className="hidden md:flex w-full overflow-hidden">
             <div className="w-1/2 flex flex-col border-r border-slate-100 overflow-hidden">
-              <ExerciseList />
+              {listPanel}
             </div>
             <div className="w-1/2 flex flex-col overflow-hidden">
-              {selectedExercise ? (
-                <ConfigPanel />
-              ) : (
+              {selectedExercise ? configPanelJsx : (
                 <div className="flex flex-col items-center justify-center h-full text-center p-8">
                   <div className="text-4xl mb-3">👈</div>
-                  <p className="text-slate-500 font-semibold text-sm mb-1">Wybierz nowe ćwiczenie</p>
-                  <p className="text-slate-400 text-xs">Domyślnie pokazuję ćwiczenia tej samej partii mięśniowej</p>
+                  <p className="text-slate-400 text-sm">Wybierz ćwiczenie z listy, aby skonfigurować szczegóły</p>
                 </div>
               )}
             </div>

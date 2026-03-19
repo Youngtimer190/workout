@@ -11,11 +11,18 @@ export interface AuthState {
   initialized: boolean;
 }
 
+const DEMO_USER = {
+  id: 'demo',
+  email: 'demo@fitplaner.app',
+  user_metadata: { full_name: 'Użytkownik Demo' },
+} as unknown as User;
+
 export function useAuthStore() {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(!isSupabaseConfigured);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -147,11 +154,26 @@ export function useAuthStore() {
     return { error };
   }, []);
 
+  const loginAsDemo = useCallback(() => {
+    setUser(DEMO_USER);
+    setIsDemoMode(true);
+    setInitialized(true);
+  }, []);
+
+  const exitDemoMode = useCallback(() => {
+    setUser(null);
+    setIsDemoMode(false);
+    // Wyczyść dane demo z localStorage
+    const keys = Object.keys(localStorage).filter(k => k.includes('_demo_') || k.includes('demo'));
+    keys.forEach(k => localStorage.removeItem(k));
+  }, []);
+
   return {
     user,
     session,
     loading,
     initialized,
+    isDemoMode,
     isAuthenticated: !!user,
     isConfigured: isSupabaseConfigured,
     signUp,
@@ -159,5 +181,7 @@ export function useAuthStore() {
     signOut,
     deleteAccount,
     resetPassword,
+    loginAsDemo,
+    exitDemoMode,
   };
 }

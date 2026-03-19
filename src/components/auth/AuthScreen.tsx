@@ -3,7 +3,11 @@ import { useAuthStore } from '../../store/authStore';
 
 type AuthView = 'login' | 'register' | 'reset';
 
-export default function AuthScreen() {
+interface AuthScreenProps {
+  onDemoLogin?: () => void;
+}
+
+export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
   const { signIn, signUp, resetPassword, loading } = useAuthStore();
   const [view, setView] = useState<AuthView>('login');
 
@@ -355,6 +359,28 @@ export default function AuthScreen() {
             )}
           </div>
         </div>
+
+        {/* Demo button */}
+        {onDemoLogin && (
+          <div className="mt-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex-1 h-px bg-slate-700" />
+              <span className="text-slate-500 text-xs">lub</span>
+              <div className="flex-1 h-px bg-slate-700" />
+            </div>
+            <button
+              type="button"
+              onClick={onDemoLogin}
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-semibold text-sm hover:from-orange-400 hover:to-amber-400 transition-all shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2"
+            >
+              <span>🚀</span>
+              Wypróbuj bez rejestracji (Demo)
+            </button>
+            <p className="text-center text-slate-500 text-xs mt-2">
+              Dane zapisywane lokalnie · Bez synchronizacji z chmurą
+            </p>
+          </div>
+        )}
 
         {/* Footer */}
         <p className="text-center text-slate-500 text-xs mt-6">

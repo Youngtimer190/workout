@@ -198,7 +198,6 @@ export default function WorkoutPlanner({
 
       {modal.type === 'replace' && (
         <ReplaceExerciseModal
-          key={`replace-${modal.exercise.id}`}
           currentExercise={modal.exercise}
           onReplace={handleReplace}
           onClose={closeModal}

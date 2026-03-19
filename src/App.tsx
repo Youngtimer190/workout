@@ -8,6 +8,7 @@ import Stats from './components/Stats';
 import PlanGenerator from './components/PlanGenerator';
 import AuthScreen from './components/auth/AuthScreen';
 import OfflineBanner from './components/auth/OfflineBanner';
+import DemoBanner from './components/auth/DemoBanner';
 import { useWorkoutStore } from './store/workoutStore';
 import { useAuthStore } from './store/authStore';
 import { isSupabaseConfigured } from './lib/supabase';
@@ -18,7 +19,7 @@ export default function App() {
   const topRef = useRef<HTMLDivElement>(null);
 
   // Auth
-  const { user, initialized, isAuthenticated } = useAuthStore();
+  const { user, initialized, isAuthenticated, isDemoMode, loginAsDemo, exitDemoMode } = useAuthStore();
 
   // Workout store — pass userId for cloud sync
   const {
@@ -93,7 +94,7 @@ export default function App() {
 
   // ── Auth screen (only when Supabase configured + not authenticated) ──
   if (isSupabaseConfigured && !isAuthenticated) {
-    return <AuthScreen />;
+    return <AuthScreen onDemoLogin={loginAsDemo} />;
   }
 
   const renderView = () => {
@@ -157,6 +158,11 @@ export default function App() {
       <Sidebar activeView={activeView} onViewChange={handleViewChange} />
 
       <div className="main-content">
+        {/* Demo banner */}
+        {isDemoMode && (
+          <DemoBanner onExit={exitDemoMode} />
+        )}
+
         {/* Offline banner */}
         {!isSupabaseConfigured && !offlineDismissed && (
           <OfflineBanner onDismiss={() => setOfflineDismissed(true)} />
