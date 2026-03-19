@@ -84,111 +84,6 @@ export default function Stats({ days }: StatsProps) {
         <p className="text-slate-500 text-sm mt-0.5">Analiza Twojego planu treningowego</p>
       </div>
 
-      {/* ── SEKCJA KONTA ── zawsze widoczna ── */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-        {/* Header sekcji */}
-        <div className="bg-gradient-to-r from-violet-500 to-indigo-600 px-4 py-3 sm:px-5">
-          <h2 className="text-white font-bold text-base">👤 Twoje konto</h2>
-        </div>
-
-        <div className="p-4 sm:p-5">
-          {isSupabaseConfigured && user ? (
-            <>
-              {/* Dane użytkownika */}
-              <div className="flex items-center gap-3 sm:gap-4 mb-5">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-violet-200">
-                  <span className="text-white text-xl sm:text-2xl font-bold">{initials}</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  {user?.user_metadata?.full_name && (
-                    <p className="font-bold text-slate-800 text-base sm:text-lg truncate">
-                      {user.user_metadata.full_name}
-                    </p>
-                  )}
-                  <p className="text-slate-500 text-sm truncate">{userEmail}</p>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="text-xs text-emerald-600 font-medium">Zalogowany</span>
-                    {isSupabaseConfigured && (
-                      <span className="text-xs text-slate-400">· synchronizacja aktywna</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Przyciski */}
-              <div className="space-y-3">
-                <button
-                  onClick={handleSignOut}
-                  disabled={signingOut || loading}
-                  className="w-full flex items-center justify-center gap-2.5 px-4 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 font-semibold text-base transition-colors disabled:opacity-50"
-                >
-                  {signingOut ? (
-                    <>
-                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                      <span>Wylogowywanie...</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                      </svg>
-                      <span>Wyloguj się</span>
-                    </>
-                  )}
-                </button>
-
-                <button
-                  onClick={() => setShowDeleteModal(true)}
-                  disabled={loading}
-                  className="w-full flex items-center justify-center gap-2.5 px-4 py-3.5 rounded-xl bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-600 font-semibold text-base border border-red-100 hover:border-red-200 transition-colors disabled:opacity-50"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                  <span>Usuń konto</span>
-                </button>
-              </div>
-
-              {/* Info o usuwaniu */}
-              <p className="text-xs text-slate-400 text-center mt-3 leading-relaxed">
-                Usunięcie konta jest nieodwracalne i spowoduje utratę wszystkich danych.
-              </p>
-            </>
-          ) : isSupabaseConfigured && !user ? (
-            /* Zaloguj się */
-            <div className="text-center py-4">
-              <div className="text-4xl mb-3">🔒</div>
-              <p className="text-slate-600 font-semibold mb-1">Nie jesteś zalogowany</p>
-              <p className="text-slate-400 text-sm">Zaloguj się, aby synchronizować dane między urządzeniami.</p>
-            </div>
-          ) : (
-            /* Tryb offline */
-            <div className="flex items-start gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-400 to-slate-500 flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </div>
-              <div>
-                <p className="font-semibold text-slate-700">Tryb offline</p>
-                <p className="text-sm text-slate-500 mt-0.5">Dane zapisywane lokalnie na urządzeniu.</p>
-                <div className="mt-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
-                  <p className="text-xs text-amber-700 font-medium">
-                    📋 Skonfiguruj Supabase, aby korzystać z konta na wielu urządzeniach.
-                    <br />
-                    <span className="opacity-70">Zobacz instrukcję w pliku SUPABASE_SETUP.md</span>
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* ── STATYSTYKI PLANU ── */}
 
       {/* Summary Cards */}
@@ -327,6 +222,99 @@ export default function Stats({ days }: StatsProps) {
           <p className="text-slate-400">Dodaj ćwiczenia do swojego planu, aby zobaczyć statystyki.</p>
         </div>
       )}
+
+      {/* ── SEKCJA KONTA ── na dole ── */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="bg-gradient-to-r from-violet-500 to-indigo-600 px-4 py-3 sm:px-5">
+          <h2 className="text-white font-bold text-base">👤 Twoje konto</h2>
+        </div>
+        <div className="p-4 sm:p-5">
+          {isSupabaseConfigured && user ? (
+            <>
+              <div className="flex items-center gap-3 sm:gap-4 mb-5">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-violet-200">
+                  <span className="text-white text-xl sm:text-2xl font-bold">{initials}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  {user?.user_metadata?.full_name && (
+                    <p className="font-bold text-slate-800 text-base sm:text-lg truncate">
+                      {user.user_metadata.full_name}
+                    </p>
+                  )}
+                  <p className="text-slate-500 text-sm truncate">{userEmail}</p>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-xs text-emerald-600 font-medium">Zalogowany</span>
+                    <span className="text-xs text-slate-400">· synchronizacja aktywna</span>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <button
+                  onClick={handleSignOut}
+                  disabled={signingOut || loading}
+                  className="w-full flex items-center justify-center gap-2.5 px-4 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 font-semibold text-base transition-colors disabled:opacity-50"
+                >
+                  {signingOut ? (
+                    <>
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      <span>Wylogowywanie...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      <span>Wyloguj się</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowDeleteModal(true)}
+                  disabled={loading}
+                  className="w-full flex items-center justify-center gap-2.5 px-4 py-3.5 rounded-xl bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-600 font-semibold text-base border border-red-100 hover:border-red-200 transition-colors disabled:opacity-50"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  <span>Usuń konto</span>
+                </button>
+              </div>
+              <p className="text-xs text-slate-400 text-center mt-3 leading-relaxed">
+                Usunięcie konta jest nieodwracalne i spowoduje utratę wszystkich danych.
+              </p>
+            </>
+          ) : isSupabaseConfigured && !user ? (
+            <div className="text-center py-4">
+              <div className="text-4xl mb-3">🔒</div>
+              <p className="text-slate-600 font-semibold mb-1">Nie jesteś zalogowany</p>
+              <p className="text-slate-400 text-sm">Zaloguj się, aby synchronizować dane między urządzeniami.</p>
+            </div>
+          ) : (
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-400 to-slate-500 flex items-center justify-center flex-shrink-0">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-semibold text-slate-700">Tryb offline</p>
+                <p className="text-sm text-slate-500 mt-0.5">Dane zapisywane lokalnie na urządzeniu.</p>
+                <div className="mt-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+                  <p className="text-xs text-amber-700 font-medium">
+                    📋 Skonfiguruj Supabase, aby korzystać z konta na wielu urządzeniach.
+                    <br />
+                    <span className="opacity-70">Zobacz instrukcję w pliku SUPABASE_SETUP.md</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Delete account modal */}
       {showDeleteModal && (
