@@ -56,6 +56,28 @@ export default function SetTracker({
     }
   }, [sets, defaultReps, defaultWeight]);
 
+  // Detect external reset (e.g. copy from previous week resets done=false)
+  // If ALL incoming setLogs have done=false but locally we have some done=true → external reset
+  const prevLogsRef = useRef(setLogs);
+  useEffect(() => {
+    const prev = prevLogsRef.current;
+    prevLogsRef.current = setLogs;
+
+    if (!Array.isArray(setLogs) || setLogs.length === 0) return;
+    if (isEditingRef.current) return;
+
+    const incomingAllUndone = setLogs.every(l => l.done === false);
+    const localHasDone = localLogs.some(l => l.done === true);
+
+    // External reset detected — rebuild from incoming setLogs
+    if (incomingAllUndone && localHasDone) {
+      setLocalLogs(buildLogs(setLogs, sets, defaultReps, defaultWeight));
+    }
+
+    // Suppress unused var warning
+    void prev;
+  }, [setLogs]);
+
   // Editing cell state
   const [editingCell, setEditingCell] = useState<{ setIdx: number; field: 'reps' | 'weight' } | null>(null);
   const [tempValue, setTempValue] = useState('');

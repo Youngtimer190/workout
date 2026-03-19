@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { View, WorkoutDay } from './types';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
@@ -15,6 +15,7 @@ import { isSupabaseConfigured } from './lib/supabase';
 export default function App() {
   const [activeView, setActiveView] = useState<View>('dashboard');
   const [offlineDismissed, setOfflineDismissed] = useState(false);
+  const topRef = useRef<HTMLDivElement>(null);
 
   // Auth
   const { user, initialized, isAuthenticated } = useAuthStore();
@@ -42,9 +43,32 @@ export default function App() {
     syncing,
   } = useWorkoutStore(user?.id);
 
+  // Scroll to top on every view change
+  useEffect(() => {
+    topRef.current?.scrollIntoView({ behavior: 'auto', block: 'start' });
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [activeView]);
+
+  const scrollToTop = () => {
+    topRef.current?.scrollIntoView({ behavior: 'auto', block: 'start' });
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  };
+
+  const handleViewChange = (view: View) => {
+    setActiveView(view);
+    // Extra call — some Safari versions need this before state update
+    scrollToTop();
+  };
+
   const handleApplyGeneratedPlan = (generatedDays: WorkoutDay[]) => {
     loadGeneratedPlan(generatedDays);
     setActiveView('planner');
+    // scrollToTop via useEffect([activeView]) + extra direct call
+    scrollToTop();
   };
 
   // ── Loading screen while auth initializes ──
@@ -78,14 +102,14 @@ export default function App() {
         return (
           <Dashboard
             days={days}
-            onGoToPlanner={() => setActiveView('planner')}
+            onGoToPlanner={() => handleViewChange('planner')}
           />
         );
       case 'generator':
         return (
           <PlanGenerator
             onApplyPlan={handleApplyGeneratedPlan}
-            onGoToPlanner={() => setActiveView('planner')}
+            onGoToPlanner={() => handleViewChange('planner')}
           />
         );
       case 'planner':
@@ -126,7 +150,10 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Sidebar activeView={activeView} onViewChange={setActiveView} />
+      {/* Invisible anchor at absolute top for scrollIntoView */}
+      <div ref={topRef} style={{ position: 'absolute', top: 0, left: 0, height: 0, width: 0 }} />
+
+      <Sidebar activeView={activeView} onViewChange={handleViewChange} />
 
       <div className="main-content">
         {/* Offline banner */}

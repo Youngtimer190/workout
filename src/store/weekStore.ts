@@ -126,17 +126,35 @@ export function getAllWeekKeys(): string[] {
   return Object.keys(loadAllWeeks());
 }
 
-/** Copy days from one week to another (keeping exercise IDs unique) */
+/** Copy days from one week to another — resets all setLog completion status */
 export function copyWeekDays(fromKey: string, toKey: string): WorkoutDay[] {
   const sourceDays = loadWeekDays(fromKey);
-  const copied: WorkoutDay[] = sourceDays.map((d, i) => ({
-    ...d,
+
+  const copied: WorkoutDay[] = sourceDays.map((day, i) => ({
+    ...day,
     id: `${toKey}-day-${i}`,
-    exercises: d.exercises.map(e => ({
-      ...e,
-      id: `${e.id.split('-copy')[0]}-copy-${Date.now()}-${Math.random()}`,
-    })),
+    exercises: day.exercises.map(ex => {
+      // Reset done=false for every set — keep weight/reps as reference for progression
+      const freshSetLogs = Array.isArray(ex.setLogs)
+        ? ex.setLogs.map(log => ({
+            id: log.id,
+            setNumber: log.setNumber,
+            targetReps: log.targetReps,
+            actualReps: log.actualReps,
+            weight: log.weight,
+            done: false,          // ← ALWAYS reset to false
+            note: log.note,
+          }))
+        : [];
+
+      return {
+        ...ex,
+        id: `${toKey}-${ex.id.split('-')[0]}-${i}-${Date.now()}-${Math.random()}`,
+        setLogs: freshSetLogs,
+      };
+    }),
   }));
+
   saveWeekDays(toKey, copied);
   return copied;
 }
