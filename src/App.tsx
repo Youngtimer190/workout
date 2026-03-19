@@ -32,7 +32,7 @@ export default function App() {
     removeExercise,
     updateExercise,
     replaceExercise,
-    reorderExercises,
+    moveExercise,
     resetWeek,
     loadGeneratedPlan,
     customExercises,
@@ -98,7 +98,7 @@ export default function App() {
             onRemoveExercise={removeExercise}
             onUpdateExercise={updateExercise}
             onReplaceExercise={replaceExercise}
-            onReorderExercises={reorderExercises}
+            onMoveExercise={moveExercise}
             onResetWeek={resetWeek}
             onPrevWeek={goToPrevWeek}
             onNextWeek={goToNextWeek}

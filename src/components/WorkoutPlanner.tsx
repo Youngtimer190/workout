@@ -12,7 +12,7 @@ interface WorkoutPlannerProps {
   onRemoveExercise: (dayId: string, exerciseId: string) => void;
   onUpdateExercise: (dayId: string, exerciseId: string, updates: Partial<Exercise>) => void;
   onReplaceExercise: (dayId: string, exerciseId: string, newExercise: Exercise) => void;
-  onReorderExercises: (dayId: string, exercises: Exercise[]) => void;
+  onMoveExercise: (dayId: string, exerciseId: string, direction: 'up' | 'down') => void;
   onResetWeek: () => void;
   onPrevWeek: () => void;
   onNextWeek: () => void;
@@ -30,7 +30,7 @@ export default function WorkoutPlanner({
   onRemoveExercise,
   onUpdateExercise,
   onReplaceExercise,
-  onReorderExercises,
+  onMoveExercise,
   onResetWeek,
   onPrevWeek,
   onNextWeek,
@@ -67,7 +67,7 @@ export default function WorkoutPlanner({
 
       {/* Reset confirmation dialog */}
       {showResetConfirm && (
-        <div className="rounded-2xl border-2 border-red-200 bg-red-50 p-4 flex flex-col sm:flex-row sm:items-center gap-4 shadow-sm animate-in">
+        <div className="rounded-2xl border-2 border-red-200 bg-red-50 p-4 flex flex-col sm:flex-row sm:items-center gap-4 shadow-sm">
           <div className="flex items-start gap-3 flex-1">
             <div className="w-9 h-9 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0 mt-0.5">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-red-500">
@@ -122,7 +122,7 @@ export default function WorkoutPlanner({
             onRemoveExercise={exId => onRemoveExercise(day.id, exId)}
             onUpdateExercise={(exId, updates) => onUpdateExercise(day.id, exId, updates)}
             onReplaceExercise={(exId, newEx) => onReplaceExercise(day.id, exId, newEx)}
-            onReorderExercises={exercises => onReorderExercises(day.id, exercises)}
+            onMoveExercise={(exId, dir) => onMoveExercise(day.id, exId, dir)}
             customExercises={customExercises}
             onSaveCustomExercise={onSaveCustomExercise}
           />

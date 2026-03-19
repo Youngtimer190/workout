@@ -586,25 +586,44 @@ function assignDayIndices(daysPerWeek: number): number[] {
 // ─── Specyficzne rozgrzewki dla każdej partii ────────────────────────────────
 // Profesjonalna rozgrzewka aktywuje mięśnie, poprawia zakres ruchu i zapobiega kontuzjom
 
-function buildWarmup(splitDay: SplitDay, dayIndex: number): Exercise {
+function buildWarmup(splitDay: SplitDay, dayIndex: number, equipmentList: EquipmentItem[]): Exercise {
   const primaryMuscle = splitDay.primaryMuscles[0];
+
+  // Dynamiczny dobór cardio do rozgrzewki na podstawie dostępnego sprzętu
+  const hasBike   = equipmentList.includes('stationary_bike');
+  const hasRower  = equipmentList.includes('rowing_machine');
+  const hasTread  = equipmentList.includes('treadmill');
+  const hasBands  = equipmentList.includes('resistance_bands');
+
+  // Wybierz najlepsze dostępne cardio do rozgrzewki
+  const cardioWarmup =
+    hasBike  ? 'rower stacjonarny (60–70 rpm, opór 2–3)' :
+    hasRower ? 'ergometr wioślarski (spokojne tempo, ~20 spm)' :
+    hasTread ? 'marsz/trucht na bieżni (6–7 km/h)' :
+               'skipping lub marsz w miejscu (o niskiej intensywności)';
+
+  // Dobierz alternatywę dla gum oporowych
+  const bandAlternative = hasBands ? 'guma oporowa' : 'lekka hantla lub masa ciała';
 
   const warmupProtocols: Partial<Record<MuscleGroup, string>> = {
     'Klatka piersiowa':
-      '1) 5 min rower/marsz w miejscu | 2) 15× rotacje ramion w obie strony | 3) 10× Arm Cross (krzyżowanie rąk przed klatką) | 4) 20× pompki z masą ciała (60% tempa) | 5) Rozciąganie klatki przy ścianie 30 sek/stronę. Pierwsze serie każdego ćwiczenia: 50% ciężaru docelowego × 15 powt.',
+      `1) 5 min ${cardioWarmup} | 2) 15× rotacje ramion w obie strony (duże kółka) | 3) 10× Arm Cross — krzyżowanie wyprostowanych rąk przed klatką | 4) 20× pompki z masą ciała w spokojnym tempie | 5) Rozciąganie klatki przy ścianie lub w framudze drzwi 30 sek/stronę. Pierwsze serie każdego ćwiczenia: 50% ciężaru docelowego × 15 powt.`,
     'Plecy':
-      '1) 5 min rower | 2) 10× krążenia ramion (duże, pełne) | 3) 15× band pull-apart z gumą | 4) Cat-Cow 10 cykli (mobilizacja kręgosłupa) | 5) Rotacje piersiowe 10/stronę. Pierwsze serie: 50% ciężaru × 12 powt.',
+      `1) 5 min ${cardioWarmup} | 2) 10× krążenia ramion w przód i w tył (pełen zakres) | 3) 15× band pull-apart z ${bandAlternative} | 4) Cat-Cow 10 cykli — mobilizacja kręgosłupa piersiowego | 5) Rotacje piersiowe w leżeniu na boku 10/stronę. Pierwsze serie: 50% ciężaru × 12 powt.`,
     'Nogi':
-      '1) 5 min rower lub marsz | 2) 20× przysiad BW (pełny zakres, powolny) | 3) 10× wykroków w miejscu | 4) 10× hip hinge BW | 5) Mobilizacja kostki (krążenia) + mobilizacja bioder (90/90 stretch). Pierwsze serie: 50% ciężaru × 10 powt.',
+      `1) 5 min ${cardioWarmup} | 2) 20× przysiad z masą ciała (pełny zakres, 3 sek zejście) | 3) 10× wykroków naprzemiennych w miejscu | 4) 10× hip hinge z masą ciała — trenuj wzorzec zawiasowy | 5) Mobilizacja kostki — krążenia 10×/stronę | 6) 90/90 hip stretch 30 sek/stronę. Pierwsze serie: 50% ciężaru × 10 powt.`,
     'Barki':
-      '1) 5 min lekkie cardio | 2) 15× rotacje zewnętrzne z gumą (stożek rotatorów) | 3) 10× band pull-apart | 4) 15× Face Pulls z gumą | 5) Krążenia ramion + poprzeczne rozciąganie barku. Pierwsze serie: 50% ciężaru × 15 powt.',
+      `1) 5 min ${cardioWarmup} | 2) 15× rotacje zewnętrzne ramienia z ${bandAlternative} — aktywacja rotatorów | 3) 10× band pull-apart lub odwrotne rozpiętki z hantlami | 4) Krążenia ramion: 10× małe kółka → 10× duże kółka | 5) Poprzeczne rozciąganie barku 30 sek/stronę. Pierwsze serie: 50% ciężaru × 15 powt.`,
     'Biceps':
-      '1) 5 min cardio | 2) Rozciąganie przedramion (do przodu i tyłu) 30 sek | 3) 15× uginania z gumą | 4) Rozgrzewkowe serie z 40% ciężaru docelowego.',
+      `1) 5 min ${cardioWarmup} | 2) Rozciąganie przedramion do przodu (prostowanie nadgarstka) 30 sek | 3) Rozciąganie przedramion do tyłu (zginanie grzbietowe) 30 sek | 4) 15× uginania z ${bandAlternative} | 5) Rozgrzewkowe serie z 40% ciężaru docelowego × 15 powt.`,
     'Triceps':
-      '1) 5 min cardio | 2) 15× pompki BW | 3) Rozciąganie tricepsa przez głowę 30 sek | 4) Rozgrzewkowe serie pushdown z lekkim ciężarem.',
+      `1) 5 min ${cardioWarmup} | 2) 15× pompki z masą ciała | 3) Rozciąganie tricepsa przez głowę — chwyć łokieć i pociągnij 30 sek/stronę | 4) Krążenia nadgarstków 10×/stronę | 5) Rozgrzewkowe serie pompek diamentowych lub pushdown z minimalnym obciążeniem.`,
     'Brzuch':
-      '1) 5 min cardio | 2) 20 sek plank × 2 | 3) 15× pełne skłony bez obciążenia | 4) Dead Bug 10/stronę.',
+      `1) 5 min ${cardioWarmup} | 2) Plank 20 sek × 2 — aktywacja głębokiego core | 3) 15× skłony bez obciążenia (pełen zakres ruchu) | 4) Dead Bug 10/stronę — stabilizacja lędźwi | 5) Cat-Cow 10 cykli — mobilizacja kręgosłupa.`,
   };
+
+  const defaultProtocol =
+    `1) 5 min ${cardioWarmup} | 2) Mobilizacja wszystkich stawów zaangażowanych w trening: krążenia, skłony, rotacje | 3) 2–3 serie rozgrzewkowe z 50% ciężaru docelowego × 10–15 powt. Nie pomijaj rozgrzewki — zwiększa siłę o 5–10% i redukuje ryzyko kontuzji.`;
 
   return {
     id: `warmup-${dayIndex}-${Date.now()}`,
@@ -615,7 +634,7 @@ function buildWarmup(splitDay: SplitDay, dayIndex: number): Exercise {
     sets: 1,
     reps: '10–12 min',
     restTime: 0,
-    notes: warmupProtocols[primaryMuscle] || '5 min cardio o niskiej intensywności + mobilizacja wszystkich stawów zaangażowanych w trening + 2–3 serie rozgrzewkowe z 50% ciężaru docelowego.',
+    notes: warmupProtocols[primaryMuscle] ?? defaultProtocol,
     requiredEquipment: ['bodyweight'],
   };
 }
@@ -678,7 +697,7 @@ function buildWorkoutDay(
 
   // ── 1. ROZGRZEWKA ────────────────────────────────────────────────────────
   if (includeWarmup) {
-    exercises.push(buildWarmup(splitDay, dayIndex));
+    exercises.push(buildWarmup(splitDay, dayIndex, prefs.equipmentList));
   }
 
   let usedTime = 0;

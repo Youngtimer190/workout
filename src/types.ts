@@ -76,7 +76,10 @@ export type EquipmentItem =
   | 'dip_bars'
   | 'treadmill'
   | 'stationary_bike'
-  | 'rowing_machine';
+  | 'rowing_machine'
+  | 'elliptical'
+  | 'battle_ropes'
+  | 'jump_rope';
 
 export interface GeneratorPreferences {
   goal: TrainingGoal;

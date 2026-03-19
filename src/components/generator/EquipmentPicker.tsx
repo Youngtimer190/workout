@@ -25,8 +25,11 @@ const equipmentOptions: EquipmentOption[] = [
   { id: 'leg_curl_machine',label: 'Maszyna do nóg',     emoji: '🔄', desc: 'Uginacz / leg curl', category: 'Sprzęt & maszyny' },
   // Cardio
   { id: 'treadmill',       label: 'Bieżnia',            emoji: '🏃', desc: 'Bieżnia elektryczna', category: 'Cardio' },
-  { id: 'stationary_bike', label: 'Rower stacjonarny',  emoji: '🚲', desc: 'Rower treningowy', category: 'Cardio' },
-  { id: 'rowing_machine',  label: 'Ergometr',           emoji: '🚣', desc: 'Wioślarz / rowing machine', category: 'Cardio' },
+  { id: 'stationary_bike', label: 'Rower stacjonarny',  emoji: '🚲', desc: 'Rower treningowy / spinning', category: 'Cardio' },
+  { id: 'rowing_machine',  label: 'Ergometr wioślarski',emoji: '🚣', desc: 'Wioślarz / rowing machine', category: 'Cardio' },
+  { id: 'elliptical',      label: 'Orbitrek',           emoji: '🔄', desc: 'Maszyna eliptyczna', category: 'Cardio' },
+  { id: 'battle_ropes',    label: 'Battle Ropes',       emoji: '🪢', desc: 'Liny bojowe', category: 'Cardio' },
+  { id: 'jump_rope',       label: 'Skakanka',           emoji: '🪃', desc: 'Skakanka / jump rope', category: 'Cardio' },
 ];
 
 const categories = ['Wolne ciężary', 'Masa ciała', 'Sprzęt & maszyny', 'Cardio'];
@@ -43,7 +46,7 @@ const PRESETS: { label: string; emoji: string; desc: string; items: EquipmentIte
     label: 'Pełna siłownia',
     emoji: '🏟️',
     desc: 'Pełen dostęp do sprzętu',
-    items: ['barbell', 'dumbbells', 'kettlebell', 'pull_up_bar', 'dip_bars', 'bench', 'cable_machine', 'smith_machine', 'leg_press', 'leg_curl_machine', 'resistance_bands', 'treadmill', 'stationary_bike', 'rowing_machine'],
+    items: ['barbell', 'dumbbells', 'kettlebell', 'pull_up_bar', 'dip_bars', 'bench', 'cable_machine', 'smith_machine', 'leg_press', 'leg_curl_machine', 'resistance_bands', 'treadmill', 'stationary_bike', 'rowing_machine', 'elliptical', 'battle_ropes', 'jump_rope'],
   },
   {
     label: 'Dom z hantlami',

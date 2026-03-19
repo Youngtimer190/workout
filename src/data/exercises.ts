@@ -768,7 +768,7 @@ export const exerciseLibrary: Exercise[] = [
     duration: 15,
     restTime: 60,
     notes: 'Zacznij od prostych skoków obunóż. Ląduj miękko na przodostopiu, kolana lekko ugięte. Przerwy 60 sek między rundami.',
-    requiredEquipment: ['bodyweight'],
+    requiredEquipment: ['jump_rope'],
   },
 
   // ═══════════════════════════════════════════════════════
@@ -1477,7 +1477,7 @@ export const exerciseLibrary: Exercise[] = [
     duration: 15,
     restTime: 30,
     notes: 'Kolana ugięte, core napięty. Wypróbuj: fale naprzemienne, obustronne, kręgi. Wysoka intensywność przez krótki czas — maksymalny wysiłek w każdej rundzie.',
-    requiredEquipment: ['bodyweight'],
+    requiredEquipment: ['battle_ropes'],
   },
   {
     id: 'cardio-7',
@@ -1490,7 +1490,7 @@ export const exerciseLibrary: Exercise[] = [
     duration: 35,
     restTime: 0,
     notes: 'Utrzymuj wyprostowaną postawę — nie pochylaj się na uchwytach. Włącz uchwytki ruchome dla zaangażowania ramion. Docelowe tętno: 65-75% max.',
-    requiredEquipment: ['bodyweight'],
+    requiredEquipment: ['elliptical'],
   },
   {
     id: 'cardio-8',

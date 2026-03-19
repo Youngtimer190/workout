@@ -266,6 +266,23 @@ export function useWorkoutStore(userId?: string) {
     });
   }, [weekKey, persistDays]);
 
+  const moveExercise = useCallback((dayId: string, exerciseId: string, direction: 'up' | 'down') => {
+    setDays(prev => {
+      const next = prev.map(d => {
+        if (d.id !== dayId) return d;
+        const exs = [...d.exercises];
+        const idx = exs.findIndex(e => e.id === exerciseId);
+        if (idx === -1) return d;
+        const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+        if (targetIdx < 0 || targetIdx >= exs.length) return d;
+        [exs[idx], exs[targetIdx]] = [exs[targetIdx], exs[idx]];
+        return { ...d, exercises: exs };
+      });
+      persistDays(next, weekKey);
+      return next;
+    });
+  }, [weekKey, persistDays]);
+
   const resetWeek = useCallback(() => {
     const fresh = createDefaultDays(weekKey);
     setDays(fresh);
@@ -353,6 +370,7 @@ export function useWorkoutStore(userId?: string) {
     updateSetLogs,
     replaceExercise,
     reorderExercises,
+    moveExercise,
     resetWeek,
     clearWeek,
     loadGeneratedPlan,
