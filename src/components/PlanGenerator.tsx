@@ -35,17 +35,35 @@ export default function PlanGenerator({ onApplyPlan, onGoToPlanner }: Props) {
   const [generatedPlan, setGeneratedPlan] = useState<GeneratedPlan | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [applied, setApplied] = useState(false);
+  // Zapamiętaj ID ćwiczeń z poprzedniego planu, żeby nie powtarzać przy regeneracji
+  const [lastPlanExerciseIds, setLastPlanExerciseIds] = useState<Set<string>>(new Set());
 
   const updatePrefs = (partial: Partial<GeneratorPreferences>) => {
     setPrefs(prev => ({ ...prev, ...partial }));
   };
 
+  // Wyciąga bazowe ID ćwiczeń z planu (bez sufixów -d0-xxx-p)
+  const extractBaseIds = (plan: GeneratedPlan): Set<string> => {
+    const ids = new Set<string>();
+    plan.days.forEach(day => {
+      day.exercises.forEach(ex => {
+        // Bazowe ID to część przed '-d' (sufiks dodawany przez generator)
+        const baseId = ex.id.split('-d')[0];
+        ids.add(baseId);
+        // Też dodaj pełne ID dla pewności
+        ids.add(ex.id);
+      });
+    });
+    return ids;
+  };
+
   const handleGenerate = () => {
     setIsGenerating(true);
-    // Small delay for UX feel
+    setLastPlanExerciseIds(new Set()); // reset przy pierwszym generowaniu
     setTimeout(() => {
-      const plan = generatePlan(prefs);
+      const plan = generatePlan(prefs, new Set());
       setGeneratedPlan(plan);
+      setLastPlanExerciseIds(extractBaseIds(plan));
       setIsGenerating(false);
       setStep(3);
     }, 800);
@@ -54,8 +72,10 @@ export default function PlanGenerator({ onApplyPlan, onGoToPlanner }: Props) {
   const handleRegenerate = () => {
     setIsGenerating(true);
     setTimeout(() => {
-      const plan = generatePlan(prefs);
+      // Przekaż ID poprzedniego planu — silnik wybierze inne ćwiczenia
+      const plan = generatePlan(prefs, lastPlanExerciseIds);
       setGeneratedPlan(plan);
+      setLastPlanExerciseIds(extractBaseIds(plan));
       setIsGenerating(false);
     }, 600);
   };

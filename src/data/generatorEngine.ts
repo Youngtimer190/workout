@@ -14,74 +14,223 @@ const DAY_NAMES = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', '
 
 // ─── Typy wewnętrzne ───────────────────────────────────────────────────────────
 
-type ExerciseRole = 'compound_primary' | 'compound_secondary' | 'isolation' | 'cardio' | 'warmup' | 'core';
+type ExerciseRole =
+  | 'compound_primary'    // Fundamentalne ćwiczenia wielostawowe (squat, deadlift, bench, OHP, row)
+  | 'compound_secondary'  // Ćwiczenia wielostawowe drugorzędne (dips, pull-up, split squat)
+  | 'isolation_primary'   // Izolacje priorytetowe (lateral raise, curl, leg extension)
+  | 'isolation_secondary' // Izolacje uzupełniające (kickback, concentration curl)
+  | 'core'                // Ćwiczenia brzucha i stabilizacji
+  | 'cardio'              // Cardio
+  | 'warmup';             // Rozgrzewka
 
 interface EnrichedExercise extends Exercise {
   role: ExerciseRole;
-  priority: number; // wyższy = ważniejszy w planie
+  priority: number; // 1–10, wyższy = lepszy bodziec treningowy
 }
 
 type SplitDay = {
   label: string;
+  sessionType: 'strength' | 'hypertrophy' | 'mixed'; // typ sesji wpływa na dobór ćwiczeń
   muscles: MuscleGroup[];
-  primaryMuscles: MuscleGroup[];   // główne partie (2-3 ćwiczenia)
-  secondaryMuscles: MuscleGroup[]; // pomocnicze (1-2 ćwiczenia)
+  primaryMuscles: MuscleGroup[];    // główne partie — 2–4 ćwiczenia
+  secondaryMuscles: MuscleGroup[];  // pomocnicze — 1–2 ćwiczenia
+  avoidExerciseTypes?: string[];    // np. ['hip_dominant'] żeby nie powtarzać martwego ciągu 2 dni z rzędu
 };
 
-// ─── Klasyfikacja ćwiczeń (compound vs isolation, priorytet) ──────────────────
+// ─── Klasyfikacja ćwiczeń — fundament systemu ─────────────────────────────────
+// Priorytet odzwierciedla efektywność ćwiczenia dla danej kategorii
+// Compounds primary: duże obciążenie CNS, największy potencjał wzrostu → priorytet 9–10
+// Compounds secondary: mniejszy stres, ale duże zaangażowanie → priorytet 7–8
+// Isolation primary: wysoka izolacja, progresja obciążenia → priorytet 4–6
+// Isolation secondary: finiszery, pompowanie → priorytet 2–3
 
-const COMPOUND_PRIMARY: string[] = [
-  'Wyciskanie sztangi leżąc',
-  'Wyciskanie skośne sztangą (górna klatka)',
-  'Martwy ciąg konwencjonalny',
-  'Martwy ciąg rumuński (RDL)',
-  'Podciąganie na drążku (szerokim chwytem)',
-  'Wiosłowanie sztangą w opadzie tułowia',
-  'Przysiad ze sztangą (back squat)',
-  'Przysiad przedni (front squat)',
-  'Wyciskanie żołnierskie (OHP) ze sztangą',
-  'Hip Thrust ze sztangą',
-  'Przysiady bułgarskie (Bulgarian Split Squat)',
-  'Clean & Press z hantlami',
-  'Dipy na poręczach (wąskie, triceps)',
-  'Pompki na poręczach (klatka)',
-  'Wyciskanie wąskim chwytem',
-  'French press (łamanie)ze sztangą leżąc',
-  'Uginanie ramion ze sztangą stojąc',
-];
+const EXERCISE_CLASSIFICATION: Record<string, { role: ExerciseRole; priority: number }> = {
+  // ── KLATKA PIERSIOWA ──
+  'Wyciskanie sztangi leżąc':                      { role: 'compound_primary',    priority: 10 },
+  'Wyciskanie skośne sztangą (górna klatka)':       { role: 'compound_primary',    priority: 9  },
+  'Wyciskanie hantli leżąc':                        { role: 'compound_secondary',  priority: 8  },
+  'Wyciskanie skośne hantlami (górna klatka)':      { role: 'compound_secondary',  priority: 7  },
+  'Pompki na poręczach (klatka)':                   { role: 'compound_secondary',  priority: 7  },
+  'Wyciskanie dolne hantlami (ujemny kąt ławki)':   { role: 'compound_secondary',  priority: 6  },
+  'Wyciskanie maszyna (Hammer Strength)':           { role: 'compound_secondary',  priority: 6  },
+  'Rozpiętki z hantlami na ławce poziomej':         { role: 'isolation_primary',   priority: 6  },
+  'Rozpiętki skośne (górna klatka)':                { role: 'isolation_primary',   priority: 5  },
+  'Krzyżowanie linek (wyciąg górny)':               { role: 'isolation_primary',   priority: 5  },
+  'Krzyżowanie linek dolnych (wyciąg dolny)':       { role: 'isolation_primary',   priority: 5  },
+  'Rozpiętki jednorącz na wyciągu górnym':          { role: 'isolation_primary',   priority: 5  },
+  'Rozpiętki jednorącz na wyciągu dolnym':          { role: 'isolation_primary',   priority: 5  },
+  'Rozpiętki na wyciągu środkowym (cable fly)':     { role: 'isolation_primary',   priority: 5  },
+  'Pompki':                                         { role: 'compound_secondary',  priority: 5  },
+  'Pompki na podwyższeniu (górna klatka)':          { role: 'compound_secondary',  priority: 4  },
+  'Pompki diamentowe':                              { role: 'isolation_secondary', priority: 3  },
+  'Pompki szerokim chwytem':                        { role: 'compound_secondary',  priority: 4  },
+  'Svend Press (ściskanie talerzy)':                { role: 'isolation_secondary', priority: 3  },
+  'Wyciskanie decline ze sztangą (dolna klatka)':   { role: 'compound_primary',    priority: 8  },
 
-const COMPOUND_SECONDARY: string[] = [
-  'Wyciskanie hantli leżąc',
-  'Wyciskanie skośne hantlami (górna klatka)',
-  'Podciąganie neutralnym chwytem',
-  'Wiosłowanie hantlem jednoręczne',
-  'Wiosłowanie na wyciągu dolnym (siedzisko)',
-  'Ściąganie drążka na wyciągu górnym (lat pulldown)',
-  'Wyciskanie hantli nad głowę (siedząc)',
-  'Arnoldpress z hantlami',
-  'Wykroki chodzące z hantlami',
-  'Prasa do nóg',
-  'Martwy ciąg rumuński z hantlami (RDL)',
-  'Pompki',
-  'Kettelbell Swing',
-  'Martwy ciąg z hantlami (sumo)',
-  'Kettlebell Swing',
-];
+  // ── PLECY ──
+  'Martwy ciąg konwencjonalny':                     { role: 'compound_primary',    priority: 10 },
+  'Martwy ciąg rumuński (RDL)':                     { role: 'compound_primary',    priority: 9  },
+  'Podciąganie na drążku (szerokim chwytem)':       { role: 'compound_primary',    priority: 9  },
+  'Wiosłowanie sztangą w opadzie tułowia':          { role: 'compound_primary',    priority: 9  },
+  'Podciąganie neutralnym chwytem':                 { role: 'compound_secondary',  priority: 8  },
+  'Chin-up (podciąganie podchwytem)':               { role: 'compound_secondary',  priority: 8  },
+  'Wiosłowanie hantlem jednoręczne':                { role: 'compound_secondary',  priority: 8  },
+  'Wiosłowanie T-bar':                              { role: 'compound_secondary',  priority: 7  },
+  'Good Morning ze sztangą':                        { role: 'compound_secondary',  priority: 6  },
+  'Inwertowane wiosłowanie (Australian pull-up)':   { role: 'compound_secondary',  priority: 6  },
+  'Wiosłowanie na wyciągu dolnym (siedzisko)':      { role: 'isolation_primary',   priority: 6  },
+  'Ściąganie drążka na wyciągu górnym (lat pulldown)': { role: 'isolation_primary', priority: 6 },
+  'Ściąganie liny na wyciągu górnym':               { role: 'isolation_primary',   priority: 5  },
+  'Ściąganie jednorącz na wyciągu':                 { role: 'isolation_primary',   priority: 5  },
+  'Wiosłowanie jednorącz na wyciągu dolnym':        { role: 'isolation_primary',   priority: 5  },
+  'Wiosłowanie maszyna (Hammer Strength)':          { role: 'isolation_primary',   priority: 5  },
+  'Wiosłowanie z gumą oporową':                     { role: 'isolation_secondary', priority: 4  },
+  'Face pull z gumą oporową':                       { role: 'isolation_secondary', priority: 3  },
+  'Ściąganie ramion (shrugs) ze sztangą':           { role: 'isolation_primary',   priority: 5  },
+  'Shrugs z hantlami':                              { role: 'isolation_secondary', priority: 4  },
+  'Hyperextension (prostowanie pleców)':            { role: 'isolation_primary',   priority: 5  },
+  'Martwy ciąg z hantlami':                         { role: 'compound_secondary',  priority: 6  },
+  'Pullover z hantlem (plecy)':                     { role: 'isolation_primary',   priority: 5  },
+  'Wiosłowanie szerokim chwytem':                   { role: 'compound_secondary',  priority: 7  },
+
+  // ── NOGI ──
+  'Przysiad ze sztangą (back squat)':               { role: 'compound_primary',    priority: 10 },
+  'Hip Thrust ze sztangą':                          { role: 'compound_primary',    priority: 9  },
+  'Martwy ciąg rumuński z hantlami (RDL)':          { role: 'compound_primary',    priority: 8  },
+  'Przysiady bułgarskie (Bulgarian Split Squat)':   { role: 'compound_primary',    priority: 9  },
+  'Przysiad przedni (front squat)':                 { role: 'compound_primary',    priority: 8  },
+  'Sumo deadlift (szeroki chwyt)':                  { role: 'compound_primary',    priority: 8  },
+  'Przysiad sumo ze sztangą':                       { role: 'compound_secondary',  priority: 7  },
+  'Prasa do nóg':                                   { role: 'compound_secondary',  priority: 7  },
+  'Wykroki chodzące z hantlami':                    { role: 'compound_secondary',  priority: 7  },
+  'Wykroki z hantlami w miejscu':                   { role: 'compound_secondary',  priority: 6  },
+  'Martwy ciąg sumo z hantlami':                    { role: 'compound_secondary',  priority: 7  },
+  'Krok w górę na skrzynię (step-up)':              { role: 'compound_secondary',  priority: 6  },
+  'Przysiad z hantlami (goblet squat)':             { role: 'compound_secondary',  priority: 6  },
+  'Hip Thrust jednostronny z hantlem':              { role: 'compound_secondary',  priority: 6  },
+  'Hip Thrust z gumą oporową':                      { role: 'compound_secondary',  priority: 5  },
+  'Żuraw jednonóż (single leg deadlift)':           { role: 'compound_secondary',  priority: 6  },
+  'Przysiad na jednej nodze (pistol squat)':        { role: 'compound_secondary',  priority: 7  },
+  'Nordic Curl (uginanie nóg z partnerem)':         { role: 'isolation_primary',   priority: 6  },
+  'Uginanie nóg leżąc (leg curl)':                  { role: 'isolation_primary',   priority: 6  },
+  'Prostowanie nóg na maszynie (leg extension)':    { role: 'isolation_primary',   priority: 6  },
+  'Wspięcia na palce ze sztangą (łydki)':           { role: 'isolation_primary',   priority: 5  },
+  'Wspięcia na palce siedząc (maszyna)':            { role: 'isolation_primary',   priority: 5  },
+  'Wspięcia na palce jednonóż':                     { role: 'isolation_secondary', priority: 4  },
+  'Abdukcja bioder na maszynie':                    { role: 'isolation_secondary', priority: 4  },
+  'Boczne kroki z gumą (band walk)':               { role: 'isolation_secondary', priority: 3  },
+  'Przysiad z masą ciała':                          { role: 'compound_secondary',  priority: 4  },
+  'Przysiad boczny (lateral squat)':                { role: 'isolation_secondary', priority: 4  },
+
+  // ── BARKI ──
+  'Wyciskanie żołnierskie (OHP) ze sztangą':        { role: 'compound_primary',    priority: 10 },
+  'Wyciskanie hantli nad głowę (siedząc)':          { role: 'compound_secondary',  priority: 8  },
+  'Wyciskanie żołnierskie hantlami stojąc':         { role: 'compound_secondary',  priority: 8  },
+  'Arnoldpress z hantlami':                         { role: 'compound_secondary',  priority: 7  },
+  'Press z hantlami stojąc (push press)':           { role: 'compound_secondary',  priority: 7  },
+  'Press za głowę (behind neck press)':             { role: 'compound_secondary',  priority: 6  },
+  'Wyciskanie na wyciągu (cable shoulder press)':   { role: 'compound_secondary',  priority: 6  },
+  'Unoszenie hantli bokiem (lateral raise)':        { role: 'isolation_primary',   priority: 7  },
+  'Wznosy hantli na wyciągu bocznym (cable lateral)': { role: 'isolation_primary', priority: 7 },
+  'Unoszenie hantli bokiem w opadzie (tylny bark)': { role: 'isolation_primary',   priority: 6  },
+  'Odwrotne rozpiętki na maszynie (pec deck odwrotny)': { role: 'isolation_primary', priority: 6 },
+  'Face Pulls na wyciągu':                          { role: 'isolation_primary',   priority: 6  },
+  'Wznosy hantli przodem':                          { role: 'isolation_secondary', priority: 4  },
+  'Wznosy ramion z gumą oporową':                   { role: 'isolation_secondary', priority: 3  },
+  'Upright Row (wiosłowanie stojąc)':               { role: 'isolation_primary',   priority: 5  },
+  'Wznosy hantli 3 drogi (front/lateral/rear)':     { role: 'isolation_secondary', priority: 4  },
+  'Rotacje zewnętrzne z gumą (external rotation)':  { role: 'isolation_secondary', priority: 3  },
+  'Pompki odwrócone (Pike Push-Up)':                { role: 'compound_secondary',  priority: 5  },
+
+  // ── BICEPS ──
+  'Uginanie ramion ze sztangą stojąc':              { role: 'compound_secondary',  priority: 8  },
+  'Uginanie EZ-bar (łamana sztanga)':               { role: 'compound_secondary',  priority: 8  },
+  'Uginanie naprzemienne z hantlami':               { role: 'isolation_primary',   priority: 7  },
+  'Uginanie młotkowe (hammer curl)':                { role: 'isolation_primary',   priority: 7  },
+  'Uginanie ramion na modlitewniku (preacher curl)': { role: 'isolation_primary',  priority: 6  },
+  'Uginanie Spiderman (na skosie twarzą w dół)':    { role: 'isolation_primary',   priority: 6  },
+  'Uginanie z hantlami na skosie (incline dumbbell curl)': { role: 'isolation_primary', priority: 6 },
+  'Uginanie na wyciągu dolnym':                     { role: 'isolation_primary',   priority: 5  },
+  'Wiosłowanie podchwytem (supinated row)':         { role: 'compound_secondary',  priority: 7  },
+  'Uginanie koncentryczne (concentration curl)':    { role: 'isolation_secondary', priority: 4  },
+  'Uginanie ze sztangą chwytem odwróconym (reverse curl)': { role: 'isolation_secondary', priority: 4 },
+  'Uginanie cable z liną (drag curl)':              { role: 'isolation_secondary', priority: 4  },
+  'Uginanie ramion na wyciągu górnym (overhead curl)': { role: 'isolation_secondary', priority: 4 },
+  'Uginanie ramion z gumą oporową':                 { role: 'isolation_secondary', priority: 3  },
+
+  // ── TRICEPS ──
+  'Wyciskanie wąskim chwytem':                      { role: 'compound_primary',    priority: 9  },
+  'Dipy na poręczach (wąskie, triceps)':            { role: 'compound_primary',    priority: 8  },
+  'JM Press':                                       { role: 'compound_secondary',  priority: 7  },
+  'French press (łamanie) ze sztangą leżąc':        { role: 'compound_secondary',  priority: 7  },
+  'EZ-bar French press stojąc':                     { role: 'compound_secondary',  priority: 7  },
+  'Wyciskanie Tate Press (pająk)':                  { role: 'compound_secondary',  priority: 6  },
+  'Prostowanie ramion na wyciągu (pushdown)':       { role: 'isolation_primary',   priority: 6  },
+  'Prostowanie ramion z liną (rope pushdown)':      { role: 'isolation_primary',   priority: 6  },
+  'Prostowanie ramion z hantlem nad głową':         { role: 'isolation_primary',   priority: 6  },
+  'Prostowanie ramienia na wyciągu górnym (overhead cable)': { role: 'isolation_primary', priority: 6 },
+  'Prostowanie ramion za głowę z liną (overhead rope)': { role: 'isolation_primary', priority: 5 },
+  'Pompki od krzesła (bench dips)':                 { role: 'isolation_secondary', priority: 4  },
+  'Kickback z hantlem w opadzie':                   { role: 'isolation_secondary', priority: 3  },
+  'Pompki wąskim chwytem':                          { role: 'isolation_secondary', priority: 4  },
+  'Prostowanie ramion z gumą':                      { role: 'isolation_secondary', priority: 3  },
+};
 
 function classifyExercise(exercise: Exercise): EnrichedExercise {
   if (exercise.muscleGroup === 'Cardio') {
     return { ...exercise, role: 'cardio', priority: 1 };
   }
   if (exercise.muscleGroup === 'Brzuch') {
-    return { ...exercise, role: 'core', priority: 2 };
+    // Hierarchia core: zaawansowane ćwiczenia z oporem wyżej
+    if (['Ab Wheel Rollout', 'Dragon Flag', 'Allahy (skłony na kolanach z linką wyciągu)', 'Allahy z rotacją (skłony skośne na wyciągu)', 'Unoszenie nóg w zwisie', 'Crunch na maszynie (cable crunch)', 'Pallof Press (anty-rotacja)', 'Wiosłowanie hantlem z rotacją (renegade row)'].includes(exercise.name)) {
+      return { ...exercise, role: 'core', priority: 6 };
+    }
+    if (['Hollow Body Hold', 'V-up (składanka)', 'Russian Twist z ciężarem', 'Dead Bug', 'Boczny plank (side plank)', 'Plank z dotknięciem barku', 'Unoszenie kolan w zwisie', 'Leg Raise leżąc', 'Windshield Wipers', 'Żuraw (toe touch crunch)'].includes(exercise.name)) {
+      return { ...exercise, role: 'core', priority: 5 };
+    }
+    return { ...exercise, role: 'core', priority: 4 };
   }
-  if (COMPOUND_PRIMARY.includes(exercise.name)) {
-    return { ...exercise, role: 'compound_primary', priority: 10 };
+
+  const classification = EXERCISE_CLASSIFICATION[exercise.name];
+  if (classification) {
+    return { ...exercise, ...classification };
   }
-  if (COMPOUND_SECONDARY.includes(exercise.name)) {
-    return { ...exercise, role: 'compound_secondary', priority: 7 };
+
+  // Fallback dla nieznanych ćwiczeń
+  if (exercise.muscleGroup === 'Całe ciało') {
+    return { ...exercise, role: 'compound_primary', priority: 7 };
   }
-  return { ...exercise, role: 'isolation', priority: 4 };
+  return { ...exercise, role: 'isolation_primary', priority: 4 };
+}
+
+// ─── Losowość z wagami (weighted shuffle) ─────────────────────────────────────
+
+function weightedShuffle<T extends { priority: number }>(arr: T[]): T[] {
+  if (arr.length === 0) return [];
+  const result: T[] = [];
+  const pool = [...arr];
+
+  while (pool.length > 0) {
+    const totalWeight = pool.reduce((s, e) => s + Math.pow(e.priority, 2), 0);
+    let rand = Math.random() * totalWeight;
+    let chosen = 0;
+    for (let i = 0; i < pool.length; i++) {
+      rand -= Math.pow(pool[i].priority, 2);
+      if (rand <= 0) { chosen = i; break; }
+    }
+    result.push(pool[chosen]);
+    pool.splice(chosen, 1);
+  }
+  return result;
+}
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
 }
 
 // ─── Filtrowanie po sprzęcie ───────────────────────────────────────────────────
@@ -100,208 +249,274 @@ function filterByLevel(exercises: Exercise[], level: FitnessLevel): Exercise[] {
   if (level === 'beginner') {
     return exercises.filter(e => e.difficulty !== 'Zaawansowany');
   }
-  if (level === 'intermediate') {
-    // średniozaawansowany dostaje wszystko, ale preferuje łatwiejsze nad zaawansowanymi
-    return exercises;
-  }
-  return exercises; // zaawansowany ma dostęp do wszystkiego
+  return exercises;
 }
 
-// ─── Parametry serii/powtórzeń/przerw dla danego celu ────────────────────────
+// ─── Parametry serii/powtórzeń/przerw per cel i poziom ───────────────────────
+// Oparte na aktualnej literaturze naukowej (Schoenfeld, Krieger, Israetel)
 
 interface VolumeParams {
-  setsCompound: number;
+  // Ćwiczenia compound (primary)
+  setsCompoundPrimary: number;
+  repsCompoundPrimary: string;
+  restCompoundPrimary: number;
+  // Ćwiczenia compound (secondary)
+  setsCompoundSecondary: number;
+  repsCompoundSecondary: string;
+  restCompoundSecondary: number;
+  // Izolacje
   setsIsolation: number;
-  repsCompound: string;
   repsIsolation: string;
-  restCompound: number;  // sekundy
   restIsolation: number;
-  repsCore: string;
+  // Core
   setsCore: number;
-  tempoNote: string;
+  repsCore: string;
+  // Wskazówki trenera
+  trainerNoteCompound: string;
+  trainerNoteIsolation: string;
 }
 
 function getVolumeParams(goal: TrainingGoal, level: FitnessLevel): VolumeParams {
-  const levelMod = level === 'beginner' ? -1 : level === 'advanced' ? 1 : 0;
+  const isAdv = level === 'advanced';
+  const isBeg = level === 'beginner';
 
   switch (goal) {
     case 'strength':
       return {
-        setsCompound: Math.min(6, 4 + levelMod),
-        setsIsolation: Math.max(2, 3 + levelMod),
-        repsCompound: level === 'advanced' ? '3-5' : '4-6',
-        repsIsolation: '6-8',
-        restCompound: 240,
-        restIsolation: 120,
-        repsCore: '10-15',
-        setsCore: 3,
-        tempoNote: 'Ekscentryka 3 sek, koncentryka eksplozywna. Długie przerwy dla pełnej regeneracji CNS.',
+        setsCompoundPrimary:    isAdv ? 5 : isBeg ? 3 : 4,
+        repsCompoundPrimary:    isAdv ? '3-5' : isBeg ? '5-6' : '4-6',
+        restCompoundPrimary:    isAdv ? 300 : 240,
+        setsCompoundSecondary:  isAdv ? 4 : 3,
+        repsCompoundSecondary:  '5-8',
+        restCompoundSecondary:  180,
+        setsIsolation:          2,
+        repsIsolation:          '8-10',
+        restIsolation:          120,
+        setsCore:               3,
+        repsCore:               '8-12',
+        trainerNoteCompound:    '⚡ SIŁA: Pełna regeneracja CNS między seriami — nie skracaj przerw. Ekscentryka 3–4 sek, koncentryka maksymalnie eksplozywna. Gdy nie możesz utrzymać techniki — zakończ serię.',
+        trainerNoteIsolation:   '⚡ SIŁA: Izolacje jako profilaktyka — nie do upadku. Utrzymaj technikę, zamiast zwiększać ciężar.',
       };
+
     case 'muscle_gain':
       return {
-        setsCompound: Math.min(5, 3 + levelMod + 1),
-        setsIsolation: Math.min(4, 3 + levelMod),
-        repsCompound: level === 'advanced' ? '6-10' : '8-12',
-        repsIsolation: '10-15',
-        restCompound: 120,
-        restIsolation: 75,
-        repsCore: '15-20',
-        setsCore: 3,
-        tempoNote: 'Ekscentryka 2-3 sek. Ostatnia seria do technical failure. Progresywne przeciążenie co tydzień.',
+        setsCompoundPrimary:    isAdv ? 5 : isBeg ? 3 : 4,
+        repsCompoundPrimary:    isAdv ? '6-10' : isBeg ? '10-12' : '8-12',
+        restCompoundPrimary:    isAdv ? 150 : 120,
+        setsCompoundSecondary:  isAdv ? 4 : 3,
+        repsCompoundSecondary:  isAdv ? '8-12' : '10-15',
+        restCompoundSecondary:  90,
+        setsIsolation:          isAdv ? 4 : 3,
+        repsIsolation:          '12-15',
+        restIsolation:          60,
+        setsCore:               3,
+        repsCore:               '15-20',
+        trainerNoteCompound:    '💪 HIPERTROFIA: Ekscentryka 2–3 sek. Ostatnia seria do technicznego upadku (nie bólowego). Zwiększ ciężar gdy robisz górny zakres we WSZYSTKICH seriach. Mechanic drop set gdy dostępny partner.',
+        trainerNoteIsolation:   '💪 HIPERTROFIA: Poczuj mięsień — mind-muscle connection. Szczyt zacisku 1 sek. Powolna ekscentryka. Krew w mięśniu to znak dobrego treningu.',
       };
+
     case 'fat_loss':
       return {
-        setsCompound: 3 + levelMod,
-        setsIsolation: 3,
-        repsCompound: '12-15',
-        repsIsolation: '15-20',
-        restCompound: 60,
-        restIsolation: 45,
-        repsCore: '20-25',
-        setsCore: 3,
-        tempoNote: 'Krótkie przerwy utrzymują tętno wysokie. Supersety tam gdzie możliwe. Ciągłe napięcie mięśnia.',
+        setsCompoundPrimary:    isBeg ? 3 : 4,
+        repsCompoundPrimary:    '10-15',
+        restCompoundPrimary:    75,
+        setsCompoundSecondary:  3,
+        repsCompoundSecondary:  '12-15',
+        restCompoundSecondary:  60,
+        setsIsolation:          3,
+        repsIsolation:          '15-20',
+        restIsolation:          45,
+        setsCore:               3,
+        repsCore:               '20-25',
+        trainerNoteCompound:    '🔥 REDUKCJA: Krótkie przerwy utrzymują metabolizm na wysokim poziomie. Ciągłe napięcie — bez odpoczynku w górnym/dolnym punkcie. Supersety antagonistów tam gdzie możliwe (klatka+plecy, biceps+triceps).',
+        trainerNoteIsolation:   '🔥 REDUKCJA: Wysoka objętość, niskie przerwy. Drop sets na ostatniej serii. Mięśnie zachowane = więcej spalanych kalorii 24/7.',
       };
+
     case 'endurance':
       return {
-        setsCompound: Math.max(2, 2 + levelMod),
-        setsIsolation: 2,
-        repsCompound: '15-20',
-        repsIsolation: '20-25',
-        restCompound: 45,
-        restIsolation: 30,
-        repsCore: '25-30',
-        setsCore: 3,
-        tempoNote: 'Bardzo krótkie przerwy (30-45 sek). Utrzymuj stałe tempo przez całą sesję. Wysoka objętość.',
+        setsCompoundPrimary:    isBeg ? 2 : 3,
+        repsCompoundPrimary:    '15-20',
+        restCompoundPrimary:    60,
+        setsCompoundSecondary:  3,
+        repsCompoundSecondary:  '20-25',
+        restCompoundSecondary:  45,
+        setsIsolation:          2,
+        repsIsolation:          '20-30',
+        restIsolation:          30,
+        setsCore:               4,
+        repsCore:               '25-40 sek',
+        trainerNoteCompound:    '🏃 WYTRZYMAŁOŚĆ: Ciągłe tempo przez cały zakres powtórzeń — bez zatrzymywania. Oddychaj rytmicznie. Cel to adaptacja metaboliczna, nie maksymalna siła. Nawodnienie kluczowe.',
+        trainerNoteIsolation:   '🏃 WYTRZYMAŁOŚĆ: Minimalne przerwy między ćwiczeniami — obwód gdy możliwe. Mięśnie muszą tolerować zakwasy i kontynuować pracę.',
       };
+
     case 'general_fitness':
     default:
       return {
-        setsCompound: 3 + levelMod,
-        setsIsolation: 3,
-        repsCompound: level === 'beginner' ? '10-12' : '8-12',
-        repsIsolation: '12-15',
-        restCompound: 90,
-        restIsolation: 60,
-        repsCore: '15-20',
-        setsCore: 3,
-        tempoNote: 'Kontrolowane tempo, pełen zakres ruchu. Skup się na technice — ciężar jest wtórny.',
+        setsCompoundPrimary:    isBeg ? 3 : isAdv ? 4 : 3,
+        repsCompoundPrimary:    isBeg ? '10-12' : '8-12',
+        restCompoundPrimary:    90,
+        setsCompoundSecondary:  3,
+        repsCompoundSecondary:  '10-15',
+        restCompoundSecondary:  75,
+        setsIsolation:          3,
+        repsIsolation:          '12-15',
+        restIsolation:          60,
+        setsCore:               3,
+        repsCore:               '15-20',
+        trainerNoteCompound:    '⚡ SPRAWNOŚĆ: Technika ponad ciężar — zawsze. Pełen zakres ruchu. Stopniowo zwiększaj obciążenie gdy ćwiczenie staje się komfortowe.',
+        trainerNoteIsolation:   '⚡ SPRAWNOŚĆ: Skup się na czuciu mięśnia, nie na poruszaniu ciężaru. Kontrolowane tempo w obie strony.',
       };
   }
 }
 
 // ─── Definicje podziałów treningowych ─────────────────────────────────────────
+// Każdy split jest zaprojektowany przez trenera z uwzględnieniem:
+// - Minimalnego czasu regeneracji między sesjami tej samej partii
+// - Balans między objętością a częstotliwością
+// - Synergia mięśni (mięśnie pomocnicze z ćwiczeń compound)
 
-function getSplit(style: string, daysPerWeek: number, _level: FitnessLevel): SplitDay[] {
+function getSplit(style: string, daysPerWeek: number, level: FitnessLevel): SplitDay[] {
 
-  // FULL BODY — dla każdego poziomu, szczególnie skuteczny dla początkujących
+  // ── FULL BODY ──────────────────────────────────────────────────────────────
+  // Optymalne dla: początkujących i średniozaawansowanych
+  // Każda partia 2–3x/tydzień = wysoka częstotliwość = szybsza nauka techniki
+  // Warianty A/B/C rotują ćwiczenia dla różnorodności bodźca
   if (style === 'full_body') {
     const variations: SplitDay[] = [
       {
-        label: 'Full Body A (Nacisk: Pchanie)',
+        label: 'Full Body A — Quad & Push Dominant',
+        sessionType: 'mixed',
         muscles: ['Klatka piersiowa', 'Plecy', 'Nogi', 'Barki', 'Triceps', 'Brzuch'],
         primaryMuscles: ['Klatka piersiowa', 'Nogi', 'Plecy'],
         secondaryMuscles: ['Barki', 'Triceps', 'Brzuch'],
       },
       {
-        label: 'Full Body B (Nacisk: Ciągnięcie)',
+        label: 'Full Body B — Hip & Pull Dominant',
+        sessionType: 'mixed',
         muscles: ['Plecy', 'Nogi', 'Klatka piersiowa', 'Biceps', 'Barki', 'Brzuch'],
         primaryMuscles: ['Plecy', 'Nogi', 'Klatka piersiowa'],
         secondaryMuscles: ['Biceps', 'Barki', 'Brzuch'],
       },
       {
-        label: 'Full Body C (Nacisk: Nogi)',
-        muscles: ['Nogi', 'Plecy', 'Klatka piersiowa', 'Barki', 'Brzuch'],
-        primaryMuscles: ['Nogi', 'Plecy', 'Klatka piersiowa'],
-        secondaryMuscles: ['Barki', 'Brzuch'],
+        label: 'Full Body C — Hinge & Shoulder Dominant',
+        sessionType: 'mixed',
+        muscles: ['Nogi', 'Barki', 'Plecy', 'Klatka piersiowa', 'Brzuch'],
+        primaryMuscles: ['Nogi', 'Barki', 'Plecy'],
+        secondaryMuscles: ['Klatka piersiowa', 'Brzuch'],
       },
     ];
     return Array.from({ length: daysPerWeek }, (_, i) => variations[i % variations.length]);
   }
 
-  // UPPER / LOWER — dobry dla 4 dni, świetna częstotliwość każdej partii
+  // ── UPPER / LOWER ──────────────────────────────────────────────────────────
+  // Optymalne dla: 4 dni, świetna częstotliwość 2x/partię
+  // Upper A: nacisk na pchanie (bench press dominant)
+  // Upper B: nacisk na ciągnięcie (row dominant)
+  // Lower A: quad dominant (squat pattern)
+  // Lower B: hip dominant (hinge pattern)
   if (style === 'upper_lower') {
     const upper_A: SplitDay = {
-      label: 'Góra ciała A (Pchanie)',
+      label: 'Góra A — Push Dominant (Klatka, Barki, Triceps)',
+      sessionType: 'mixed',
       muscles: ['Klatka piersiowa', 'Barki', 'Triceps', 'Plecy'],
       primaryMuscles: ['Klatka piersiowa', 'Barki'],
       secondaryMuscles: ['Triceps', 'Plecy'],
     };
     const upper_B: SplitDay = {
-      label: 'Góra ciała B (Ciągnięcie)',
+      label: 'Góra B — Pull Dominant (Plecy, Biceps)',
+      sessionType: 'mixed',
       muscles: ['Plecy', 'Biceps', 'Barki', 'Klatka piersiowa'],
       primaryMuscles: ['Plecy', 'Biceps'],
       secondaryMuscles: ['Barki', 'Klatka piersiowa'],
     };
     const lower_A: SplitDay = {
-      label: 'Dół ciała A (Quad Dominant)',
+      label: 'Dół A — Quad Dominant (Czworogłowe, Pośladki)',
+      sessionType: 'mixed',
       muscles: ['Nogi', 'Brzuch'],
       primaryMuscles: ['Nogi'],
       secondaryMuscles: ['Brzuch'],
+      avoidExerciseTypes: ['hip_hinge'],
     };
     const lower_B: SplitDay = {
-      label: 'Dół ciała B (Hip Dominant)',
+      label: 'Dół B — Hip Dominant (Dwugłowe, Pośladki)',
+      sessionType: 'mixed',
       muscles: ['Nogi', 'Brzuch'],
       primaryMuscles: ['Nogi'],
       secondaryMuscles: ['Brzuch'],
     };
+
+    if (daysPerWeek === 2) return [upper_A, lower_A];
+    if (daysPerWeek === 3) return [upper_A, lower_A, upper_B];
     const pattern = [upper_A, lower_A, upper_B, lower_B];
     return Array.from({ length: daysPerWeek }, (_, i) => pattern[i % pattern.length]);
   }
 
-  // PUSH / PULL / LEGS — klasyk dla 3-6 dni, świetna specjalizacja
+  // ── PUSH / PULL / LEGS ─────────────────────────────────────────────────────
+  // Optymalne dla: 3–6 dni, dobra specjalizacja
+  // Klasyczny split z naturalną synergia mięśni
+  // Przy 6 dniach: PPL PPL (każda partia 2x/tydzień)
   if (style === 'push_pull_legs') {
     const push: SplitDay = {
       label: 'Push — Pchanie (Klatka, Barki, Triceps)',
+      sessionType: 'mixed',
       muscles: ['Klatka piersiowa', 'Barki', 'Triceps'],
       primaryMuscles: ['Klatka piersiowa', 'Barki'],
       secondaryMuscles: ['Triceps'],
     };
     const pull: SplitDay = {
-      label: 'Pull — Ciągnięcie (Plecy, Biceps)',
+      label: 'Pull — Ciągnięcie (Plecy, Biceps, Tylny Bark)',
+      sessionType: 'mixed',
       muscles: ['Plecy', 'Biceps', 'Barki'],
       primaryMuscles: ['Plecy', 'Biceps'],
       secondaryMuscles: ['Barki'],
     };
     const legs: SplitDay = {
-      label: 'Legs — Nogi (+ Brzuch)',
+      label: 'Legs — Nogi (Czworogłowe, Pośladki, Dwugłowe, Łydki)',
+      sessionType: 'mixed',
       muscles: ['Nogi', 'Brzuch'],
       primaryMuscles: ['Nogi'],
       secondaryMuscles: ['Brzuch'],
     };
     const pattern = [push, pull, legs];
-    // Dla 6 dni: PPL PPL, dla 5: PPL PP, dla 4: PPL P
     return Array.from({ length: daysPerWeek }, (_, i) => pattern[i % pattern.length]);
   }
 
-  // BRO SPLIT — jedno partie na sesję, wysoka izolacja, popularna
+  // ── BRO SPLIT ──────────────────────────────────────────────────────────────
+  // Optymalne dla: izolacja i wysoka objętość per partię, 5 dni
+  // Każda partia 1x/tydzień = duża objętość na sesję
   if (style === 'bro_split') {
     const days: SplitDay[] = [
       {
-        label: 'Klatka piersiowa',
+        label: 'Klatka piersiowa (+ Triceps pomocniczo)',
+        sessionType: level === 'advanced' ? 'hypertrophy' : 'mixed',
         muscles: ['Klatka piersiowa', 'Triceps'],
         primaryMuscles: ['Klatka piersiowa'],
         secondaryMuscles: ['Triceps'],
       },
       {
-        label: 'Plecy',
+        label: 'Plecy (+ Biceps pomocniczo)',
+        sessionType: level === 'advanced' ? 'hypertrophy' : 'mixed',
         muscles: ['Plecy', 'Biceps'],
         primaryMuscles: ['Plecy'],
         secondaryMuscles: ['Biceps'],
       },
       {
-        label: 'Nogi',
+        label: 'Nogi — kompletny trening dolnych partii',
+        sessionType: level === 'advanced' ? 'hypertrophy' : 'mixed',
         muscles: ['Nogi', 'Brzuch'],
         primaryMuscles: ['Nogi'],
         secondaryMuscles: ['Brzuch'],
       },
       {
-        label: 'Barki',
+        label: 'Barki (+ Triceps uzupełniająco)',
+        sessionType: level === 'advanced' ? 'hypertrophy' : 'mixed',
         muscles: ['Barki', 'Triceps'],
         primaryMuscles: ['Barki'],
         secondaryMuscles: ['Triceps'],
       },
       {
-        label: 'Ramiona',
+        label: 'Ramiona — Biceps & Triceps (+ Core)',
+        sessionType: level === 'advanced' ? 'hypertrophy' : 'mixed',
         muscles: ['Biceps', 'Triceps', 'Brzuch'],
         primaryMuscles: ['Biceps', 'Triceps'],
         secondaryMuscles: ['Brzuch'],
@@ -310,34 +525,41 @@ function getSplit(style: string, daysPerWeek: number, _level: FitnessLevel): Spl
     return Array.from({ length: daysPerWeek }, (_, i) => days[i % days.length]);
   }
 
-  // FBL (Frequency Based) — częste treningi każdej partii
+  // ── FBL SPLIT (Frequency-Based) ────────────────────────────────────────────
+  // Optymalne dla: zaawansowani, 5+ dni, wymagają wysokiej częstotliwości
+  // Miks: sesje siłowe + hipertroficzne dla tej samej partii w tygodniu
   const fbl: SplitDay[] = [
     {
-      label: 'Klatka & Triceps (Siłowy)',
+      label: 'Klatka & Triceps — Siłowy (compound focused)',
+      sessionType: 'strength',
       muscles: ['Klatka piersiowa', 'Triceps', 'Brzuch'],
       primaryMuscles: ['Klatka piersiowa'],
       secondaryMuscles: ['Triceps', 'Brzuch'],
     },
     {
-      label: 'Plecy & Biceps (Siłowy)',
+      label: 'Plecy & Biceps — Siłowy (vertical + horizontal pull)',
+      sessionType: 'strength',
       muscles: ['Plecy', 'Biceps'],
       primaryMuscles: ['Plecy'],
       secondaryMuscles: ['Biceps'],
     },
     {
-      label: 'Nogi & Barki',
+      label: 'Nogi & Barki — Kompletny',
+      sessionType: 'mixed',
       muscles: ['Nogi', 'Barki', 'Brzuch'],
       primaryMuscles: ['Nogi', 'Barki'],
       secondaryMuscles: ['Brzuch'],
     },
     {
-      label: 'Klatka & Plecy (Hipertrofia)',
+      label: 'Klatka & Plecy — Hipertroficzny (pump session)',
+      sessionType: 'hypertrophy',
       muscles: ['Klatka piersiowa', 'Plecy', 'Brzuch'],
       primaryMuscles: ['Klatka piersiowa', 'Plecy'],
       secondaryMuscles: ['Brzuch'],
     },
     {
-      label: 'Ramiona & Core',
+      label: 'Ramiona & Core — Izolacja (specialization)',
+      sessionType: 'hypertrophy',
       muscles: ['Biceps', 'Triceps', 'Barki', 'Brzuch'],
       primaryMuscles: ['Biceps', 'Triceps', 'Barki'],
       secondaryMuscles: ['Brzuch'],
@@ -347,247 +569,334 @@ function getSplit(style: string, daysPerWeek: number, _level: FitnessLevel): Spl
 }
 
 // ─── Optymalny rozkład dni w tygodniu ────────────────────────────────────────
+// Zasada: minimum 1 dzień odpoczynku między ciężkimi sesjami tej samej partii
 
 function assignDayIndices(daysPerWeek: number): number[] {
-  // Zgodnie z zasadą: min. 1 dzień odpoczynku między ciężkimi sesjami
   const schedules: Record<number, number[]> = {
-    2: [1, 4],           // Wt, Pt — maks. odpoczynek
-    3: [0, 2, 4],        // Pn, Śr, Pt — klasyka
-    4: [0, 1, 3, 4],     // Pn, Wt, Cz, Pt — 2+2
-    5: [0, 1, 2, 3, 4],  // Pn-Pt
-    6: [0, 1, 2, 3, 4, 5], // Pn-Sb
+    2: [1, 4],              // Wt, Pt — max odpoczynek między sesjami
+    3: [0, 2, 4],           // Pn, Śr, Pt — klasyka 3×/tydzień
+    4: [0, 1, 3, 4],        // Pn, Wt, Cz, Pt — 2 dni + odpoczynek + 2 dni
+    5: [0, 1, 2, 4, 5],     // Pn-Śr + Pt-Sb — środa = przełom
+    6: [0, 1, 2, 3, 4, 5],  // Pn-Sb
     7: [0, 1, 2, 3, 4, 5, 6],
   };
   return schedules[daysPerWeek] || schedules[3];
 }
 
-// ─── Generowanie rozgrzewki dopasowanej do dnia ──────────────────────────────
+// ─── Specyficzne rozgrzewki dla każdej partii ────────────────────────────────
+// Profesjonalna rozgrzewka aktywuje mięśnie, poprawia zakres ruchu i zapobiega kontuzjom
 
 function buildWarmup(splitDay: SplitDay, dayIndex: number): Exercise {
   const primaryMuscle = splitDay.primaryMuscles[0];
 
-  const warmupNotes: Partial<Record<MuscleGroup, string>> = {
-    'Klatka piersiowa': '5 min bieżnia lub rower + 10 krążeń ramion + 15 pompek z masą ciała (50% intensywności)',
-    'Plecy': '5 min rower + 10 krążeń ramion + 15 powtórzeń ściągania gumy oporowej + mobilizacja klatki piersiowej',
-    'Nogi': '5 min rower lub marsz + 15 przysiadów BW + 10 wykroków BW + mobilizacja bioder i kostek',
-    'Barki': '5 min lekkie cardio + rotacje ramion + 15 powtórzeń face pulls z gumą + krążenia szyi',
-    'Biceps': '5 min cardio + rozgrzewkowe serie z 30% ciężaru docelowego + rozciąganie przedramion',
-    'Triceps': '5 min cardio + pompki z masą ciała + rozciąganie tricepsa przez głowę',
-    'Brzuch': '5 min cardio + 20 sek plank x2 + 15 skrętosklonów bez obciążenia',
+  const warmupProtocols: Partial<Record<MuscleGroup, string>> = {
+    'Klatka piersiowa':
+      '1) 5 min rower/marsz w miejscu | 2) 15× rotacje ramion w obie strony | 3) 10× Arm Cross (krzyżowanie rąk przed klatką) | 4) 20× pompki z masą ciała (60% tempa) | 5) Rozciąganie klatki przy ścianie 30 sek/stronę. Pierwsze serie każdego ćwiczenia: 50% ciężaru docelowego × 15 powt.',
+    'Plecy':
+      '1) 5 min rower | 2) 10× krążenia ramion (duże, pełne) | 3) 15× band pull-apart z gumą | 4) Cat-Cow 10 cykli (mobilizacja kręgosłupa) | 5) Rotacje piersiowe 10/stronę. Pierwsze serie: 50% ciężaru × 12 powt.',
+    'Nogi':
+      '1) 5 min rower lub marsz | 2) 20× przysiad BW (pełny zakres, powolny) | 3) 10× wykroków w miejscu | 4) 10× hip hinge BW | 5) Mobilizacja kostki (krążenia) + mobilizacja bioder (90/90 stretch). Pierwsze serie: 50% ciężaru × 10 powt.',
+    'Barki':
+      '1) 5 min lekkie cardio | 2) 15× rotacje zewnętrzne z gumą (stożek rotatorów) | 3) 10× band pull-apart | 4) 15× Face Pulls z gumą | 5) Krążenia ramion + poprzeczne rozciąganie barku. Pierwsze serie: 50% ciężaru × 15 powt.',
+    'Biceps':
+      '1) 5 min cardio | 2) Rozciąganie przedramion (do przodu i tyłu) 30 sek | 3) 15× uginania z gumą | 4) Rozgrzewkowe serie z 40% ciężaru docelowego.',
+    'Triceps':
+      '1) 5 min cardio | 2) 15× pompki BW | 3) Rozciąganie tricepsa przez głowę 30 sek | 4) Rozgrzewkowe serie pushdown z lekkim ciężarem.',
+    'Brzuch':
+      '1) 5 min cardio | 2) 20 sek plank × 2 | 3) 15× pełne skłony bez obciążenia | 4) Dead Bug 10/stronę.',
   };
 
   return {
     id: `warmup-${dayIndex}-${Date.now()}`,
-    name: '🔥 Rozgrzewka ogólna i specyficzna',
+    name: '🔥 Rozgrzewka specyficzna',
     muscleGroup: 'Cardio',
     difficulty: 'Początkujący',
-    description: 'Przygotowanie układu krążenia, stawów i mięśni do głównej pracy. Zmniejsza ryzyko kontuzji o ~50%.',
+    description: 'Aktywacja układu nerwowo-mięśniowego, rozgrzanie stawów i przygotowanie ciała do wysiłku. Dobrze przeprowadzona rozgrzewka zwiększa siłę o 5–10% i redukuje ryzyko kontuzji.',
     sets: 1,
-    reps: '10-15 min',
+    reps: '10–12 min',
     restTime: 0,
-    notes: warmupNotes[primaryMuscle] || '5 min cardio o niskiej intensywności + mobilizacja stawów pracujących podczas treningu',
+    notes: warmupProtocols[primaryMuscle] || '5 min cardio o niskiej intensywności + mobilizacja wszystkich stawów zaangażowanych w trening + 2–3 serie rozgrzewkowe z 50% ciężaru docelowego.',
     requiredEquipment: ['bodyweight'],
   };
 }
 
-// ─── Budowanie jednego dnia treningowego ─────────────────────────────────────
+// ─── Główna logika budowania sesji treningowej ────────────────────────────────
+// Kolejność ćwiczeń wg zasad biomechanicznych:
+// 1. Rozgrzewka
+// 2. Compound primary (największy CNS demand — gdy jesteś najświeższy)
+// 3. Compound secondary (mniejsze CNS demand)
+// 4. Isolation primary (izolacje gdy mięśnie już rozgrzane)
+// 5. Isolation secondary / finishery
+// 6. Core (na końcu — nie zmęczony przed compound ruchami)
+// 7. Cardio (po siłówce — glikogen wyczerpany → więcej tłuszczu)
 
 function buildWorkoutDay(
   splitDay: SplitDay,
   dayIndex: number,
   prefs: GeneratorPreferences,
   availableExercises: Exercise[],
-  usedCompoundIds: Set<string>,
+  usedExerciseIds: Set<string>,
+  excludedIds: Set<string> = new Set(),
 ): WorkoutDay {
   const { goal, fitnessLevel, sessionDuration, includeCardio, includeWarmup, focusMuscles } = prefs;
-  const volumeParams = getVolumeParams(goal, fitnessLevel);
+  const vp = getVolumeParams(goal, fitnessLevel);
+  const isBeginner = fitnessLevel === 'beginner';
+  const isAdvanced = fitnessLevel === 'advanced';
 
-  // Szacowanie liczby ćwiczeń na sesję na podstawie czasu
-  const warmupMinutes = includeWarmup ? 12 : 0;
-  const cardioMinutes = includeCardio ? (goal === 'fat_loss' ? 20 : 15) : 0;
-  const cooldownMinutes = 5;
-  const workMinutes = sessionDuration - warmupMinutes - cardioMinutes - cooldownMinutes;
+  // Budżet czasowy sesji
+  const warmupMin = includeWarmup ? 12 : 0;
+  const cardioMin = includeCardio ? (goal === 'fat_loss' ? 20 : goal === 'endurance' ? 30 : 15) : 0;
+  const cooldownMin = 5;
+  const workMin = Math.max(20, sessionDuration - warmupMin - cardioMin - cooldownMin);
 
-  // Czas na jedno ćwiczenie (serie × czas serii + przerwy)
-  const minutesPerCompound = goal === 'strength'
-    ? (volumeParams.setsCompound * 1.5) + (volumeParams.restCompound / 60 * (volumeParams.setsCompound - 1))
-    : (volumeParams.setsCompound * 1.2) + (volumeParams.restCompound / 60 * (volumeParams.setsCompound - 1));
-  const minutesPerIsolation = (volumeParams.setsIsolation * 1.0) + (volumeParams.restIsolation / 60 * (volumeParams.setsIsolation - 1));
+  // Szacowany czas na ćwiczenie
+  const minPerCompoundPrimary =
+    (vp.setsCompoundPrimary * 1.5) +
+    (vp.restCompoundPrimary / 60 * (vp.setsCompoundPrimary - 1));
+  const minPerCompoundSecondary =
+    (vp.setsCompoundSecondary * 1.2) +
+    (vp.restCompoundSecondary / 60 * (vp.setsCompoundSecondary - 1));
+  const minPerIsolation =
+    (vp.setsIsolation * 1.0) +
+    (vp.restIsolation / 60 * (vp.setsIsolation - 1));
 
-  // Ustal liczbę ćwiczeń każdego rodzaju
-  let primaryCount = splitDay.primaryMuscles.length <= 2 ? 2 : 1; // compound na każdą główną partię
-  let secondaryCount = splitDay.secondaryMuscles.length;
+  // Enriched pool ćwiczeń
+  const enrichedPool = availableExercises.map(classifyExercise);
 
-  // Dostosuj do czasu
-  const estimatedTime = primaryCount * minutesPerCompound + secondaryCount * minutesPerIsolation;
-  if (estimatedTime > workMinutes + 10) {
-    secondaryCount = Math.max(1, secondaryCount - 1);
-  }
+  // Helper: pobierz pule dla mięśnia z wykluczeniami
+  const getPool = (muscle: MuscleGroup, roles: ExerciseRole[]) => {
+    const all = enrichedPool.filter(e =>
+      e.muscleGroup === muscle &&
+      roles.includes(e.role) &&
+      !usedExerciseIds.has(e.id)
+    );
+    const fresh = all.filter(e => !excludedIds.has(e.id));
+    return fresh.length >= 2 ? fresh : all; // preferuj świeże, fallback do wszystkich
+  };
 
   const exercises: Exercise[] = [];
 
-  // 1. ROZGRZEWKA
+  // ── 1. ROZGRZEWKA ────────────────────────────────────────────────────────
   if (includeWarmup) {
     exercises.push(buildWarmup(splitDay, dayIndex));
   }
 
-  // 2. GŁÓWNE ĆWICZENIA COMPOUND (primaries)
-  const enrichedAvailable = availableExercises.map(classifyExercise);
+  let usedTime = 0;
+
+  // ── 2. COMPOUND PRIMARY ──────────────────────────────────────────────────
+  // Zasada profesjonalnego trenera: zacznij od najtrudniejszego ćwiczenia
+  // gdy CNS jest wypoczęty. Nigdy nie zaczynaj od izolacji.
 
   for (const muscle of splitDay.primaryMuscles) {
-    const isFocus = focusMuscles.includes(muscle);
-    const compoundsForMuscle = enrichedAvailable
-      .filter(e =>
-        e.muscleGroup === muscle &&
-        (e.role === 'compound_primary' || e.role === 'compound_secondary') &&
-        !usedCompoundIds.has(e.id)
-      )
-      .sort((a, b) => b.priority - a.priority); // wyższy priorytet pierwszy
+    if (usedTime > workMin - 10) break; // zostaw margines
 
-    // Zaawansowani dostają compound primary, beginners mogą dostać secondary
-    const preferredTier = fitnessLevel === 'beginner' ? 'compound_secondary' : 'compound_primary';
-    const primary = compoundsForMuscle.find(e => e.role === preferredTier)
-      || compoundsForMuscle.find(e => e.role === 'compound_primary')
-      || compoundsForMuscle.find(e => e.role === 'compound_secondary')
-      || enrichedAvailable.filter(e => e.muscleGroup === muscle && !usedCompoundIds.has(e.id))[0];
+    const isFocus = focusMuscles.includes(muscle);
+    const compoundPool = getPool(muscle, ['compound_primary', 'compound_secondary']);
+    const shuffled = weightedShuffle(compoundPool);
+
+    // Dla początkujących — prefer compound_secondary (bezpieczniejsze)
+    // Dla zaawansowanych — prefer compound_primary (większy bodziec)
+    const preferredRole: ExerciseRole = isBeginner ? 'compound_secondary' : 'compound_primary';
+
+    const primary =
+      shuffled.find(e => e.role === preferredRole) ||
+      shuffled.find(e => e.role === 'compound_primary') ||
+      shuffled.find(e => e.role === 'compound_secondary') ||
+      shuffled[0];
 
     if (primary) {
-      const params = isFocus
-        ? { sets: volumeParams.setsCompound + 1, reps: volumeParams.repsCompound, restTime: volumeParams.restCompound }
-        : { sets: volumeParams.setsCompound, reps: volumeParams.repsCompound, restTime: volumeParams.restCompound };
+      const sets = isFocus
+        ? vp.setsCompoundPrimary + 1
+        : vp.setsCompoundPrimary;
 
+      const notePrefix = primary.notes ? `${primary.notes}\n\n` : '';
       exercises.push({
         ...primary,
-        id: `${primary.id}-d${dayIndex}-${Date.now()}-p`,
-        ...params,
-        notes: primary.notes
-          ? `${primary.notes}\n\n💡 TRENER: ${volumeParams.tempoNote}`
-          : `💡 TRENER: ${volumeParams.tempoNote}`,
+        id: `${primary.id}-d${dayIndex}-${Date.now()}-cp`,
+        sets,
+        reps: vp.repsCompoundPrimary,
+        restTime: vp.restCompoundPrimary,
+        notes: `${notePrefix}${vp.trainerNoteCompound}`,
       });
-      usedCompoundIds.add(primary.id);
-    }
+      usedExerciseIds.add(primary.id);
+      usedTime += minPerCompoundPrimary;
 
-    // Drugie ćwiczenie compound dla FOCUS muscles lub zaawansowanych przy bro splicie
-    if (isFocus || (fitnessLevel === 'advanced' && splitDay.primaryMuscles.length === 1)) {
-      const secondary = compoundsForMuscle.find(
-        e => e.id !== (primary?.id || '') && !usedCompoundIds.has(e.id)
-      );
-      if (secondary) {
-        exercises.push({
-          ...secondary,
-          id: `${secondary.id}-d${dayIndex}-${Date.now()}-p2`,
-          sets: volumeParams.setsCompound,
-          reps: volumeParams.repsCompound,
-          restTime: volumeParams.restCompound,
-        });
-        usedCompoundIds.add(secondary.id);
+      // Dla zaawansowanych / focus muscles: drugie ćwiczenie compound (inny wzorzec ruchu)
+      // np. po bench → dips lub po squat → BSS
+      if ((isFocus || (isAdvanced && splitDay.primaryMuscles.length === 1)) && usedTime + minPerCompoundSecondary < workMin) {
+        const remaining = shuffled.filter(e => !usedExerciseIds.has(e.id));
+        const secondary = remaining[0];
+        if (secondary) {
+          exercises.push({
+            ...secondary,
+            id: `${secondary.id}-d${dayIndex}-${Date.now()}-cs2`,
+            sets: vp.setsCompoundSecondary,
+            reps: vp.repsCompoundSecondary,
+            restTime: vp.restCompoundSecondary,
+            notes: secondary.notes || '',
+          });
+          usedExerciseIds.add(secondary.id);
+          usedTime += minPerCompoundSecondary;
+        }
       }
     }
   }
 
-  // 3. ĆWICZENIA IZOLOWANE (secondaries)
-  // usedInDay intentionally not used — tracking via name matching below
+  // ── 3. COMPOUND SECONDARY dla mięśni secondary ───────────────────────────
+  // np. przy Push: po bench i OHP → triceps compound (dips lub CG bench)
 
   for (const muscle of splitDay.secondaryMuscles) {
-    if (muscle === 'Brzuch') continue; // core dodamy osobno na końcu
+    if (muscle === 'Brzuch') continue;
+    if (usedTime > workMin - 8) break;
 
-    const isolations = enrichedAvailable
-      .filter(e =>
-        e.muscleGroup === muscle &&
-        e.role === 'isolation' &&
-        !exercises.some(ex => ex.name === e.name)
-      )
-      .sort(() => Math.random() - 0.5);
+    const isFocus = focusMuscles.includes(muscle);
+    const compoundPool = getPool(muscle, ['compound_primary', 'compound_secondary']);
+    const shuffledSecondary = weightedShuffle(compoundPool);
+    const secondaryCompound = shuffledSecondary[0];
 
-    // Wybierz 1-2 ćwiczenia izolowane dla partii pomocniczej
-    const count = focusMuscles.includes(muscle) ? 2 : 1;
-    for (let i = 0; i < Math.min(count, isolations.length); i++) {
+    if (secondaryCompound) {
       exercises.push({
-        ...isolations[i],
-        id: `${isolations[i].id}-d${dayIndex}-${Date.now()}-iso-${i}`,
-        sets: volumeParams.setsIsolation,
-        reps: volumeParams.repsIsolation,
-        restTime: volumeParams.restIsolation,
+        ...secondaryCompound,
+        id: `${secondaryCompound.id}-d${dayIndex}-${Date.now()}-sec-c`,
+        sets: vp.setsCompoundSecondary,
+        reps: vp.repsCompoundSecondary,
+        restTime: vp.restCompoundSecondary,
+        notes: secondaryCompound.notes || '',
       });
-    }
+      usedExerciseIds.add(secondaryCompound.id);
+      usedTime += minPerCompoundSecondary;
 
-    // Fallback: jeśli brak izolacji, użyj compound secondary
-    if (isolations.length === 0) {
-      const fallback = enrichedAvailable
-        .filter(e => e.muscleGroup === muscle && !exercises.some(ex => ex.name === e.name))
-        .sort((a, b) => b.priority - a.priority)[0];
-      if (fallback) {
-        exercises.push({
-          ...fallback,
-          id: `${fallback.id}-d${dayIndex}-${Date.now()}-fb`,
-          sets: volumeParams.setsIsolation,
-          reps: volumeParams.repsIsolation,
-          restTime: volumeParams.restIsolation,
-        });
+      // Focus muscle dostaje extra izolację
+      if (isFocus && usedTime + minPerIsolation < workMin) {
+        const isolPool = getPool(muscle, ['isolation_primary', 'isolation_secondary']);
+        const iso = shuffle(isolPool)[0];
+        if (iso) {
+          exercises.push({
+            ...iso,
+            id: `${iso.id}-d${dayIndex}-${Date.now()}-sec-iso`,
+            sets: vp.setsIsolation,
+            reps: vp.repsIsolation,
+            restTime: vp.restIsolation,
+            notes: `${iso.notes || ''}\n\n${vp.trainerNoteIsolation}`,
+          });
+          usedExerciseIds.add(iso.id);
+          usedTime += minPerIsolation;
+        }
       }
     }
   }
 
-  // 4. ĆWICZENIA CORE (brzuch) — na końcu głównej sesji przed cardio
-  const hasCoreInPlan = splitDay.muscles.includes('Brzuch');
-  const shouldAddCore = hasCoreInPlan ||
-    (goal === 'general_fitness' && Math.random() > 0.5) ||
-    goal === 'fat_loss';
+  // ── 4. IZOLACJE dla mięśni primary ───────────────────────────────────────
+  // Izolacje PO compound — mięśnie są rozgrzane, można skupić się na czuciu
 
-  if (shouldAddCore && fitnessLevel !== 'beginner') {
-    const coreExercises = enrichedAvailable
-      .filter(e => e.muscleGroup === 'Brzuch' && !exercises.some(ex => ex.name === e.name))
-      .sort(() => Math.random() - 0.5);
+  for (const muscle of splitDay.primaryMuscles) {
+    if (usedTime > workMin - 6) break;
 
-    const coreCount = fitnessLevel === 'advanced' ? 2 : 1;
-    for (let i = 0; i < Math.min(coreCount, coreExercises.length); i++) {
+    const isFocus = focusMuscles.includes(muscle);
+    const isolPool = getPool(muscle, ['isolation_primary', 'isolation_secondary']);
+    const shuffledIso = shuffle(isolPool);
+
+    const isoCount = isFocus ? (isAdvanced ? 3 : 2) : 1;
+
+    for (let i = 0; i < Math.min(isoCount, shuffledIso.length); i++) {
+      if (usedTime + minPerIsolation > workMin) break;
+      const iso = shuffledIso[i];
+      if (!iso || usedExerciseIds.has(iso.id)) continue;
+
       exercises.push({
-        ...coreExercises[i],
-        id: `${coreExercises[i].id}-d${dayIndex}-${Date.now()}-core-${i}`,
-        sets: volumeParams.setsCore,
-        reps: volumeParams.repsCore,
-        restTime: 45,
-        notes: coreExercises[i].notes || 'Napnij brzuch jak przed uderzeniem przez cały ruch.',
+        ...iso,
+        id: `${iso.id}-d${dayIndex}-${Date.now()}-iso-${i}`,
+        sets: vp.setsIsolation,
+        reps: vp.repsIsolation,
+        restTime: vp.restIsolation,
+        notes: `${iso.notes || ''}\n\n${vp.trainerNoteIsolation}`,
       });
+      usedExerciseIds.add(iso.id);
+      usedTime += minPerIsolation;
     }
-  } else if (shouldAddCore && fitnessLevel === 'beginner') {
-    // Dla początkujących: prosty plank
-    const plank = enrichedAvailable.find(e => e.name === 'Plank (deska)');
-    if (plank && !exercises.some(ex => ex.name === plank.name)) {
+  }
+
+  // ── 5. CORE ───────────────────────────────────────────────────────────────
+  // Core ZAWSZE na końcu siłowej części treningu.
+  // Powód: zmęczony core = niestabilny kręgosłup przy compound ruchach → kontuzja
+
+  const hasCoreDay = splitDay.muscles.includes('Brzuch');
+  const shouldAddCore =
+    hasCoreDay ||
+    goal === 'fat_loss' ||
+    (goal === 'general_fitness' && Math.random() > 0.3);
+
+  if (shouldAddCore && usedTime + 8 < sessionDuration) {
+    const corePool = enrichedPool.filter(e =>
+      e.muscleGroup === 'Brzuch' &&
+      !exercises.some(ex => ex.name === e.name)
+    );
+    const freshCore = corePool.filter(e => !excludedIds.has(e.id));
+    const coreList = shuffle(freshCore.length > 0 ? freshCore : corePool);
+
+    // Początkujący: 1 ćwiczenie (plank lub dead bug)
+    // Średniozaawansowany: 2 ćwiczenia (statyczne + dynamiczne)
+    // Zaawansowany: 2–3 ćwiczenia (różne płaszczyzny ruchu)
+    const coreCount = isBeginner ? 1 : isAdvanced ? 2 : 2;
+
+    // Priorytet dla początkujących: plank i dead bug (bezpieczne)
+    let coreToAdd = coreList;
+    if (isBeginner) {
+      const safeCores = coreList.filter(e =>
+        ['Plank (deska)', 'Dead Bug', 'Boczny plank (side plank)', 'Hollow Body Hold'].includes(e.name)
+      );
+      if (safeCores.length > 0) coreToAdd = safeCores;
+    }
+
+    for (let i = 0; i < Math.min(coreCount, coreToAdd.length); i++) {
+      const coreEx = coreToAdd[i];
       exercises.push({
-        ...plank,
-        id: `plank-${dayIndex}-${Date.now()}`,
-        sets: 3,
-        reps: '30-45 sek',
+        ...coreEx,
+        id: `${coreEx.id}-d${dayIndex}-${Date.now()}-core-${i}`,
+        sets: vp.setsCore,
+        reps: vp.repsCore,
         restTime: 45,
+        notes: `${coreEx.notes || 'Napnij brzuch jak przed uderzeniem przez cały ruch.'}\n\n🎯 Core trenuj z pełną koncentracją — to fundament każdego ruchu siłowego.`,
       });
     }
   }
 
-  // 5. CARDIO NA KOŃCU (opcjonalne)
+  // ── 6. CARDIO ─────────────────────────────────────────────────────────────
+  // Cardio PO treningu siłowym: glikogen wyczerpany → więcej tłuszczu jako paliwo
+  // Wyjątek: aktywna regeneracja (trucht) może być przed jeśli celem jest wydolność
+
   if (includeCardio) {
     const cardioPool = availableExercises.filter(e => e.muscleGroup === 'Cardio');
-    // Dobierz cardio do celu
     let cardio: Exercise | undefined;
+
     if (goal === 'fat_loss') {
-      cardio = cardioPool.find(e => e.name.includes('HIIT')) || cardioPool[0];
+      // HIIT preferowany — efekt EPOC
+      cardio = cardioPool.find(e => e.name.includes('HIIT') || e.name.includes('interwałowy') || e.name.includes('Tabata'))
+        || cardioPool.find(e => e.name.includes('Battle Ropes'))
+        || shuffle(cardioPool)[0];
     } else if (goal === 'endurance') {
-      cardio = cardioPool.find(e => e.name.includes('Bieg ciągły')) || cardioPool[0];
+      // LISS — bazowy trening tlenowy
+      cardio = cardioPool.find(e => e.name.includes('ciągły') || e.name.includes('Bieg ciągły') || e.name.includes('Ergometr'))
+        || shuffle(cardioPool)[0];
     } else {
-      cardio = cardioPool[Math.floor(Math.random() * cardioPool.length)];
+      // Losowe cardio dla różnorodności
+      cardio = shuffle(cardioPool)[0];
     }
 
     if (cardio) {
-      const cardioDuration = goal === 'fat_loss' ? 20 : goal === 'endurance' ? 35 : 15;
+      const duration = goal === 'fat_loss' ? 20 : goal === 'endurance' ? 30 : 15;
+      const cardioNote =
+        goal === 'fat_loss'
+          ? '🔥 REDUKCJA: Intensywne tempo (75–85% max HR). HIIT: 30 sek praca / 90 sek odpoczynek × 8 rund. Efekt EPOC spala kalorie przez 24h po treningu.'
+          : goal === 'endurance'
+          ? '🏃 WYTRZYMAŁOŚĆ: Umiarkowane tempo (65–70% max HR) — możesz rozmawiać zdaniami. Rozwijasz pojemność tlenową i gęstość mitochondriów.'
+          : '⚡ AKTYWNA REGENERACJA: Umiarkowane tempo, utrzymuje metabolizm i korzystnie wpływa na regenerację mięśni.';
+
       exercises.push({
         ...cardio,
         id: `cardio-${dayIndex}-${Date.now()}`,
-        duration: cardioDuration,
-        notes: goal === 'fat_loss'
-          ? 'Intensywne tempo (75-85% max HR). HIIT: 30 sek sprint / 90 sek marsz × 8.'
-          : goal === 'endurance'
-          ? 'Umiarkowane tempo (65-70% max HR) — możesz rozmawiać. Nie forsuj.'
-          : 'Umiarkowane tempo dla aktywnej regeneracji i poprawy wydolności.',
+        duration,
+        notes: `${cardio.notes || ''}\n\n${cardioNote}`,
       });
     }
   }
@@ -605,61 +914,63 @@ function buildWorkoutDay(
 
 // ─── Metadane i opis planu ─────────────────────────────────────────────────────
 
-function getPlanMeta(prefs: GeneratorPreferences, _totalExercises: number, totalSets: number) {
+function getPlanMeta(prefs: GeneratorPreferences, totalSets: number) {
   const goalLabels: Record<string, string> = {
-    muscle_gain: 'Budowa masy mięśniowej',
-    fat_loss: 'Redukcja tkanki tłuszczowej',
-    strength: 'Siła maksymalna',
-    endurance: 'Wytrzymałość i kondycja',
-    general_fitness: 'Ogólna sprawność fizyczna',
+    muscle_gain:      'Budowa masy mięśniowej',
+    fat_loss:         'Redukcja tkanki tłuszczowej',
+    strength:         'Siła maksymalna',
+    endurance:        'Wytrzymałość i kondycja',
+    general_fitness:  'Ogólna sprawność fizyczna',
   };
   const styleLabels: Record<string, string> = {
-    fbl: 'FBL Split',
-    push_pull_legs: 'Push / Pull / Legs',
-    upper_lower: 'Góra / Dół',
-    full_body: 'Full Body',
-    bro_split: 'Bro Split',
+    fbl:              'FBL Split',
+    push_pull_legs:   'Push / Pull / Legs',
+    upper_lower:      'Góra / Dół',
+    full_body:        'Full Body',
+    bro_split:        'Bro Split',
   };
   const levelLabels: Record<string, string> = {
-    beginner: 'Początkujący',
+    beginner:     'Początkujący',
     intermediate: 'Średniozaawansowany',
-    advanced: 'Zaawansowany',
+    advanced:     'Zaawansowany',
   };
 
   const name = `${goalLabels[prefs.goal]} — ${styleLabels[prefs.trainingStyle]} (${prefs.daysPerWeek}×/tydz.)`;
 
-  // Profesjonalne opisy planów
   const descriptions: Record<TrainingGoal, string> = {
-    muscle_gain: `Plan hipertroficzny zaprojektowany dla maksymalnego wzrostu masy mięśniowej. Objętość ${totalSets} serii/tydzień mieści się w optymalnym oknie hipertrofii (10-20 serii/partię). Zakresy powtórzeń 8-12 przy 70-80% 1RM z progresywnym przeciążeniem jako główny mechanizm wzrostu. Przerwy 75-120 sek. balansują syntezę hormonów anabolicznych z regeneracją. Kluczowe: zwiększaj ciężar o 2.5 kg gdy wykonasz górną granicę zakresu powtórzeń we wszystkich seriach.`,
-    fat_loss: `Plan redukcyjny łączący trening siłowy (zachowanie masy mięśniowej) z deficytem kalorycznym. Wysoka objętość i krótkie przerwy (45-60 sek.) maksymalizują spalanie kalorii i efekt EPOC (podwyższone spalanie przez 24-48h po treningu). Zachowanie mięśni podczas redukcji wymaga minimum 1.6-2.2g białka/kg masy ciała. ${prefs.includeCardio ? 'Cardio po siłówce gdy glikogen jest wyczerpany — więcej tłuszczu jako paliwo.' : ''}`,
-    strength: `Plan siłowy oparty na zasadach periodyzacji liniowej. Zakresy 3-6 powtórzeń przy 85-95% 1RM trenują adaptacje neurologiczne (rekrutacja jednostek motorycznych, synchronizacja). Długie przerwy (3-4 min) są OBOWIĄZKOWE dla pełnej regeneracji CNS — nie skracaj ich. Progresja: +2.5 kg co sesję na ćwiczenia dolne, +1.25 kg na górne gdy nie możesz zrobić min. serii z założonym ciężarem.`,
-    endurance: `Plan wytrzymałościowy budujący pojemność aerobową (VO2max), gęstość mitochondriów i odporność mięśni na zmęczenie. Krótkie przerwy (30-45 sek.) z wysokimi powtórzeniami (15-25) symulują warunki wysiłku długotrwałego. Łączy trening siłowy wytrzymałościowy z sesjami cardio dla kompleksowego efektu. Kluczowe: nawodnienie i węglowodany przed treningiem.`,
-    general_fitness: `Zrównoważony plan dla ogólnej sprawności fizycznej. Łączy ćwiczenia siłowe, cardio i mobilność w optymalnych proporcjach. Kontrolowane tempo i pełen zakres ruchu budują wzorce ruchowe zapobiegające kontuzjom. Idealny punkt startowy lub plan utrzymaniowy dla aktywnych osób. Postęp: gdy wszystkie ćwiczenia są komfortowe — zwiększ ciężar lub objętość (nie jednocześnie!).`,
+    muscle_gain:
+      `Plan hipertroficzny zaprojektowany wg zasad Evidence-Based Training. Objętość ${totalSets} serii/tydzień mieści się w optymalnym oknie hipertrofii (10–20 serii/partię/tydzień wg Krieger, 2010). Zakresy 6–12 powt. przy 70–80% 1RM z mechanic tension i metabolic stress jako głównymi czynnikami wzrostu (Schoenfeld, 2010). Przerwy 90–120 sek balansują między GH/IGF-1 a regeneracją fosfokreatyny.\n\n📋 Kluczowe zasady: progresywne przeciążenie co tydzień (+2.5kg lub +1 powt.), minimum 7h snu, białko 1.6–2.2g/kg BM, surplus kaloryczny 200–300 kcal.`,
+    fat_loss:
+      `Plan redukcyjny łączący maksymalne zachowanie mięśni z deficytem kalorycznym. Wysoka objętość (${totalSets} serii) i krótkie przerwy (45–75 sek) maksymalizują efekt EPOC — podwyższone spalanie przez 24–48h po treningu. Priorytet: zachowanie siły = zachowanie mięśni przy deficycie.\n\n📋 Kluczowe zasady: deficyt max 500 kcal/dzień, białko 2.2–2.4g/kg (wyższe przy redukcji), ${prefs.includeCardio ? 'cardio po siłówce gdy glikogen wyczerpany,' : ''} waga rano na czczo 1×/tydzień.`,
+    strength:
+      `Plan siłowy oparty na liniowej periodyzacji (Texas Method / 5×5 principles). Zakresy 3–6 powt. przy 85–95% 1RM trenują adaptacje neurologiczne: rekrutację jednostek motorycznych, synchronizację i koordinację między mięśniami. Przerwy 3–5 min OBOWIĄZKOWE — fosfokreatyna wymaga 3 min do pełnej resynttezy.\n\n📋 Kluczowe zasady: +2.5kg/sesję na dolne partie, +1.25kg na górne, deload co 4–6 tygodni (redukcja objętości o 40%), sen 8–9h, kreatyna 3–5g/dzień potwierdzona naukowo.`,
+    endurance:
+      `Plan wytrzymałościowy budujący pojemność aerobową (VO2max), gęstość mitochondriów i odporność mięśni na zmęczenie. Wysoka objętość powtórzeń (15–25) z krótkimi przerwami (30–60 sek) symuluje warunki długotrwałego wysiłku. Duże obciążenie całkowite tygodniowe dla adaptacji metabolicznych.\n\n📋 Kluczowe zasady: nawodnienie 2.5–3L/dzień, węglowodany przed treningiem (30–60g), suplement beta-alanina może opóźnić zmęczenie mięśni, periodicznie zwiększaj dystans/czas o max 10%/tydzień.`,
+    general_fitness:
+      `Zrównoważony plan dla ogólnej sprawności — łączy siłę, wytrzymałość i mobilność w optymalnych proporcjach. Idealne jako plan startowy lub utrzymaniowy. Technika i zakres ruchu zawsze priorytetowe nad ciężarem.\n\n📋 Kluczowe zasady: gdy ćwiczenie jest komfortowe przez 2 tygodnie → zwiększ ciężar lub objętość (nigdy jednocześnie), 150 min aktywności/tydzień = minimum WHO dla zdrowia, rozciąganie 10 min po każdym treningu.`,
   };
 
-  // Kalorie: dokładniejsze obliczenie
-  const metPerGoal: Record<string, number> = {
+  // Dokładne obliczenie kalorii (MET × masa × czas)
+  const metValues: Record<string, number> = {
     muscle_gain: 6.5,
-    fat_loss: 8.0,
+    fat_loss: 8.5,
     strength: 5.5,
-    endurance: 7.5,
+    endurance: 8.0,
     general_fitness: 6.0,
   };
-  const avgSessionMinutes = prefs.sessionDuration;
-  const kcalPerSession = Math.round(metPerGoal[prefs.goal] * 75 * (avgSessionMinutes / 60)); // 75 kg avg
+  const kcalPerSession = Math.round(metValues[prefs.goal] * 75 * (prefs.sessionDuration / 60));
   const estimatedCalories = kcalPerSession * prefs.daysPerWeek;
 
   return {
     name,
-    description: `${descriptions[prefs.goal]}\n\n📊 Poziom: ${levelLabels[prefs.fitnessLevel]} | Split: ${styleLabels[prefs.trainingStyle]} | Sesja: ~${prefs.sessionDuration} min`,
+    description: `${descriptions[prefs.goal]}\n\n📊 ${levelLabels[prefs.fitnessLevel]} | ${styleLabels[prefs.trainingStyle]} | ~${prefs.sessionDuration} min/sesję`,
     estimatedCalories,
   };
 }
 
 // ─── GŁÓWNA FUNKCJA GENERATORA ────────────────────────────────────────────────
 
-export function generatePlan(prefs: GeneratorPreferences): GeneratedPlan {
-  // Inicjalizuj wszystkie dni jako dni odpoczynku
+export function generatePlan(prefs: GeneratorPreferences, excludedIds: Set<string> = new Set()): GeneratedPlan {
   const allDays: WorkoutDay[] = Array.from({ length: 7 }, (_, i) => ({
     id: `day-${i}`,
     dayIndex: i,
@@ -669,25 +980,22 @@ export function generatePlan(prefs: GeneratorPreferences): GeneratedPlan {
     color: dayColors[i],
   }));
 
-  // Wyznacz dni treningowe
   const trainingDayIndices = assignDayIndices(prefs.daysPerWeek);
-
-  // Pobierz podział treningowy
   const split = getSplit(prefs.trainingStyle, prefs.daysPerWeek, prefs.fitnessLevel);
 
-  // Filtruj ćwiczenia
+  // Filtruj dostępne ćwiczenia
   let availableExercises = filterByEquipment(exerciseLibrary, prefs.equipmentList);
   availableExercises = filterByLevel(availableExercises, prefs.fitnessLevel);
 
-  // Dla Full Body resetujemy usedCompounds co sesję, dla innych splittów — globalnie
-  // Ale compound primary nigdy nie powtarzamy w tygodniu (za dużo stresu)
-  const globalUsedCompounds = new Set<string>();
+  // Global tracking — każde ćwiczenie compound_primary używane max 1× w tygodniu
+  // (dla splittów innych niż full body)
+  // Wyjątek: przy full body każda sesja ma własną pulę (warianty A/B/C)
+  const globalUsedIds = new Set<string>();
 
   trainingDayIndices.forEach((dayIdx, splitIdx) => {
-    // Full Body: każda sesja może mieć te same compounds (różne warianty A/B/C)
     const usedForThisDay = prefs.trainingStyle === 'full_body'
-      ? new Set<string>()
-      : globalUsedCompounds;
+      ? new Set<string>() // Full body: reset dla każdej sesji
+      : globalUsedIds;    // Inne splity: globalne śledzenie
 
     const workoutDay = buildWorkoutDay(
       split[splitIdx],
@@ -695,28 +1003,32 @@ export function generatePlan(prefs: GeneratorPreferences): GeneratedPlan {
       prefs,
       availableExercises,
       usedForThisDay,
+      excludedIds,
     );
 
+    // Aktualizuj globalny tracker (dla splitów z globalnym śledzeniem)
     if (prefs.trainingStyle !== 'full_body') {
-      // Dodaj użyte ćwiczenia do globalnego setu
       workoutDay.exercises.forEach(e => {
         const baseId = e.id.split('-d')[0];
-        globalUsedCompounds.add(baseId);
+        globalUsedIds.add(baseId);
       });
     }
 
     allDays[dayIdx] = workoutDay;
   });
 
-  // Oblicz statystyki planu
+  // Statystyki
   const totalExercises = allDays.reduce((s, d) =>
-    s + d.exercises.filter(e => e.muscleGroup !== 'Cardio' || e.name !== '🔥 Rozgrzewka ogólna i specyficzna').length, 0
+    s + d.exercises.filter(e =>
+      e.name !== '🔥 Rozgrzewka specyficzna' &&
+      e.muscleGroup !== 'Cardio'
+    ).length, 0
   );
   const totalSets = allDays.reduce((s, d) =>
     s + d.exercises.reduce((ss, e) => ss + (e.sets || 0), 0), 0
   );
 
-  const meta = getPlanMeta(prefs, totalExercises, totalSets);
+  const meta = getPlanMeta(prefs, totalSets);
 
   return {
     id: `plan-${Date.now()}`,
