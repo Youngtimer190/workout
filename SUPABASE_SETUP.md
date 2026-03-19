@@ -1,27 +1,20 @@
-# 🗄️ Instrukcja konfiguracji Supabase dla FitPlaner
+# Supabase Setup — FitPlaner
 
-## 1. Utwórz projekt w Supabase
-
-1. Przejdź na [supabase.com](https://supabase.com) i zaloguj się
-2. Kliknij **"New Project"**
-3. Wybierz organizację, podaj nazwę projektu (np. `fitplaner`) i hasło do bazy danych
-4. Wybierz region (np. `eu-central-1` dla Europy)
-5. Kliknij **"Create new project"** i poczekaj ~2 minuty
+Kompletna instrukcja konfiguracji bazy danych Supabase dla aplikacji FitPlaner.
 
 ---
 
-## 2. Pobierz klucze API
+## 1. Klucze API
 
-1. W panelu projektu przejdź do **Settings → API**
-2. Skopiuj trzy wartości:
+W panelu Supabase: **Project Settings → API**
 
-| Klucz | Gdzie znaleźć | Zmienna w `.env.local` |
-|-------|--------------|----------------------|
-| **Project URL** | Settings → API → Project URL | `VITE_SUPABASE_URL` |
-| **anon public** | Settings → API → Project API keys → `anon` `public` | `VITE_SUPABASE_ANON_KEY` |
-| **service_role** | Settings → API → Project API keys → `service_role` `secret` | `VITE_SUPABASE_SERVICE_ROLE_KEY` |
+| Klucz | Zmienna `.env.local` | Gdzie znaleźć |
+|---|---|---|
+| Project URL | `VITE_SUPABASE_URL` | Settings → API → Project URL |
+| anon (public) | `VITE_SUPABASE_ANON_KEY` | Settings → API → Project API keys → `anon public` |
+| service_role | `VITE_SUPABASE_SERVICE_ROLE_KEY` | Settings → API → Project API keys → `service_role secret` |
 
-3. Wklej do pliku `.env.local` w głównym katalogu projektu:
+### Plik `.env.local`
 
 ```env
 VITE_SUPABASE_URL=https://twoj-projekt.supabase.co
@@ -29,258 +22,229 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 VITE_SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
-> ⚠️ **WAŻNE — klucz `service_role`:**
-> - Ma **pełny dostęp** do bazy danych, omija Row Level Security
-> - Używany **wyłącznie** do usuwania konta użytkownika (admin API)
-> - **Nie commituj** pliku `.env.local` do repozytorium (jest w `.gitignore`)
-> - W środowisku produkcyjnym ustaw go jako zmienną środowiskową serwera
-> - Bez tego klucza usuwanie konta będzie działać przez fallback RPC (wymaga kroku 3)
+> ⚠️ **Nigdy nie commituj `.env.local` do repozytorium!**
+> `service_role` key ma pełny dostęp do bazy — trzymaj go bezpiecznie.
 
 ---
 
-## 3. Wklej SQL do edytora Supabase
+## 2. SQL — wklej do Supabase SQL Editor
 
-1. W panelu projektu przejdź do **SQL Editor**
-2. Kliknij **"New query"**
-3. Wklej **cały poniższy kod SQL** i kliknij **"Run"**
+Przejdź do **SQL Editor** w panelu Supabase i wykonaj poniższy kod:
 
 ```sql
 -- ============================================================
--- FitPlaner — Schemat bazy danych
--- Wklej cały poniższy kod do SQL Editor w Supabase i uruchom
+-- FITPLANER — Schema Setup
+-- Wklej całość do SQL Editor i kliknij "Run"
 -- ============================================================
 
--- ─── Włącz rozszerzenie UUID ─────────────────────────────────
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
--- ─── Tabela: plany tygodniowe ─────────────────────────────────
--- Każdy wiersz to plan treningowy jednego użytkownika na jeden tydzień.
--- week_key ma format "YYYY-Www", np. "2025-W03"
+-- ── Tabela planów tygodniowych ────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.week_plans (
-  id           UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  user_id      UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  week_key     TEXT NOT NULL,                    -- np. "2025-W03"
-  days_data    JSONB NOT NULL DEFAULT '[]',      -- tablica WorkoutDay[]
-  created_at   TIMESTAMPTZ DEFAULT NOW(),
-  updated_at   TIMESTAMPTZ DEFAULT NOW(),
-
-  -- Jeden użytkownik może mieć tylko jeden plan na tydzień
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  week_key    TEXT NOT NULL,           -- np. "2025-W03"
+  days_data   JSONB NOT NULL DEFAULT '[]',
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(user_id, week_key)
 );
 
--- ─── Tabela: własne ćwiczenia użytkownika ────────────────────
+-- ── Tabela własnych ćwiczeń ───────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.custom_exercises (
-  id             UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  user_id        UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  exercise_id    TEXT NOT NULL,                   -- ID ćwiczenia z aplikacji
-  exercise_data  JSONB NOT NULL DEFAULT '{}',     -- obiekt Exercise
-  created_at     TIMESTAMPTZ DEFAULT NOW(),
-  updated_at     TIMESTAMPTZ DEFAULT NOW(),
-
-  -- Jeden użytkownik może mieć tylko jedno ćwiczenie o danym ID
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  exercise_id   TEXT NOT NULL,         -- ID ćwiczenia z aplikacji
+  exercise_data JSONB NOT NULL,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(user_id, exercise_id)
 );
 
--- ─── Indeksy dla wydajności ───────────────────────────────────
-CREATE INDEX IF NOT EXISTS idx_week_plans_user_id      ON public.week_plans(user_id);
-CREATE INDEX IF NOT EXISTS idx_week_plans_week_key     ON public.week_plans(week_key);
-CREATE INDEX IF NOT EXISTS idx_custom_exercises_user_id ON public.custom_exercises(user_id);
-
--- ─── Row Level Security (RLS) ─────────────────────────────────
--- WAŻNE: RLS zapewnia że każdy użytkownik widzi TYLKO swoje dane
-
-ALTER TABLE public.week_plans        ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.custom_exercises  ENABLE ROW LEVEL SECURITY;
-
--- Polityki dla week_plans
-CREATE POLICY "Users select own week_plans"
-  ON public.week_plans FOR SELECT
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Users insert own week_plans"
-  ON public.week_plans FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users update own week_plans"
-  ON public.week_plans FOR UPDATE
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users delete own week_plans"
-  ON public.week_plans FOR DELETE
-  USING (auth.uid() = user_id);
-
--- Polityki dla custom_exercises
-CREATE POLICY "Users select own custom_exercises"
-  ON public.custom_exercises FOR SELECT
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Users insert own custom_exercises"
-  ON public.custom_exercises FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users update own custom_exercises"
-  ON public.custom_exercises FOR UPDATE
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users delete own custom_exercises"
-  ON public.custom_exercises FOR DELETE
-  USING (auth.uid() = user_id);
-
--- ─── Funkcja automatycznej aktualizacji updated_at ───────────
+-- ── Automatyczna aktualizacja updated_at ──────────────────────
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
-  NEW.updated_at = NOW();
+  NEW.updated_at = now();
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger dla week_plans
-DROP TRIGGER IF EXISTS set_week_plans_updated_at ON public.week_plans;
-CREATE TRIGGER set_week_plans_updated_at
+DROP TRIGGER IF EXISTS set_updated_at_week_plans ON public.week_plans;
+CREATE TRIGGER set_updated_at_week_plans
   BEFORE UPDATE ON public.week_plans
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
--- Trigger dla custom_exercises
-DROP TRIGGER IF EXISTS set_custom_exercises_updated_at ON public.custom_exercises;
-CREATE TRIGGER set_custom_exercises_updated_at
+DROP TRIGGER IF EXISTS set_updated_at_custom_exercises ON public.custom_exercises;
+CREATE TRIGGER set_updated_at_custom_exercises
   BEFORE UPDATE ON public.custom_exercises
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
--- ─── Funkcja usuwania danych użytkownika (fallback) ──────────
--- Ta funkcja jest używana jako FALLBACK gdy klucz service_role
--- nie jest skonfigurowany. Usuwa dane z tabel aplikacji.
--- Samo konto auth.users jest usuwane przez Admin API (service_role).
---
--- Jeśli masz skonfigurowany service_role w .env.local,
--- ta funkcja nie jest wywoływana (Admin API radzi sobie sam).
-CREATE OR REPLACE FUNCTION public.delete_user_account()
-RETURNS json
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  calling_user_id UUID;
-  deleted_plans   INT;
-  deleted_ex      INT;
-BEGIN
-  calling_user_id := auth.uid();
+-- ── Row Level Security (RLS) ──────────────────────────────────
+-- Każdy użytkownik widzi i modyfikuje TYLKO swoje dane
 
-  IF calling_user_id IS NULL THEN
-    RETURN json_build_object(
-      'success', false,
-      'error', 'Użytkownik nie jest zalogowany'
-    );
+ALTER TABLE public.week_plans ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.custom_exercises ENABLE ROW LEVEL SECURITY;
+
+-- Usuń stare polityki jeśli istnieją
+DROP POLICY IF EXISTS "week_plans_select" ON public.week_plans;
+DROP POLICY IF EXISTS "week_plans_insert" ON public.week_plans;
+DROP POLICY IF EXISTS "week_plans_update" ON public.week_plans;
+DROP POLICY IF EXISTS "week_plans_delete" ON public.week_plans;
+DROP POLICY IF EXISTS "custom_exercises_select" ON public.custom_exercises;
+DROP POLICY IF EXISTS "custom_exercises_insert" ON public.custom_exercises;
+DROP POLICY IF EXISTS "custom_exercises_update" ON public.custom_exercises;
+DROP POLICY IF EXISTS "custom_exercises_delete" ON public.custom_exercises;
+
+-- Polityki dla week_plans
+CREATE POLICY "week_plans_select" ON public.week_plans
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "week_plans_insert" ON public.week_plans
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "week_plans_update" ON public.week_plans
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "week_plans_delete" ON public.week_plans
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- Polityki dla custom_exercises
+CREATE POLICY "custom_exercises_select" ON public.custom_exercises
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "custom_exercises_insert" ON public.custom_exercises
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "custom_exercises_update" ON public.custom_exercises
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "custom_exercises_delete" ON public.custom_exercises
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- ── Funkcja usuwania konta (fallback bez service_role) ────────
+-- Używana gdy VITE_SUPABASE_SERVICE_ROLE_KEY nie jest ustawiony.
+-- Usuwa dane użytkownika z tabel aplikacji.
+-- Samo konto auth.users jest usuwane przez Admin API (service_role).
+
+CREATE OR REPLACE FUNCTION public.delete_user_account()
+RETURNS void AS $$
+DECLARE
+  uid UUID := auth.uid();
+BEGIN
+  IF uid IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
   END IF;
 
-  -- Usuń plany tygodniowe
-  DELETE FROM public.week_plans WHERE user_id = calling_user_id;
-  GET DIAGNOSTICS deleted_plans = ROW_COUNT;
-
-  -- Usuń własne ćwiczenia
-  DELETE FROM public.custom_exercises WHERE user_id = calling_user_id;
-  GET DIAGNOSTICS deleted_ex = ROW_COUNT;
-
-  RETURN json_build_object(
-    'success',       true,
-    'deleted_plans', deleted_plans,
-    'deleted_exercises', deleted_ex,
-    'note', 'Dane usunięte. Konto auth wymaga usunięcia przez Admin API (service_role).'
-  );
+  -- Usuń dane z tabel aplikacji
+  DELETE FROM public.week_plans WHERE user_id = uid;
+  DELETE FROM public.custom_exercises WHERE user_id = uid;
 END;
-$$;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Nadaj uprawnienia do wykonania funkcji zalogowanym użytkownikom
+-- Ogranicz dostęp do funkcji tylko dla zalogowanych użytkowników
+REVOKE ALL ON FUNCTION public.delete_user_account() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.delete_user_account() TO authenticated;
 
--- ─── Koniec skryptu ───────────────────────────────────────────
--- Sprawdź czy tabele zostały utworzone:
--- Table Editor → week_plans i custom_exercises
--- Sprawdź czy RLS jest aktywne:
--- Authentication → Policies
+-- ── Indeksy dla wydajności ────────────────────────────────────
+CREATE INDEX IF NOT EXISTS idx_week_plans_user_id ON public.week_plans(user_id);
+CREATE INDEX IF NOT EXISTS idx_week_plans_week_key ON public.week_plans(user_id, week_key);
+CREATE INDEX IF NOT EXISTS idx_custom_exercises_user_id ON public.custom_exercises(user_id);
 ```
 
 ---
 
-## 4. Skonfiguruj autoryzację email
+## 3. Weryfikacja
 
-1. Przejdź do **Authentication → Providers → Email**
-2. Upewnij się że **"Enable Email provider"** jest włączone ✅
-3. **Opcjonalnie (zalecane podczas dev):** wyłącz **"Confirm email"** aby logowanie działało bez weryfikacji emaila
+Po wykonaniu SQL sprawdź w panelu Supabase:
 
-### Opcjonalnie: Własne szablony emaili
-
-W **Authentication → Email Templates** możesz dostosować wygląd emaili (potwierdzenie rejestracji, reset hasła).
+- **Table Editor** → powinny być widoczne tabele `week_plans` i `custom_exercises`
+- **Authentication → Policies** → każda tabela powinna mieć 4 polityki (SELECT, INSERT, UPDATE, DELETE)
 
 ---
 
-## 5. Skonfiguruj URL przekierowania
+## 4. Jak działa synchronizacja
 
-1. Przejdź do **Authentication → URL Configuration**
-2. Dodaj URL swojej aplikacji do **"Redirect URLs"**:
-   - `http://localhost:5173` (development)
-   - `https://twoja-domena.com` (produkcja)
+### Izolacja danych między użytkownikami
 
----
+Każdy użytkownik ma **całkowicie oddzielną przestrzeń danych**:
 
-## 6. Uruchom aplikację
-
-```bash
-npm run dev
+```
+Użytkownik A: week_plans WHERE user_id = 'uuid-a'
+Użytkownik B: week_plans WHERE user_id = 'uuid-b'
 ```
 
-Po skonfigurowaniu zmiennych środowiskowych aplikacja:
-- ✅ Pokaże ekran logowania/rejestracji
-- ✅ Zsynchronizuje dane między urządzeniami
-- ✅ Każdy użytkownik będzie miał osobną przestrzeń danych
-- ✅ Dane lokalne z localStorage zostaną automatycznie przesłane do chmury przy pierwszym logowaniu
-- ✅ Usuwanie konta działa niezawodnie przez Admin API
+RLS (Row Level Security) na poziomie bazy danych gwarantuje że **żaden użytkownik nie może zobaczyć ani zmodyfikować danych innego użytkownika** — nawet jeśli zna jego `user_id`.
 
----
+### Przepływ przy rejestracji nowego konta
 
-## 🔒 Bezpieczeństwo
-
-| Element | Opis |
-|---------|------|
-| **Row Level Security (RLS)** | Włączone na obu tabelach — użytkownicy widzą TYLKO swoje dane |
-| **Klucz `anon`** | Bezpieczny do użycia w przeglądarce — RLS go chroni |
-| **Klucz `service_role`** | Używany wyłącznie do `auth.admin.deleteUser()` — nie jest przesyłany na serwer, działa po stronie klienta tylko do tej jednej operacji |
-| **ON DELETE CASCADE** | Usunięcie konta z `auth.users` automatycznie usuwa wszystkie powiązane dane |
-| **Funkcja RPC** | Fallback do usuwania danych gdy brak `service_role` |
-
----
-
-## 🐛 Rozwiązywanie problemów
-
-| Problem | Rozwiązanie |
-|---------|-------------|
-| "Brak zmiennych środowiskowych" | Sprawdź czy `.env.local` istnieje i zawiera poprawne klucze. Zrestartuj `npm run dev` po zmianach. |
-| Błąd 401 Unauthorized | Sprawdź czy klucz `anon` jest poprawny |
-| Dane nie synchronizują się | Sprawdź czy RLS jest poprawnie skonfigurowane w Authentication → Policies |
-| Nie można usunąć konta | Upewnij się że `VITE_SUPABASE_SERVICE_ROLE_KEY` jest ustawiony w `.env.local`. Jeśli nie masz klucza service_role — funkcja SQL `delete_user_account()` musi być wgrana (krok 3). |
-| "User not allowed" przy usuwaniu konta | Dodaj klucz `service_role` do `.env.local` — to jest wymagane do usunięcia z `auth.users` |
-| Email potwierdzający nie przychodzi | Sprawdź folder spam lub wyłącz "Confirm email" w Authentication → Providers → Email |
-| Duplikaty danych po synchronizacji | Normalne przy pierwszym logowaniu — `upsert` z `onConflict` obsługuje duplikaty |
-
----
-
-## 📁 Struktura pliku `.env.local`
-
-```env
-# ─── Supabase ────────────────────────────────────────────────────
-# Settings → API → Project URL
-VITE_SUPABASE_URL=https://xxxxxxxxxxxxxxxxxxxx.supabase.co
-
-# Settings → API → Project API keys → anon public
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6...
-
-# Settings → API → Project API keys → service_role secret
-# Wymagane do niezawodnego usuwania kont użytkowników
-VITE_SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6...
+```
+1. Użytkownik rejestruje się → Supabase tworzy konto w auth.users
+2. Aplikacja loguje użytkownika
+3. Synchronizacja pobiera dane z chmury → baza jest pusta → aplikacja startuje z pustym planem
+4. Lokalne dane (z trybu anonimowego) NIE są przenoszone na nowe konto
 ```
 
-> 💡 Plik `.env.local` jest automatycznie ignorowany przez Git (`.gitignore`).
-> Nigdy nie wklejaj tych kluczy bezpośrednio w kodzie ani nie wysyłaj na GitHub.
+> ✅ **Nowe konto zawsze zaczyna z pustym planem** — bez danych z poprzednich sesji anonimowych.
+
+### Przepływ przy logowaniu na istniejące konto
+
+```
+1. Użytkownik loguje się
+2. Aplikacja czyści localStorage (dane anonimowe/poprzedniego użytkownika)
+3. Pobiera wszystkie dane z Supabase dla tego user_id
+4. Zapisuje do localStorage jako cache
+5. Aplikacja wyświetla plan użytkownika
+```
+
+### Przepływ przy wylogowaniu
+
+```
+1. Użytkownik wylogowuje się
+2. Aplikacja czyści localStorage (week_plans + custom_exercises)
+3. Kolejny użytkownik który się zaloguje zobaczy tylko swoje dane z chmury
+```
+
+### Tryb offline (bez Supabase)
+
+Jeśli zmienne `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` nie są ustawione:
+- Aplikacja działa normalnie — dane zapisywane tylko w localStorage
+- Brak synchronizacji między urządzeniami
+- Brak logowania/rejestracji
+
+---
+
+## 5. Usuwanie konta
+
+Aplikacja używa dwuetapowego procesu:
+
+### Metoda preferowana (wymaga `service_role`)
+
+```
+1. Usuń wiersze z week_plans WHERE user_id = uid
+2. Usuń wiersze z custom_exercises WHERE user_id = uid  
+3. supabaseAdmin.auth.admin.deleteUser(uid) → usuwa z auth.users
+4. Wyloguj lokalnie + wyczyść localStorage
+```
+
+### Fallback (bez `service_role`)
+
+```
+1. supabase.rpc('delete_user_account') → usuwa dane z tabel
+2. supabase.auth.signOut() → wylogowuje
+3. Wyczyść localStorage
+```
+
+> ⚠️ Bez `service_role` konto pozostaje w `auth.users` ale wszystkie dane są usunięte.
+> Użytkownik nie będzie mógł się zalogować (hasło jest nadal aktywne ale baza jest pusta).
+> Dla pełnego usunięcia konta wymagany jest klucz `service_role`.
+
+---
+
+## 6. Rozwiązywanie problemów
+
+| Problem | Możliwa przyczyna | Rozwiązanie |
+|---|---|---|
+| Nowe konto ma dane poprzedniego użytkownika | Stara wersja kodu (bug pushLocalDataToCloud) | Zaktualizuj kod do najnowszej wersji |
+| Dane nie synchronizują się | Błędne klucze API | Sprawdź `.env.local` i uruchom ponownie |
+| Nie można usunąć konta | Brak `service_role` | Dodaj `VITE_SUPABASE_SERVICE_ROLE_KEY` do `.env.local` |
+| Błąd RLS przy zapisie | Brak polityk | Wykonaj ponownie SQL z sekcji 2 |
+| Tabele nie istnieją | SQL nie został wykonany | Wklej SQL do SQL Editor i kliknij Run |

@@ -66,6 +66,10 @@ export function useAuthStore() {
   const signOut = useCallback(async () => {
     setLoading(true);
     await supabase.auth.signOut();
+    // Wyczyść localStorage — dane lokalne nie powinny być widoczne
+    // po wylogowaniu ani dla kolejnego użytkownika
+    localStorage.removeItem('workout-planner-weeks');
+    localStorage.removeItem('workout-planner-custom-exercises');
     setLoading(false);
   }, []);
 

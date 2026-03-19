@@ -12,8 +12,8 @@ import {
   copyWeekDays,
   deleteWeekDays,
   migrateOldData,
-  loadAllWeeksLocal,
   saveAllWeeksLocal,
+  clearLocalData,
 } from './weekStore';
 import {
   upsertWeekPlan,
@@ -22,7 +22,6 @@ import {
   deleteCustomExerciseRemote,
   fetchCustomExercises,
   syncAllDataFromCloud,
-  pushLocalDataToCloud,
 } from '../lib/syncService';
 import { isSupabaseConfigured } from '../lib/supabase';
 
@@ -62,33 +61,40 @@ export function useWorkoutStore(userId?: string) {
 
   // ── On userId change: sync data from cloud ──
   useEffect(() => {
-    if (!userId || !isSupabaseConfigured) return;
+    if (!isSupabaseConfigured) return;
+
+    if (!userId) {
+      // Użytkownik wylogował się — wyczyść localStorage żeby kolejny
+      // użytkownik nie widział danych poprzedniego
+      clearLocalData();
+      const currentKey = getWeekKey(getMondayOf(new Date()));
+      setDays(createDefaultDays(currentKey));
+      setCustomExercises([]);
+      return;
+    }
 
     const syncFromCloud = async () => {
       setSyncing(true);
       try {
-        const localWeeks = loadAllWeeksLocal();
-        const localCustom = loadCustomExercisesLocal();
-        const hasLocalData = Object.keys(localWeeks).length > 0 || localCustom.length > 0;
-
+        // Zawsze pobierz dane z chmury dla zalogowanego użytkownika.
+        // NIE pushujemy lokalnych danych — lokalne dane to dane anonimowe
+        // które nie należą do żadnego konta.
         const { weeks: cloudWeeks, customExercises: cloudCustom } = await syncAllDataFromCloud(userId);
-        const hasCloudData = Object.keys(cloudWeeks).length > 0 || cloudCustom.length > 0;
 
-        if (hasLocalData && !hasCloudData) {
-          // First login: push local data to cloud
-          await pushLocalDataToCloud(userId, localWeeks, localCustom);
-        } else if (hasCloudData) {
-          // Cloud has data: merge with local (cloud wins for conflicts)
-          const merged = { ...localWeeks, ...cloudWeeks };
-          saveAllWeeksLocal(merged);
-          saveCustomExercisesLocal(cloudCustom.length > 0 ? cloudCustom : localCustom);
-
-          // Reload current week
-          const currentKey = getWeekKey(getMondayOf(new Date()));
-          const currentDays = loadWeekDays(currentKey);
-          setDays(currentDays);
-          setCustomExercises(loadCustomExercisesLocal());
+        // Wyczyść lokalne dane i zastąp danymi z chmury
+        clearLocalData();
+        
+        if (Object.keys(cloudWeeks).length > 0) {
+          saveAllWeeksLocal(cloudWeeks);
         }
+        if (cloudCustom.length > 0) {
+          saveCustomExercisesLocal(cloudCustom);
+        }
+
+        // Załaduj bieżący tydzień z chmury (lub pusty jeśli nowe konto)
+        const currentKey = getWeekKey(getMondayOf(new Date()));
+        setDays(loadWeekDays(currentKey));
+        setCustomExercises(cloudCustom);
       } catch (err) {
         console.error('[WorkoutStore] Sync error:', err);
       } finally {

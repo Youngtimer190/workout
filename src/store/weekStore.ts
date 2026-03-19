@@ -159,6 +159,11 @@ export function copyWeekDays(fromKey: string, toKey: string): WorkoutDay[] {
   return copied;
 }
 
+/** Clear ALL local workout data (call on logout to prevent data leakage between users) */
+export function clearLocalData() {
+  localStorage.removeItem(WEEKS_STORAGE_KEY);
+}
+
 /** Migrate old single-week data to multi-week storage */
 export function migrateOldData() {
   const OLD_KEY = 'workout-planner-days';
