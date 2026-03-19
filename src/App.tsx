@@ -130,6 +130,7 @@ export default function App() {
             onCopyFromPrevWeek={copyFromPrevWeek}
             customExercises={customExercises}
             onSaveCustomExercise={addCustomExercise}
+            onDeleteCustomExercise={deleteCustomExercise}
           />
         );
       case 'library':

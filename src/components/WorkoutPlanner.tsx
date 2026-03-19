@@ -20,6 +20,7 @@ interface WorkoutPlannerProps {
   onCopyFromPrevWeek: () => void;
   customExercises?: Exercise[];
   onSaveCustomExercise?: (exercise: Exercise) => void;
+  onDeleteCustomExercise?: (id: string) => void;
 }
 
 export default function WorkoutPlanner({
@@ -38,6 +39,7 @@ export default function WorkoutPlanner({
   onCopyFromPrevWeek,
   customExercises = [],
   onSaveCustomExercise,
+  onDeleteCustomExercise,
 }: WorkoutPlannerProps) {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
@@ -125,6 +127,7 @@ export default function WorkoutPlanner({
             onMoveExercise={(exId, dir) => onMoveExercise(day.id, exId, dir)}
             customExercises={customExercises}
             onSaveCustomExercise={onSaveCustomExercise}
+            onDeleteCustomExercise={onDeleteCustomExercise}
           />
         ))}
       </div>

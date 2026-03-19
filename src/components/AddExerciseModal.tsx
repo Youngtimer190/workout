@@ -9,11 +9,19 @@ interface AddExerciseModalProps {
   onClose: () => void;
   customExercises?: Exercise[];
   onSaveCustom?: (exercise: Exercise) => void;
+  onDeleteCustom?: (id: string) => void;
 }
 
 const ALL_GROUPS = 'Wszystkie';
 
-export default function AddExerciseModal({ dayName, onAdd, onClose, customExercises = [], onSaveCustom }: AddExerciseModalProps) {
+export default function AddExerciseModal({
+  dayName,
+  onAdd,
+  onClose,
+  customExercises = [],
+  onSaveCustom,
+  onDeleteCustom,
+}: AddExerciseModalProps) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<string>(ALL_GROUPS);
@@ -23,8 +31,8 @@ export default function AddExerciseModal({ dayName, onAdd, onClose, customExerci
   const [weight, setWeight] = useState('');
   const [notes, setNotes] = useState('');
   const [duration, setDuration] = useState('30');
-  // Mobile step: 'list' | 'config'
   const [mobileStep, setMobileStep] = useState<'list' | 'config'>('list');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const handleSaveCustom = (exercise: Exercise) => {
     onSaveCustom?.(exercise);
@@ -40,7 +48,8 @@ export default function AddExerciseModal({ dayName, onAdd, onClose, customExerci
 
   const filtered = useMemo(() => {
     return allExercises.filter(e => {
-      const matchSearch = e.name.toLowerCase().includes(search.toLowerCase()) ||
+      const matchSearch =
+        e.name.toLowerCase().includes(search.toLowerCase()) ||
         e.muscleGroup.toLowerCase().includes(search.toLowerCase());
       const matchGroup = selectedGroup === ALL_GROUPS || e.muscleGroup === selectedGroup;
       return matchSearch && matchGroup;
@@ -48,11 +57,21 @@ export default function AddExerciseModal({ dayName, onAdd, onClose, customExerci
   }, [search, selectedGroup, allExercises]);
 
   const handleSelect = (ex: Exercise) => {
+    if (confirmDeleteId) return;
     setSelectedExercise(ex);
     setSets(String(ex.sets || 3));
     setReps(ex.reps || '10-12');
     setDuration(String(ex.duration || 30));
     setMobileStep('config');
+  };
+
+  const handleDeleteConfirm = (id: string) => {
+    onDeleteCustom?.(id);
+    setConfirmDeleteId(null);
+    if (selectedExercise?.id === id) {
+      setSelectedExercise(null);
+      setMobileStep('list');
+    }
   };
 
   const handleAdd = () => {
@@ -76,6 +95,100 @@ export default function AddExerciseModal({ dayName, onAdd, onClose, customExerci
   };
 
   const isCardio = selectedExercise?.muscleGroup === 'Cardio';
+
+  /* ── Wiersz ćwiczenia z opcją usuwania ── */
+  const ExerciseRow = ({ ex, compact = false }: { ex: Exercise; compact?: boolean }) => {
+    const isCustom = customExercises.some(c => c.id === ex.id);
+    const isSelected = selectedExercise?.id === ex.id;
+    const isConfirming = confirmDeleteId === ex.id;
+
+    return (
+      <div key={ex.id} className="rounded-xl overflow-hidden border border-slate-100">
+        {/* Główny wiersz */}
+        <div
+          className={`w-full text-left transition-all ${
+            isSelected && !compact
+              ? 'border-violet-400 bg-violet-50'
+              : 'bg-white hover:bg-slate-50'
+          } ${isConfirming ? 'bg-red-50' : ''}`}
+        >
+          <div className="flex items-stretch">
+            {/* Klikalna część — wybierz ćwiczenie */}
+            <button
+              onClick={() => handleSelect(ex)}
+              className={`flex-1 text-left p-3 cursor-pointer min-w-0`}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-sm font-semibold text-slate-800 leading-tight truncate">{ex.name}</p>
+                <div className="flex gap-1 flex-shrink-0">
+                  {isCustom && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-600">✨</span>
+                  )}
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${difficultyColor(ex.difficulty)}`}>
+                    {ex.difficulty === 'Początkujący' ? 'P' : ex.difficulty === 'Średniozaawansowany' ? 'Ś' : 'Z'}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between mt-1.5">
+                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${muscleGroupBgColors[ex.muscleGroup] || 'bg-slate-100 text-slate-500'}`}>
+                  {ex.muscleGroup}
+                </span>
+                {!compact && (
+                  <span className="text-[10px] text-slate-400 font-medium">Konfiguruj →</span>
+                )}
+              </div>
+            </button>
+
+            {/* Przycisk usuwania — tylko dla własnych ćwiczeń */}
+            {isCustom && onDeleteCustom && (
+              <button
+                onClick={e => {
+                  e.stopPropagation();
+                  setConfirmDeleteId(isConfirming ? null : ex.id);
+                }}
+                className={`flex-shrink-0 flex items-center justify-center w-11 border-l transition-all cursor-pointer ${
+                  isConfirming
+                    ? 'bg-red-500 border-red-400 text-white'
+                    : 'border-slate-100 text-slate-300 hover:text-red-500 hover:bg-red-50 hover:border-red-100'
+                }`}
+                title="Usuń własne ćwiczenie"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
+                  <path d="M10 11v6M14 11v6" />
+                  <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Panel potwierdzenia usunięcia */}
+        {isConfirming && (
+          <div className="bg-red-50 border-t border-red-200 px-3 py-2.5">
+            <p className="text-xs text-red-700 font-semibold mb-2">
+              Usunąć „{ex.name}" z bazy własnych ćwiczeń?
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleDeleteConfirm(ex.id)}
+                className="flex-1 py-2 rounded-lg bg-red-500 text-white text-xs font-bold hover:bg-red-600 active:bg-red-700 transition-colors cursor-pointer"
+              >
+                Tak, usuń
+              </button>
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                className="flex-1 py-2 rounded-lg bg-white border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 active:bg-slate-100 transition-colors cursor-pointer"
+              >
+                Anuluj
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const ConfigPanel = () => (
     <div className="flex flex-col h-full">
@@ -181,7 +294,7 @@ export default function AddExerciseModal({ dayName, onAdd, onClose, customExerci
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Modal — sheet on mobile, centered on desktop */}
+      {/* Modal */}
       <div
         className="relative bg-white w-full sm:rounded-2xl sm:max-w-2xl shadow-2xl flex flex-col overflow-hidden"
         style={{
@@ -220,9 +333,8 @@ export default function AddExerciseModal({ dayName, onAdd, onClose, customExerci
         {/* Body */}
         <div className="flex flex-1 overflow-hidden">
 
-          {/* ── MOBILE: step-based layout ── */}
+          {/* ── MOBILE ── */}
           <div className="flex flex-col w-full md:hidden overflow-hidden">
-            {/* Step: list */}
             {mobileStep === 'list' && (
               <div className="flex flex-col flex-1 overflow-hidden">
                 {/* Search */}
@@ -254,36 +366,24 @@ export default function AddExerciseModal({ dayName, onAdd, onClose, customExerci
                     </button>
                   ))}
                 </div>
-                {/* Exercise list */}
+
+                {/* Informacja o usuwaniu */}
+                {customExercises.length > 0 && onDeleteCustom && (
+                  <div className="px-4 pb-2 flex-shrink-0">
+                    <p className="text-[11px] text-slate-400 flex items-center gap-1">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 flex-shrink-0">
+                        <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" />
+                      </svg>
+                      Kliknij 🗑️ przy własnym ćwiczeniu aby je usunąć z bazy
+                    </p>
+                  </div>
+                )}
+
+                {/* Lista */}
                 <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-2">
-                  {filtered.map(ex => {
-                    const isCustom = customExercises.some(c => c.id === ex.id);
-                    return (
-                      <button
-                        key={ex.id}
-                        onClick={() => handleSelect(ex)}
-                        className="w-full text-left p-3.5 rounded-xl border border-slate-100 hover:border-violet-200 hover:bg-violet-50/50 active:bg-violet-50 transition-all cursor-pointer"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="text-sm font-semibold text-slate-800 leading-tight">{ex.name}</p>
-                          <div className="flex gap-1 flex-shrink-0">
-                            {isCustom && (
-                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-600">✨</span>
-                            )}
-                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${difficultyColor(ex.difficulty)}`}>
-                              {ex.difficulty === 'Początkujący' ? 'P' : ex.difficulty === 'Średniozaawansowany' ? 'Ś' : 'Z'}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between mt-1.5">
-                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${muscleGroupBgColors[ex.muscleGroup] || 'bg-slate-100 text-slate-500'}`}>
-                            {ex.muscleGroup}
-                          </span>
-                          <span className="text-[10px] text-slate-400 font-medium">Konfiguruj →</span>
-                        </div>
-                      </button>
-                    );
-                  })}
+                  {filtered.map(ex => (
+                    <ExerciseRow key={ex.id} ex={ex} />
+                  ))}
                   {filtered.length === 0 && (
                     <div className="text-center py-10 text-slate-400 text-sm">Brak ćwiczeń spełniających kryteria</div>
                   )}
@@ -291,13 +391,12 @@ export default function AddExerciseModal({ dayName, onAdd, onClose, customExerci
               </div>
             )}
 
-            {/* Step: config */}
             {mobileStep === 'config' && selectedExercise && (
               <ConfigPanel />
             )}
           </div>
 
-          {/* ── DESKTOP: side-by-side layout ── */}
+          {/* ── DESKTOP ── */}
           <div className="hidden md:flex w-full overflow-hidden">
             {/* Left: list */}
             <div className="w-1/2 flex flex-col border-r border-slate-100 overflow-hidden">
@@ -330,37 +429,24 @@ export default function AddExerciseModal({ dayName, onAdd, onClose, customExerci
                   </button>
                 ))}
               </div>
+
+              {/* Informacja o usuwaniu */}
+              {customExercises.length > 0 && onDeleteCustom && (
+                <div className="px-4 pb-2 flex-shrink-0">
+                  <p className="text-[11px] text-slate-400 flex items-center gap-1">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 flex-shrink-0">
+                      <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" />
+                    </svg>
+                    Kliknij 🗑️ przy własnym ćwiczeniu aby je usunąć z bazy
+                  </p>
+                </div>
+              )}
+
               {/* List */}
               <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-2">
-                {filtered.map(ex => {
-                  const isCustom = customExercises.some(c => c.id === ex.id);
-                  return (
-                    <button
-                      key={ex.id}
-                      onClick={() => handleSelect(ex)}
-                      className={`w-full text-left p-3 rounded-xl border transition-all cursor-pointer ${
-                        selectedExercise?.id === ex.id
-                          ? 'border-violet-400 bg-violet-50'
-                          : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-sm font-semibold text-slate-800 leading-tight">{ex.name}</p>
-                        <div className="flex gap-1 flex-shrink-0">
-                          {isCustom && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-600">✨</span>
-                          )}
-                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${difficultyColor(ex.difficulty)}`}>
-                            {ex.difficulty === 'Początkujący' ? 'P' : ex.difficulty === 'Średniozaawansowany' ? 'Ś' : 'Z'}
-                          </span>
-                        </div>
-                      </div>
-                      <span className={`inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${muscleGroupBgColors[ex.muscleGroup] || 'bg-slate-100 text-slate-500'}`}>
-                        {ex.muscleGroup}
-                      </span>
-                    </button>
-                  );
-                })}
+                {filtered.map(ex => (
+                  <ExerciseRow key={ex.id} ex={ex} compact />
+                ))}
                 {filtered.length === 0 && (
                   <div className="text-center py-8 text-slate-400 text-sm">Brak ćwiczeń spełniających kryteria</div>
                 )}

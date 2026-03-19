@@ -14,6 +14,7 @@ interface DayColumnProps {
   onMoveExercise: (exerciseId: string, direction: 'up' | 'down') => void;
   customExercises?: Exercise[];
   onSaveCustomExercise?: (exercise: Exercise) => void;
+  onDeleteCustomExercise?: (id: string) => void;
 }
 
 const DAY_LABELS = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Nd'];
@@ -29,6 +30,7 @@ export default function DayColumn({
   onMoveExercise,
   customExercises = [],
   onSaveCustomExercise,
+  onDeleteCustomExercise,
 }: DayColumnProps) {
   const [showModal, setShowModal] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -236,6 +238,7 @@ export default function DayColumn({
           onClose={() => setShowModal(false)}
           customExercises={customExercises}
           onSaveCustom={onSaveCustomExercise}
+          onDeleteCustom={onDeleteCustomExercise}
         />
       )}
     </>
