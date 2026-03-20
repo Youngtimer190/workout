@@ -768,15 +768,16 @@ function buildWorkoutDay(
   const guardSecondary  = Math.max(4,  Math.round(workMin * 0.14)); // compound secondary
   const guardIsolation  = Math.max(3,  Math.round(workMin * 0.10)); // izolacje
 
-  // Szacowany czas na ćwiczenie
+  // Szacowany czas na ćwiczenie (seria ~1 min pracy + przerwa)
+  // Szacujemy konserwatywnie żeby nie przepełnić sesji
   const minPerCompoundPrimary =
-    (vp.setsCompoundPrimary * 1.5) +
+    (vp.setsCompoundPrimary * 1.2) +
     (vp.restCompoundPrimary / 60 * (vp.setsCompoundPrimary - 1));
   const minPerCompoundSecondary =
-    (vp.setsCompoundSecondary * 1.2) +
+    (vp.setsCompoundSecondary * 1.0) +
     (vp.restCompoundSecondary / 60 * (vp.setsCompoundSecondary - 1));
   const minPerIsolation =
-    (vp.setsIsolation * 1.0) +
+    (vp.setsIsolation * 0.8) +
     (vp.restIsolation / 60 * (vp.setsIsolation - 1));
 
   // Enriched pool ćwiczeń — przekaż poziom dla prawidłowego priorytetu intermediate
@@ -807,7 +808,8 @@ function buildWorkoutDay(
   // gdy CNS jest wypoczęty. Nigdy nie zaczynaj od izolacji.
 
   for (const muscle of splitDay.primaryMuscles) {
-    if (usedTime > workMin - guardCompound) break; // zostaw margines
+    if (usedTime > workMin - guardCompound) break;
+    if (usedTime + minPerCompoundPrimary > workMin) break; // nie przekraczaj budżetu
 
     const isFocus = focusMuscles.includes(muscle);
     const compoundPool = getPool(muscle, ['compound_primary', 'compound_secondary']);
@@ -867,6 +869,7 @@ function buildWorkoutDay(
   for (const muscle of splitDay.secondaryMuscles) {
     if (muscle === 'Brzuch') continue;
     if (usedTime > workMin - guardSecondary) break;
+    if (usedTime + minPerCompoundSecondary > workMin) break;
 
     const isFocus = focusMuscles.includes(muscle);
     const compoundPool = getPool(muscle, ['compound_primary', 'compound_secondary']);
@@ -905,26 +908,42 @@ function buildWorkoutDay(
     }
   }
 
-  // ── 4. IZOLACJE dla mięśni primary ───────────────────────────────────────
+  // ── 4. IZOLACJE dla mięśni primary i secondary ───────────────────────────
   // Izolacje PO compound — mięśnie są rozgrzane, można skupić się na czuciu
+  // Przy dłuższych sesjach (75+ min) dodajemy też izolacje dla secondary muscles
 
-  for (const muscle of splitDay.primaryMuscles) {
+  // Ile izolacji na partię — skaluje się z dostępnym czasem
+  const remainingAfterCompounds = workMin - usedTime;
+  const isoSlotsAvailable = Math.floor(remainingAfterCompounds / minPerIsolation);
+
+  // Wszystkie partie do izolacji: primary + secondary (bez Brzuch)
+  const allMusclesForIso = [
+    ...splitDay.primaryMuscles,
+    ...splitDay.secondaryMuscles.filter(m => m !== 'Brzuch'),
+  ];
+
+  for (const muscle of allMusclesForIso) {
     if (usedTime > workMin - guardIsolation) break;
+    if (usedTime + minPerIsolation > workMin) break;
 
     const isFocus = focusMuscles.includes(muscle);
+    const isPrimary = splitDay.primaryMuscles.includes(muscle);
     const isolPool = getPool(muscle, ['isolation_primary', 'isolation_secondary']);
     const shuffledIso = shuffle(isolPool);
 
-    // Focus muscles: znacznie więcej izolacji (specjalizacja)
-    // Zaawansowany + focus: 3–4 izolacje (dedykowana sesja specjalizacyjna)
-    // Średniozaaw + focus: 2–3 izolacje
-    // Bez focus: 1 izolacja (standardowo)
+    // Liczba izolacji na partię:
+    // - Focus muscle: 3–4 (specjalizacja)
+    // - Primary bez focus: 1–2 zależnie od czasu
+    // - Secondary: 1 tylko gdy zostaje czas (75+ min sesje)
     const isoCount = isFocus
       ? (isAdvanced ? 4 : isBeginner ? 2 : 3)
-      : 1;
+      : isPrimary
+        ? (isoSlotsAvailable >= 6 ? 2 : 1)  // przy 75+ min: 2 dla primary
+        : 1;                                  // secondary: zawsze max 1
 
     for (let i = 0; i < Math.min(isoCount, shuffledIso.length); i++) {
       if (usedTime + minPerIsolation > workMin) break;
+      if (usedTime > workMin - guardIsolation) break;
       const iso = shuffledIso[i];
       if (!iso || usedExerciseIds.has(iso.id)) continue;
 
