@@ -780,16 +780,16 @@ function buildWorkoutDay(
   const guardSecondary  = Math.max(4,  Math.round(workMin * 0.14)); // compound secondary
   const guardIsolation  = Math.max(3,  Math.round(workMin * 0.10)); // izolacje
 
-  // Szacowany czas na ćwiczenie (seria ~1 min pracy + przerwa)
-  // Szacujemy konserwatywnie żeby nie przepełnić sesji
+  // Szacowany czas na ćwiczenie — realistyczne wartości uwzględniające
+  // ustawienie sprzętu, zmianę ciężarów i przygotowanie mentalne
   const minPerCompoundPrimary =
-    (vp.setsCompoundPrimary * 1.2) +
+    (vp.setsCompoundPrimary * 1.5) +
     (vp.restCompoundPrimary / 60 * (vp.setsCompoundPrimary - 1));
   const minPerCompoundSecondary =
-    (vp.setsCompoundSecondary * 1.0) +
+    (vp.setsCompoundSecondary * 1.5) +
     (vp.restCompoundSecondary / 60 * (vp.setsCompoundSecondary - 1));
   const minPerIsolation =
-    (vp.setsIsolation * 0.8) +
+    (vp.setsIsolation * 1.2) +
     (vp.restIsolation / 60 * (vp.setsIsolation - 1));
 
   // Enriched pool ćwiczeń — przekaż poziom dla prawidłowego priorytetu intermediate
