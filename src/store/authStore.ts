@@ -30,6 +30,15 @@ export function useAuthStore() {
 
     // Pobierz aktualną sesję
     supabase.auth.getSession().then(({ data: { session } }) => {
+      // Nie wpuszczaj użytkownika bez potwierdzonego emaila
+      if (session?.user) {
+        const confirmed = session.user.email_confirmed_at || session.user.confirmed_at;
+        if (!confirmed) {
+          supabase.auth.signOut();
+          setInitialized(true);
+          return;
+        }
+      }
       setSession(session);
       setUser(session?.user ?? null);
       setInitialized(true);
@@ -37,22 +46,30 @@ export function useAuthStore() {
 
     // Nasłuchuj zmian sesji
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      // Nie loguj automatycznie użytkownika który nie potwierdził emaila
-      if (_event === 'SIGNED_IN' && session?.user) {
-        const confirmed = session.user.email_confirmed_at || session.user.confirmed_at;
-        if (!confirmed) {
-          supabase.auth.signOut();
-          return;
-        }
-      }
-      setSession(session);
-      setUser(session?.user ?? null);
       // Wykryj tryb odzyskiwania hasła
       if (_event === 'PASSWORD_RECOVERY') {
         setIsPasswordRecovery(true);
-      } else if (_event === 'USER_UPDATED') {
+        setSession(session);
+        setUser(session?.user ?? null);
+        return;
+      }
+      if (_event === 'USER_UPDATED') {
         setIsPasswordRecovery(false);
       }
+
+      // Blokuj logowanie użytkownika bez potwierdzonego emaila
+      if ((_event === 'SIGNED_IN' || _event === 'INITIAL_SESSION') && session?.user) {
+        const confirmed = session.user.email_confirmed_at || session.user.confirmed_at;
+        const hasIdentities = session.user.identities && session.user.identities.length > 0;
+        if (!confirmed && !hasIdentities) {
+          // Wyloguj asynchronicznie żeby nie blokować listenera
+          setTimeout(() => supabase.auth.signOut(), 0);
+          return;
+        }
+      }
+
+      setSession(session);
+      setUser(session?.user ?? null);
     });
 
     return () => subscription.unsubscribe();
@@ -72,8 +89,10 @@ export function useAuthStore() {
       },
     });
     setLoading(false);
-    // Jeśli user istnieje ale nie ma sesji — email wymaga potwierdzenia
-    const needsConfirmation = !error && !!data.user && !data.session;
+    const needsConfirmation = !error && !!data.user && (
+      !data.session ||
+      (data.user.identities !== undefined && data.user.identities.length === 0)
+    );
     return { error, needsConfirmation };
   }, []);
 
