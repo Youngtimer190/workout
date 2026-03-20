@@ -174,9 +174,21 @@ const EXERCISE_CLASSIFICATION: Record<string, { role: ExerciseRole; priority: nu
   'Kickback z hantlem w opadzie':                   { role: 'isolation_secondary', priority: 3  },
   'Pompki wąskim chwytem':                          { role: 'isolation_secondary', priority: 4  },
   'Prostowanie ramion z gumą':                      { role: 'isolation_secondary', priority: 3  },
+
+  'Narciarz na wyciągu (cable ski)':               { role: 'compound_secondary',  priority: 7  },
+
+  // ── SMITH MACHINE ──
+  'Wyciskanie na ławce poziomej (Smith Machine)':   { role: 'compound_secondary',  priority: 7  },
+  'Wyciskanie skośne (Smith Machine)':              { role: 'compound_secondary',  priority: 6  },
+  'Przysiad ze Smith Machine':                      { role: 'compound_secondary',  priority: 7  },
+  'Wyciskanie żołnierskie (Smith Machine)':         { role: 'compound_secondary',  priority: 6  },
+  'Martwy ciąg rumuński (Smith Machine)':           { role: 'compound_secondary',  priority: 6  },
+  'Wiosłowanie podchwytem (Smith Machine)':         { role: 'compound_secondary',  priority: 6  },
+  'Hip Thrust (Smith Machine)':                     { role: 'compound_primary',    priority: 8  },
+  'Wykroki (Smith Machine)':                        { role: 'compound_secondary',  priority: 6  },
 };
 
-function classifyExercise(exercise: Exercise): EnrichedExercise {
+function classifyExercise(exercise: Exercise, level?: FitnessLevel): EnrichedExercise {
   if (exercise.muscleGroup === 'Cardio') {
     return { ...exercise, role: 'cardio', priority: 1 };
   }
@@ -193,7 +205,13 @@ function classifyExercise(exercise: Exercise): EnrichedExercise {
 
   const classification = EXERCISE_CLASSIFICATION[exercise.name];
   if (classification) {
-    return { ...exercise, ...classification };
+    let { role, priority } = classification;
+    // Dla intermediate: obniż priorytet ćwiczeń zaawansowanych
+    // żeby generator preferował Średniozaawansowane ćwiczenia gdy dostępne
+    if (level === 'intermediate' && exercise.difficulty === 'Zaawansowany') {
+      priority = Math.max(1, priority - 3);
+    }
+    return { ...exercise, role, priority };
   }
 
   // Fallback dla nieznanych ćwiczeń
@@ -247,8 +265,21 @@ function filterByEquipment(exercises: Exercise[], equipmentList: EquipmentItem[]
 
 function filterByLevel(exercises: Exercise[], level: FitnessLevel): Exercise[] {
   if (level === 'beginner') {
+    // Początkujący: tylko Początkujący i Średniozaawansowany
     return exercises.filter(e => e.difficulty !== 'Zaawansowany');
   }
+  if (level === 'intermediate') {
+    // Średniozaawansowany: wszystkie ćwiczenia, ale priorytetowo Średniozaawansowany
+    // Ćwiczenia Zaawansowane są dostępne, ale zostaną zepchnięte przez niższy priorytet
+    return exercises.map(e => {
+      if (e.difficulty === 'Zaawansowany') {
+        // Sztucznie obniż priorytet zaawansowanych ćwiczeń dla intermediate
+        return { ...e, _reducedPriority: true };
+      }
+      return e;
+    }) as Exercise[];
+  }
+  // Zaawansowany: wszystkie ćwiczenia bez ograniczeń
   return exercises;
 }
 
@@ -528,6 +559,7 @@ function getSplit(style: string, daysPerWeek: number, level: FitnessLevel): Spli
   // ── FBL SPLIT (Frequency-Based) ────────────────────────────────────────────
   // Optymalne dla: zaawansowani, 5+ dni, wymagają wysokiej częstotliwości
   // Miks: sesje siłowe + hipertroficzne dla tej samej partii w tygodniu
+  if (style === 'fbl') {
   const fbl: SplitDay[] = [
     {
       label: 'Klatka & Triceps — Siłowy (compound focused)',
@@ -566,6 +598,17 @@ function getSplit(style: string, daysPerWeek: number, level: FitnessLevel): Spli
     },
   ];
   return Array.from({ length: daysPerWeek }, (_, i) => fbl[i % fbl.length]);
+  }
+
+  // Fallback — domyślnie full_body jeśli nieznany styl
+  const fallback: SplitDay = {
+    label: 'Full Body — Ogólny',
+    sessionType: 'mixed',
+    muscles: ['Klatka piersiowa', 'Plecy', 'Nogi', 'Barki', 'Brzuch'],
+    primaryMuscles: ['Klatka piersiowa', 'Plecy', 'Nogi'],
+    secondaryMuscles: ['Barki', 'Brzuch'],
+  };
+  return Array.from({ length: daysPerWeek }, () => fallback);
 }
 
 // ─── Optymalny rozkład dni w tygodniu ────────────────────────────────────────
@@ -668,6 +711,12 @@ function buildWorkoutDay(
   const cooldownMin = 5;
   const workMin = Math.max(20, sessionDuration - warmupMin - cardioMin - cooldownMin);
 
+  // Skalowalne guardy czasowe — proporcjonalne do długości sesji
+  // Dla 30 min: guard ~15% workMin | Dla 60 min: ~20% | Dla 90 min: ~22%
+  const guardCompound   = Math.max(5,  Math.round(workMin * 0.18)); // compound primary
+  const guardSecondary  = Math.max(4,  Math.round(workMin * 0.14)); // compound secondary
+  const guardIsolation  = Math.max(3,  Math.round(workMin * 0.10)); // izolacje
+
   // Szacowany czas na ćwiczenie
   const minPerCompoundPrimary =
     (vp.setsCompoundPrimary * 1.5) +
@@ -679,8 +728,8 @@ function buildWorkoutDay(
     (vp.setsIsolation * 1.0) +
     (vp.restIsolation / 60 * (vp.setsIsolation - 1));
 
-  // Enriched pool ćwiczeń
-  const enrichedPool = availableExercises.map(classifyExercise);
+  // Enriched pool ćwiczeń — przekaż poziom dla prawidłowego priorytetu intermediate
+  const enrichedPool = availableExercises.map(e => classifyExercise(e, fitnessLevel));
 
   // Helper: pobierz pule dla mięśnia z wykluczeniami
   const getPool = (muscle: MuscleGroup, roles: ExerciseRole[]) => {
@@ -707,7 +756,7 @@ function buildWorkoutDay(
   // gdy CNS jest wypoczęty. Nigdy nie zaczynaj od izolacji.
 
   for (const muscle of splitDay.primaryMuscles) {
-    if (usedTime > workMin - 10) break; // zostaw margines
+    if (usedTime > workMin - guardCompound) break; // zostaw margines
 
     const isFocus = focusMuscles.includes(muscle);
     const compoundPool = getPool(muscle, ['compound_primary', 'compound_secondary']);
@@ -766,7 +815,7 @@ function buildWorkoutDay(
 
   for (const muscle of splitDay.secondaryMuscles) {
     if (muscle === 'Brzuch') continue;
-    if (usedTime > workMin - 8) break;
+    if (usedTime > workMin - guardSecondary) break;
 
     const isFocus = focusMuscles.includes(muscle);
     const compoundPool = getPool(muscle, ['compound_primary', 'compound_secondary']);
@@ -809,7 +858,7 @@ function buildWorkoutDay(
   // Izolacje PO compound — mięśnie są rozgrzane, można skupić się na czuciu
 
   for (const muscle of splitDay.primaryMuscles) {
-    if (usedTime > workMin - 6) break;
+    if (usedTime > workMin - guardIsolation) break;
 
     const isFocus = focusMuscles.includes(muscle);
     const isolPool = getPool(muscle, ['isolation_primary', 'isolation_secondary']);
@@ -851,7 +900,7 @@ function buildWorkoutDay(
     goal === 'fat_loss' ||
     (goal === 'general_fitness' && Math.random() > 0.3);
 
-  if (shouldAddCore && usedTime + 8 < sessionDuration) {
+  if (shouldAddCore && usedTime + 8 < workMin) {
     const corePool = enrichedPool.filter(e =>
       e.muscleGroup === 'Brzuch' &&
       !exercises.some(ex => ex.name === e.name)
