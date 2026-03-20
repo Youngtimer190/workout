@@ -757,10 +757,22 @@ function buildWorkoutDay(
   const isAdvanced = fitnessLevel === 'advanced';
 
   // Budżet czasowy sesji
-  const warmupMin = includeWarmup ? 12 : 0;
-  const cardioMin = includeCardio ? (goal === 'fat_loss' ? 20 : goal === 'endurance' ? 30 : 15) : 0;
-  const cooldownMin = 5;
-  const workMin = Math.max(20, sessionDuration - warmupMin - cardioMin - cooldownMin);
+  // Czas rozgrzewki — skrócona dla krótkich sesji
+  const warmupMin = includeWarmup
+    ? sessionDuration <= 30 ? 5 : sessionDuration <= 45 ? 8 : 12
+    : 0;
+
+  // Czas cardio — skaluje się z długością sesji żeby nie zjadać całego budżetu
+  const cardioMin = includeCardio
+    ? sessionDuration <= 45
+      ? (goal === 'endurance' ? 15 : 10)        // krótka sesja: mniej cardio
+      : sessionDuration <= 60
+      ? (goal === 'fat_loss' ? 15 : goal === 'endurance' ? 20 : 12)
+      : (goal === 'fat_loss' ? 20 : goal === 'endurance' ? 30 : 15)  // standardowo
+    : 0;
+
+  const cooldownMin = sessionDuration <= 30 ? 3 : 5;
+  const workMin = Math.max(15, sessionDuration - warmupMin - cardioMin - cooldownMin);
 
   // Skalowalne guardy czasowe — proporcjonalne do długości sesji
   // Dla 30 min: guard ~15% workMin | Dla 60 min: ~20% | Dla 90 min: ~22%
