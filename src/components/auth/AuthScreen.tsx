@@ -31,7 +31,7 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
     const { error } = await signIn(email, password);
     if (error) {
       if (error.message.includes('Invalid login')) setError('Nieprawidłowy email lub hasło.');
-      else if (error.message.includes('Email not confirmed')) setError('Potwierdź adres email przed zalogowaniem.');
+      else if (error.message.includes('Email not confirmed')) setError('Najpierw potwierdź adres email — sprawdź swoją skrzynkę pocztową.');
       else setError(error.message);
     }
   };
@@ -43,12 +43,15 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
     if (!email) { setError('Podaj adres email.'); return; }
     if (password.length < 6) { setError('Hasło musi mieć co najmniej 6 znaków.'); return; }
     if (password !== confirmPassword) { setError('Hasła nie są zgodne.'); return; }
-    const { error } = await signUp(email, password, fullName);
+    const { error, needsConfirmation } = await signUp(email, password, fullName);
     if (error) {
       if (error.message.includes('already registered')) setError('Ten email jest już zarejestrowany.');
       else setError(error.message);
+    } else if (needsConfirmation) {
+      setSuccessMsg(`Konto zostało utworzone! Wysłaliśmy link potwierdzający na adres ${email}. Kliknij w link w emailu, aby aktywować konto.`);
+      setView('login');
     } else {
-      setSuccessMsg('Konto zostało utworzone! Sprawdź swoją skrzynkę email, aby potwierdzić rejestrację.');
+      setSuccessMsg('Konto zostało utworzone! Możesz się teraz zalogować.');
       setView('login');
     }
   };
