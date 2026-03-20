@@ -400,16 +400,16 @@ function getVolumeParams(goal: TrainingGoal, level: FitnessLevel): VolumeParams 
     case 'fat_loss':
       return {
         setsCompoundPrimary:    isBeg ? 3 : 4,
-        repsCompoundPrimary:    '10-15',
-        restCompoundPrimary:    75,
-        setsCompoundSecondary:  3,
-        repsCompoundSecondary:  '12-15',
-        restCompoundSecondary:  60,
-        setsIsolation:          3,
-        repsIsolation:          '15-20',
-        restIsolation:          45,
-        setsCore:               3,
-        repsCore:               '20-25',
+        repsCompoundPrimary:    isAdv ? '12-20' : '10-15',
+        restCompoundPrimary:    isAdv ? 60 : 75,
+        setsCompoundSecondary:  isAdv ? 4 : 3,
+        repsCompoundSecondary:  isAdv ? '15-20' : '12-15',
+        restCompoundSecondary:  isAdv ? 45 : 60,
+        setsIsolation:          isAdv ? 4 : 3,
+        repsIsolation:          isAdv ? '20-25' : '15-20',
+        restIsolation:          isAdv ? 30 : 45,
+        setsCore:               isAdv ? 4 : 3,
+        repsCore:               isAdv ? '25-30' : '20-25',
         trainerNoteCompound:    '🔥 REDUKCJA: Krótkie przerwy utrzymują metabolizm na wysokim poziomie. Ciągłe napięcie — bez odpoczynku w górnym/dolnym punkcie. Supersety antagonistów tam gdzie możliwe (klatka+plecy, biceps+triceps).',
         trainerNoteIsolation:   '🔥 REDUKCJA: Wysoka objętość, niskie przerwy. Drop sets na ostatniej serii. Mięśnie zachowane = więcej spalanych kalorii 24/7.',
       };
@@ -417,16 +417,16 @@ function getVolumeParams(goal: TrainingGoal, level: FitnessLevel): VolumeParams 
     case 'endurance':
       return {
         setsCompoundPrimary:    isBeg ? 2 : 3,
-        repsCompoundPrimary:    '15-20',
-        restCompoundPrimary:    60,
-        setsCompoundSecondary:  3,
-        repsCompoundSecondary:  '20-25',
-        restCompoundSecondary:  45,
-        setsIsolation:          2,
-        repsIsolation:          '20-30',
-        restIsolation:          30,
-        setsCore:               4,
-        repsCore:               '25-40 sek',
+        repsCompoundPrimary:    isAdv ? '20-30' : '15-20',
+        restCompoundPrimary:    isAdv ? 45 : 60,
+        setsCompoundSecondary:  isAdv ? 4 : 3,
+        repsCompoundSecondary:  isAdv ? '25-30' : '20-25',
+        restCompoundSecondary:  isAdv ? 30 : 45,
+        setsIsolation:          isAdv ? 3 : 2,
+        repsIsolation:          isAdv ? '25-35' : '20-30',
+        restIsolation:          isAdv ? 20 : 30,
+        setsCore:               isAdv ? 5 : 4,
+        repsCore:               isAdv ? '30-50 sek' : '25-40 sek',
         trainerNoteCompound:    '🏃 WYTRZYMAŁOŚĆ: Ciągłe tempo przez cały zakres powtórzeń — bez zatrzymywania. Oddychaj rytmicznie. Cel to adaptacja metaboliczna, nie maksymalna siła. Nawodnienie kluczowe.',
         trainerNoteIsolation:   '🏃 WYTRZYMAŁOŚĆ: Minimalne przerwy między ćwiczeniami — obwód gdy możliwe. Mięśnie muszą tolerować zakwasy i kontynuować pracę.',
       };
@@ -962,7 +962,7 @@ function buildWorkoutDay(
     // Początkujący: 1 ćwiczenie (plank lub dead bug)
     // Średniozaawansowany: 2 ćwiczenia (statyczne + dynamiczne)
     // Zaawansowany: 2–3 ćwiczenia (różne płaszczyzny ruchu)
-    const coreCount = isBeginner ? 1 : isAdvanced ? 2 : 2;
+    const coreCount = isBeginner ? 1 : isAdvanced ? 3 : 2;
 
     // Priorytet dla początkujących: plank i dead bug (bezpieczne)
     let coreToAdd = coreList;
