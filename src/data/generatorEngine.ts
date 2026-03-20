@@ -177,6 +177,57 @@ const EXERCISE_CLASSIFICATION: Record<string, { role: ExerciseRole; priority: nu
 
   'Narciarz na wyciągu (cable ski)':               { role: 'compound_secondary',  priority: 7  },
 
+  // ── NOGI — dodatkowe ──
+  'Glute Bridge (mostek biodrowy)':                 { role: 'isolation_primary',   priority: 5  },
+  'Glute Bridge z obciążeniem':                     { role: 'isolation_primary',   priority: 6  },
+  'Wypady w tył (reverse lunge)':                   { role: 'compound_secondary',  priority: 7  },
+  'Wypady w tył z hantlami':                        { role: 'compound_secondary',  priority: 7  },
+  'Przysiad z wyskokiem (jump squat)':              { role: 'compound_secondary',  priority: 6  },
+  'Wspięcia na palce z hantlami stojąc':            { role: 'isolation_primary',   priority: 5  },
+  'Nożyce (scissors lunge)':                        { role: 'compound_secondary',  priority: 6  },
+  'Calf raise na prasie do nóg':                    { role: 'isolation_primary',   priority: 5  },
+  'Frog pump (żaba)':                               { role: 'isolation_secondary', priority: 3  },
+  'Romanian split squat z hantlami':                { role: 'compound_primary',    priority: 8  },
+
+  // ── BARKI — dodatkowe ──
+  'Cuban Press z hantlami':                         { role: 'isolation_secondary', priority: 4  },
+  'Ćwiczenie YTW z hantlami':                       { role: 'isolation_secondary', priority: 3  },
+  'Lateral raise na wyciągu siedząc':               { role: 'isolation_primary',   priority: 7  },
+  'Odwrotne rozpiętki z hantlami stojąc':           { role: 'isolation_primary',   priority: 6  },
+  'Wyciskanie jednostronne z kettlebell':           { role: 'compound_secondary',  priority: 7  },
+
+  // ── BICEPS — dodatkowe ──
+  'Uginanie Zottman (zottman curl)':                { role: 'isolation_primary',   priority: 6  },
+  'Bayesian curl (wyciąg za plecami)':              { role: 'isolation_primary',   priority: 6  },
+  'Uginanie ze sztangą wąskim chwytem':             { role: 'compound_secondary',  priority: 7  },
+
+  // ── TRICEPS — dodatkowe ──
+  'Skull crusher z hantlami':                       { role: 'compound_secondary',  priority: 7  },
+  'Overhead triceps extension z liną':              { role: 'isolation_primary',   priority: 6  },
+  'Diamond push-up z nogami uniesionymi':           { role: 'isolation_secondary', priority: 4  },
+
+  // ── KLATKA — dodatkowe ──
+  'Pompki archer (archer push-up)':                 { role: 'isolation_secondary', priority: 4  },
+  'Wyciskanie z pauzą (pause bench press)':         { role: 'compound_primary',    priority: 9  },
+  'Rozpiętki na maszynie (pec deck)':               { role: 'isolation_primary',   priority: 5  },
+
+  // ── PLECY — dodatkowe ──
+  'Podciąganie z obciążeniem (weighted pull-up)':   { role: 'compound_primary',    priority: 10 },
+  'Wiosłowanie jednoręczne na wyciągu stojąc':      { role: 'compound_secondary',  priority: 7  },
+  'Meadows row':                                    { role: 'compound_secondary',  priority: 7  },
+  'Seal row (wiosłowanie leżąc na ławce)':          { role: 'compound_primary',    priority: 8  },
+
+  // ── BRZUCH — dodatkowe ──
+  'Spiderman plank':                                { role: 'core',                priority: 5  },
+  'Ab wheel rollout na kolanach':                   { role: 'core',                priority: 5  },
+  'Unoszenie nóg na poręczach (captain\'s chair)':  { role: 'core',                priority: 6  },
+
+  // ── CAŁE CIAŁO — dodatkowe ──
+  'Kettlebell Snatch (rwanie kettlebell)':          { role: 'compound_primary',    priority: 9  },
+  'Kompleks ze sztangą (barbell complex)':          { role: 'compound_primary',    priority: 8  },
+  'Swing jednoręczny z kettlebell':                 { role: 'compound_secondary',  priority: 7  },
+  'Wiosłowanie renegade ze sztangą':                { role: 'compound_secondary',  priority: 7  },
+
   // ── SMITH MACHINE ──
   'Wyciskanie na ławce poziomej (Smith Machine)':   { role: 'compound_secondary',  priority: 7  },
   'Wyciskanie skośne (Smith Machine)':              { role: 'compound_secondary',  priority: 6  },
@@ -943,9 +994,9 @@ function buildWorkoutDay(
     const cardioPool = availableExercises.filter(e => e.muscleGroup === 'Cardio');
 
     // Grupy cardio wg intensywności — oparte na ID, odporne na zmiany nazw
-    const hiitIds    = new Set(['cardio-1', 'cardio-6', 'cardio-8', 'cardio-11']); // HIIT, Battle Ropes, Tabata, Assault Bike
-    const lissIds    = new Set(['cardio-2', 'cardio-3', 'cardio-4', 'cardio-7', 'cardio-13']); // Bieg LISS, Rower, Ergometr, Orbitrek, Trucht
-    const moderateIds= new Set(['cardio-5', 'cardio-9', 'cardio-10', 'cardio-12', 'cardio-14']); // Skakanka, Mountain Climbers, Box Jump, Sprint, Stepping
+    const hiitIds    = new Set(['cardio-1', 'cardio-6', 'cardio-8', 'cardio-11', 'cardio-15', 'cardio-17']); // HIIT, Battle Ropes, Tabata, Assault Bike, Wiosłowanie HIIT, Broad Jump
+    const lissIds    = new Set(['cardio-2', 'cardio-3', 'cardio-4', 'cardio-7', 'cardio-13', 'cardio-16']); // Bieg LISS, Rower, Ergometr, Orbitrek, Trucht, Stepping
+    const moderateIds= new Set(['cardio-5', 'cardio-9', 'cardio-10', 'cardio-12', 'cardio-14', 'cardio-18']); // Skakanka, Mountain Climbers, Box Jump, Sprint, Stepping, Skipping
 
     // Sprzęt cardio zaznaczony przez użytkownika (tylko maszyny cardio)
     const cardioEquipment = new Set(['treadmill', 'stationary_bike', 'rowing_machine', 'elliptical', 'battle_ropes', 'jump_rope']);
