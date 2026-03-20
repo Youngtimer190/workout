@@ -37,6 +37,14 @@ export function useAuthStore() {
 
     // Nasłuchuj zmian sesji
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      // Nie loguj automatycznie użytkownika który nie potwierdził emaila
+      if (_event === 'SIGNED_IN' && session?.user) {
+        const confirmed = session.user.email_confirmed_at || session.user.confirmed_at;
+        if (!confirmed) {
+          supabase.auth.signOut();
+          return;
+        }
+      }
       setSession(session);
       setUser(session?.user ?? null);
       // Wykryj tryb odzyskiwania hasła
@@ -54,9 +62,9 @@ export function useAuthStore() {
     email: string,
     password: string,
     fullName: string
-  ): Promise<{ error: AuthError | null }> => {
+  ): Promise<{ error: AuthError | null; needsConfirmation: boolean }> => {
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -64,7 +72,9 @@ export function useAuthStore() {
       },
     });
     setLoading(false);
-    return { error };
+    // Jeśli user istnieje ale nie ma sesji — email wymaga potwierdzenia
+    const needsConfirmation = !error && !!data.user && !data.session;
+    return { error, needsConfirmation };
   }, []);
 
   const signIn = useCallback(async (
