@@ -23,6 +23,7 @@ export function useAuthStore() {
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(!isSupabaseConfigured);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -38,6 +39,12 @@ export function useAuthStore() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      // Wykryj tryb odzyskiwania hasła
+      if (_event === 'PASSWORD_RECOVERY') {
+        setIsPasswordRecovery(true);
+      } else if (_event === 'USER_UPDATED') {
+        setIsPasswordRecovery(false);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -149,8 +156,18 @@ export function useAuthStore() {
     email: string
   ): Promise<{ error: AuthError | null }> => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin,
+      redirectTo: 'https://workout-flax-five.vercel.app',
     });
+    return { error };
+  }, []);
+
+  const updatePassword = useCallback(async (
+    newPassword: string
+  ): Promise<{ error: AuthError | null }> => {
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setLoading(false);
+    if (!error) setIsPasswordRecovery(false);
     return { error };
   }, []);
 
@@ -174,6 +191,7 @@ export function useAuthStore() {
     loading,
     initialized,
     isDemoMode,
+    isPasswordRecovery,
     isAuthenticated: !!user,
     isConfigured: isSupabaseConfigured,
     signUp,
@@ -181,6 +199,7 @@ export function useAuthStore() {
     signOut,
     deleteAccount,
     resetPassword,
+    updatePassword,
     loginAsDemo,
     exitDemoMode,
   };
