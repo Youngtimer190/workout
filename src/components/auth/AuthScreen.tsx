@@ -376,9 +376,6 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
               <span>🚀</span>
               Wypróbuj bez rejestracji (Demo)
             </button>
-            <p className="text-center text-slate-500 text-xs mt-2">
-              Dane zapisywane lokalnie · Bez synchronizacji z chmurą
-            </p>
           </div>
         )}
 
