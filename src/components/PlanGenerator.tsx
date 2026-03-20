@@ -16,7 +16,7 @@ const defaultPrefs: GeneratorPreferences = {
   daysPerWeek: 3,
   trainingDays: [0, 2, 4], // Pn, Śr, Pt
   equipment: 'full_gym',
-  equipmentList: ['barbell', 'dumbbells', 'bench', 'cable_machine', 'pull_up_bar', 'leg_press', 'leg_curl_machine', 'dip_bars', 'treadmill', 'stationary_bike'],
+  equipmentList: ['barbell', 'dumbbells', 'bench', 'cable_machine', 'pull_up_bar', 'leg_curl_machine', 'dip_bars', 'treadmill'],
   trainingStyle: 'push_pull_legs',
   focusMuscles: [],
   sessionDuration: 60,
