@@ -1986,7 +1986,7 @@ export const exerciseLibrary: Exercise[] = [
     reps: '10-12',
     restTime: 90,
     notes: 'Stopy na środku platformy lub wyżej dla większego zaangażowania pośladków. Kolana aktywnie na zewnątrz przez cały ruch. Nie blokuj kolan w górze. Zejdź do pełnej głębokości — im głębiej, tym lepiej dla pośladków. Powolna ekscentryka 2-3 sek.',
-    requiredEquipment: ['leg_press'],
+    requiredEquipment: ['leg_press', 'smith_machine'],
   },
   {
     id: 'legs-24',

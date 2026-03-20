@@ -941,20 +941,56 @@ function buildWorkoutDay(
 
   if (includeCardio) {
     const cardioPool = availableExercises.filter(e => e.muscleGroup === 'Cardio');
+
+    // Grupy cardio wg intensywności — oparte na ID, odporne na zmiany nazw
+    const hiitIds    = new Set(['cardio-1', 'cardio-6', 'cardio-8', 'cardio-11']); // HIIT, Battle Ropes, Tabata, Assault Bike
+    const lissIds    = new Set(['cardio-2', 'cardio-3', 'cardio-4', 'cardio-7', 'cardio-13']); // Bieg LISS, Rower, Ergometr, Orbitrek, Trucht
+    const moderateIds= new Set(['cardio-5', 'cardio-9', 'cardio-10', 'cardio-12', 'cardio-14']); // Skakanka, Mountain Climbers, Box Jump, Sprint, Stepping
+
+    // Sprzęt cardio zaznaczony przez użytkownika (tylko maszyny cardio)
+    const cardioEquipment = new Set(['treadmill', 'stationary_bike', 'rowing_machine', 'elliptical', 'battle_ropes', 'jump_rope']);
+    const userCardioEquipment = new Set(prefs.equipmentList.filter(e => cardioEquipment.has(e)));
+
+    // Ćwiczenia które wymagają DOKŁADNIE sprzętu wybranego przez użytkownika w sekcji Cardio
+    // mają wyższy priorytet niż ćwiczenia bodyweight (dostępne zawsze)
+    const preferredCardioPool = cardioPool.filter(e =>
+      e.requiredEquipment &&
+      e.requiredEquipment.length > 0 &&
+      e.requiredEquipment.some(eq => userCardioEquipment.has(eq as EquipmentItem))
+    );
+    const fallbackCardioPool = cardioPool.filter(e =>
+      !e.requiredEquipment ||
+      e.requiredEquipment.length === 0 ||
+      e.requiredEquipment.every(eq => eq === 'bodyweight')
+    );
+
+    // Użyj preferred jeśli dostępne, inaczej fallback
+    const effectivePool = preferredCardioPool.length > 0 ? preferredCardioPool : fallbackCardioPool.length > 0 ? fallbackCardioPool : cardioPool;
+
+    const hiitPool     = effectivePool.filter(e => hiitIds.has(e.id));
+    const lissPool     = effectivePool.filter(e => lissIds.has(e.id));
+    const moderatePool = effectivePool.filter(e => moderateIds.has(e.id));
+
     let cardio: Exercise | undefined;
 
     if (goal === 'fat_loss') {
-      // HIIT preferowany — efekt EPOC
-      cardio = cardioPool.find(e => e.name.includes('HIIT') || e.name.includes('interwałowy') || e.name.includes('Tabata'))
-        || cardioPool.find(e => e.name.includes('Battle Ropes'))
-        || shuffle(cardioPool)[0];
+      // HIIT priorytetowy → fallback moderate → losowe z preferred
+      cardio = shuffle(hiitPool)[0]
+        || shuffle(moderatePool)[0]
+        || shuffle(effectivePool)[0];
     } else if (goal === 'endurance') {
-      // LISS — bazowy trening tlenowy
-      cardio = cardioPool.find(e => e.name.includes('ciągły') || e.name.includes('Bieg ciągły') || e.name.includes('Ergometr'))
-        || shuffle(cardioPool)[0];
+      // LISS priorytetowy → fallback moderate → losowe z preferred
+      cardio = shuffle(lissPool)[0]
+        || shuffle(moderatePool)[0]
+        || shuffle(effectivePool)[0];
+    } else if (goal === 'strength') {
+      // Przy treningu siłowym — unikaj HIIT (zmęczenie CNS), preferuj LISS lub umiarkowane
+      cardio = shuffle(lissPool)[0]
+        || shuffle(moderatePool)[0]
+        || shuffle(effectivePool)[0];
     } else {
-      // Losowe cardio dla różnorodności
-      cardio = shuffle(cardioPool)[0];
+      // Ogólna sprawność i masa — rotuj między wszystkimi typami z preferred pool
+      cardio = shuffle(effectivePool)[0];
     }
 
     if (cardio) {
@@ -964,6 +1000,8 @@ function buildWorkoutDay(
           ? '🔥 REDUKCJA: Intensywne tempo (75–85% max HR). HIIT: 30 sek praca / 90 sek odpoczynek × 8 rund. Efekt EPOC spala kalorie przez 24h po treningu.'
           : goal === 'endurance'
           ? '🏃 WYTRZYMAŁOŚĆ: Umiarkowane tempo (65–70% max HR) — możesz rozmawiać zdaniami. Rozwijasz pojemność tlenową i gęstość mitochondriów.'
+          : goal === 'strength'
+          ? '⚡ AKTYWNA REGENERACJA: Niska intensywność — nie przeciążaj CNS po ciężkim treningu siłowym. Cel: przepływ krwi i regeneracja.'
           : '⚡ AKTYWNA REGENERACJA: Umiarkowane tempo, utrzymuje metabolizm i korzystnie wpływa na regenerację mięśni.';
 
       exercises.push({
