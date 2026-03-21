@@ -22,6 +22,8 @@ export const supabase = createClient(
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
+      storageKey: 'fitplaner-auth-token', // stały klucz — przetrwa restarty PWA na iOS
+      storage: window.localStorage,       // jawnie użyj localStorage
     },
   }
 );
