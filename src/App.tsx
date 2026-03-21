@@ -13,7 +13,70 @@ import { useWorkoutStore } from './store/workoutStore';
 import { useAuthStore } from './store/authStore';
 import { isSupabaseConfigured } from './lib/supabase';
 
-// ── Ekran ustawienia nowego hasła ─────────────────────────────────────────────
+// ── Skeleton Loader ───────────────────────────────────────────────────────────
+function SkeletonBox({ className }: { className?: string }) {
+  return (
+    <div className={`bg-slate-200 rounded-2xl animate-pulse ${className ?? ''}`} />
+  );
+}
+
+function SkeletonLoader() {
+  return (
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <SkeletonBox className="h-7 w-36" />
+          <SkeletonBox className="h-4 w-56" />
+        </div>
+        <SkeletonBox className="h-10 w-28" />
+      </div>
+
+      {/* Stats grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+            <SkeletonBox className="h-9 w-9 mb-2.5" />
+            <SkeletonBox className="h-8 w-16 mb-1" />
+            <SkeletonBox className="h-3 w-24" />
+          </div>
+        ))}
+      </div>
+
+      {/* Two cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {[...Array(2)].map((_, i) => (
+          <div key={i} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-3">
+            <div className="flex justify-between">
+              <div className="space-y-1.5">
+                <SkeletonBox className="h-3 w-10" />
+                <SkeletonBox className="h-5 w-28" />
+              </div>
+              <SkeletonBox className="h-6 w-16 rounded-full" />
+            </div>
+            <SkeletonBox className="h-3 w-full" />
+            <SkeletonBox className="h-3 w-4/5" />
+            <SkeletonBox className="h-3 w-3/5" />
+          </div>
+        ))}
+      </div>
+
+      {/* Week overview */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <SkeletonBox className="h-5 w-28 mb-4" />
+        <div className="grid grid-cols-7 gap-2">
+          {[...Array(7)].map((_, i) => (
+            <div key={i} className="flex flex-col items-center gap-1.5">
+              <SkeletonBox className="h-3 w-6" />
+              <SkeletonBox className="w-full aspect-square rounded-xl" />
+              <SkeletonBox className="h-2.5 w-8" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 function NewPasswordScreen() {
   const { updatePassword, loading } = useAuthStore();
   const [password, setPassword] = useState('');
@@ -221,7 +284,7 @@ export default function App() {
     toggleRestDay, addExercise, removeExercise, updateExercise,
     replaceExercise, moveExercise, resetWeek, loadGeneratedPlan,
     customExercises, addCustomExercise, updateCustomExercise, deleteCustomExercise,
-    syncing,
+    syncing, isHydrating,
   } = useWorkoutStore(user?.id);
 
   useEffect(() => {
@@ -333,7 +396,7 @@ export default function App() {
 
           <main>
             <div className="max-w-5xl mx-auto px-3 sm:px-5 lg:px-8 py-4 sm:py-6">
-              {renderView()}
+              {isHydrating ? <SkeletonLoader /> : renderView()}
             </div>
           </main>
         </div>
