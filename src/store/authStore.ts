@@ -109,8 +109,7 @@ export function useAuthStore() {
   const signOut = useCallback(async () => {
     setLoading(true);
     await supabase.auth.signOut();
-    // Wyczyść localStorage — dane lokalne nie powinny być widoczne
-    // po wylogowaniu ani dla kolejnego użytkownika
+    localStorage.removeItem('fitplaner-auth-token');
     localStorage.removeItem('workout-planner-weeks');
     localStorage.removeItem('workout-planner-custom-exercises');
     setLoading(false);
@@ -160,8 +159,11 @@ export function useAuthStore() {
         }
       }
 
-      // ── Krok 3: Wyloguj lokalnie ──────────────────────────────────────────────
-      await supabase.auth.signOut();
+      // ── Krok 3: Wyczyść sesję lokalnie bez wywoływania signOut() ─────────────
+      // NIE wywołujemy supabase.auth.signOut() — konto już nie istnieje w bazie
+      // i Supabase zwróciłby 403. Czyścimy stan lokalnie.
+      setUser(null);
+      setSession(null);
 
       // ── Krok 4: Wyczyść localStorage ─────────────────────────────────────────
       const keysToRemove = Object.keys(localStorage).filter(k =>
