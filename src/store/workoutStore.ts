@@ -58,6 +58,7 @@ export function useWorkoutStore(userId?: string) {
 
   // ── Sync state ──
   const [syncing, setSyncing] = useState(false);
+  const [isHydrating, setIsHydrating] = useState(() => !!isSupabaseConfigured);
 
   // ── On userId change: sync data from cloud ──
   useEffect(() => {
@@ -99,6 +100,7 @@ export function useWorkoutStore(userId?: string) {
         console.error('[WorkoutStore] Sync error:', err);
       } finally {
         setSyncing(false);
+        setIsHydrating(false);
       }
     };
 
@@ -366,6 +368,7 @@ export function useWorkoutStore(userId?: string) {
     goToNextWeek,
     goToCurrentWeek,
     goToWeekByKey,
+    isHydrating,
     copyFromPrevWeek,
     // Days
     days,
