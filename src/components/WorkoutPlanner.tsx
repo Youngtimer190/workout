@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { WorkoutDay, Exercise } from '../types';
 import { WeekMeta } from '../store/weekStore';
 import DayColumn from './DayColumn';
@@ -24,6 +24,7 @@ interface WorkoutPlannerProps {
   customExercises?: Exercise[];
   onSaveCustomExercise?: (exercise: Exercise) => void;
   onDeleteCustomExercise?: (id: string) => void;
+  highlightDayIndex?: number | null;
 }
 
 // Modal state type
@@ -50,6 +51,7 @@ export default function WorkoutPlanner({
   customExercises = [],
   onSaveCustomExercise,
   onDeleteCustomExercise,
+  highlightDayIndex,
 }: WorkoutPlannerProps) {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [modal, setModal] = useState<ModalState>({ type: 'none' });
@@ -58,6 +60,23 @@ export default function WorkoutPlanner({
 
   const daysRef = useRef(days);
   daysRef.current = days;
+
+  const dayRefs = useRef<(Array<HTMLDivElement | null>)>(new Array(7).fill(null));
+
+  // Przewiń do wybranego dnia po przejściu z dashboardu
+  useEffect(() => {
+    if (highlightDayIndex !== null && highlightDayIndex >= 0 && highlightDayIndex < 7) {
+      const dayElement = dayRefs.current[highlightDayIndex];
+      if (dayElement) {
+        dayElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Dodaj tymczasowe podświetlenie
+        dayElement.classList.add('ring-2', 'ring-violet-500', 'ring-offset-2');
+        setTimeout(() => {
+          dayElement.classList.remove('ring-2', 'ring-violet-500', 'ring-offset-2');
+        }, 2000);
+      }
+    }
+  }, [highlightDayIndex]);
 
   const totalExercises = days.reduce((acc, d) => acc + d.exercises.length, 0);
   const trainingDays = days.filter(d => !d.isRestDay && d.exercises.length > 0).length;
@@ -173,17 +192,21 @@ export default function WorkoutPlanner({
       {/* Days list */}
       <div className="space-y-2">
         {days.map((day, index) => (
-          <DayColumn
+          <div
             key={day.id}
-            day={day}
-            index={index}
-            onToggleRest={() => onToggleRest(day.id)}
-            onRemoveExercise={(exId) => onRemoveExercise(day.id, exId)}
-            onUpdateExercise={(exId, updates) => onUpdateExercise(day.id, exId, updates)}
-            onMoveExercise={(exId, dir) => onMoveExercise(day.id, exId, dir)}
-            onRequestAdd={() => handleRequestAdd(day.id, day.name)}
-            onRequestReplace={(exercise) => handleRequestReplace(day.id, exercise)}
-          />
+            ref={el => { dayRefs.current[index] = el; }}
+          >
+            <DayColumn
+              day={day}
+              index={index}
+              onToggleRest={() => onToggleRest(day.id)}
+              onRemoveExercise={(exId) => onRemoveExercise(day.id, exId)}
+              onUpdateExercise={(exId, updates) => onUpdateExercise(day.id, exId, updates)}
+              onMoveExercise={(exId, dir) => onMoveExercise(day.id, exId, dir)}
+              onRequestAdd={() => handleRequestAdd(day.id, day.name)}
+              onRequestReplace={(exercise) => handleRequestReplace(day.id, exercise)}
+            />
+          </div>
         ))}
       </div>
 
