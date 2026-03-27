@@ -65,7 +65,10 @@ export default function WorkoutPlanner({
 
   // Przewiń do wybranego dnia po przejściu z dashboardu
   useEffect(() => {
-    if (highlightDayIndex !== null && highlightDayIndex >= 0 && highlightDayIndex < 7) {
+    if (highlightDayIndex == null || highlightDayIndex < 0 || highlightDayIndex >= 7) return;
+
+    // Funkcja przewijająca z ponawianiem w razie potrzeby
+    const scrollToDay = (attempt = 0) => {
       const dayElement = dayRefs.current[highlightDayIndex];
       if (dayElement) {
         dayElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -74,8 +77,15 @@ export default function WorkoutPlanner({
         setTimeout(() => {
           dayElement.classList.remove('ring-2', 'ring-violet-500', 'ring-offset-2');
         }, 2000);
+      } else if (attempt < 10) {
+        // Spróbuj ponownie za chwilę (element może jeszcze nie być zamontowany)
+        setTimeout(() => scrollToDay(attempt + 1), 100);
       }
-    }
+    };
+
+    // Opóźnij przewinięcie żeby DOM się ustabilizował
+    const timer = setTimeout(() => scrollToDay(), 100);
+    return () => clearTimeout(timer);
   }, [highlightDayIndex]);
 
   const totalExercises = days.reduce((acc, d) => acc + d.exercises.length, 0);
