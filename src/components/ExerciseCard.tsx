@@ -219,7 +219,7 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
             </div>
 
             {exercise.notes && !editing && (
-              <p className="text-xs text-slate-400 mt-1.5 italic leading-snug">📝 {exercise.notes}</p>
+              <p className="text-sm text-slate-500 mt-2 italic leading-snug">📝 {exercise.notes}</p>
             )}
           </div>
         </div>
