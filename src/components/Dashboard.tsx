@@ -4,12 +4,13 @@ import { muscleGroupBgColors } from '../data/exercises';
 interface DashboardProps {
   days: WorkoutDay[];
   onGoToPlanner: () => void;
+  onGoToDay?: (dayIndex: number) => void;
 }
 
 const today = new Date().getDay();
 const todayIndex = today === 0 ? 6 : today - 1;
 
-export default function Dashboard({ days, onGoToPlanner }: DashboardProps) {
+export default function Dashboard({ days, onGoToPlanner, onGoToDay }: DashboardProps) {
   const totalExercises = days.reduce((acc, d) => acc + d.exercises.length, 0);
   const trainingDays = days.filter(d => !d.isRestDay && d.exercises.length > 0).length;
   const restDays = days.filter(d => d.isRestDay).length;
@@ -69,7 +70,13 @@ export default function Dashboard({ days, onGoToPlanner }: DashboardProps) {
 
       {/* Today & Tomorrow */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <DayCard day={todayDay} label="Dziś" isToday />
+        <DayCard
+          day={todayDay}
+          label="Dziś"
+          isToday
+          onClick={onGoToDay ? () => onGoToDay(todayIndex) : undefined}
+          clickable={!!onGoToDay}
+        />
         <DayCard day={tomorrowDay} label="Jutro" />
       </div>
 
@@ -152,9 +159,11 @@ export default function Dashboard({ days, onGoToPlanner }: DashboardProps) {
   );
 }
 
-function DayCard({ day, label, isToday }: { day: WorkoutDay; label: string; isToday?: boolean }) {
+function DayCard({ day, label, isToday, onClick, clickable }: { day: WorkoutDay; label: string; isToday?: boolean; onClick?: () => void; clickable?: boolean }) {
   return (
-    <div className={`rounded-2xl p-4 sm:p-5 border ${isToday ? 'border-violet-200 bg-violet-50' : 'border-slate-100 bg-white'} shadow-sm`}>
+    <div
+      onClick={onClick}
+      className={`rounded-2xl p-4 sm:p-5 border ${isToday ? 'border-violet-200 bg-violet-50' : 'border-slate-100 bg-white'} shadow-sm ${clickable ? 'cursor-pointer hover:shadow-md hover:scale-[1.01] transition-all' : ''}`}>
       <div className="flex items-center justify-between mb-3">
         <div>
           <span className={`text-[10px] font-bold uppercase tracking-wider ${isToday ? 'text-violet-500' : 'text-slate-400'}`}>
