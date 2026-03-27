@@ -142,8 +142,8 @@ function DayColumn({
               {day.exercises.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <span className="text-4xl mb-2">🏋️</span>
-                  <p className="text-slate-500 font-semibold text-sm">Brak ćwiczeń</p>
-                  <p className="text-slate-400 text-xs mt-1">Dodaj pierwsze ćwiczenie do tego dnia</p>
+                  <p className="text-slate-500 font-semibold text-lg">Brak ćwiczeń</p>
+                  <p className="text-slate-400 text-sm mt-1">Dodaj pierwsze ćwiczenie do tego dnia</p>
                 </div>
               ) : (
                 <>
