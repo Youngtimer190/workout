@@ -82,14 +82,14 @@ function DayColumn({
             <button
               onClick={e => { e.stopPropagation(); onToggleRest(); }}
               title={day.isRestDay ? 'Ustaw jako dzień treningowy' : 'Ustaw jako dzień odpoczynku'}
-              className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 active:bg-white/40 flex items-center justify-center transition-all cursor-pointer"
+              className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 active:bg-white/40 flex items-center justify-center transition-all cursor-pointer"
             >
               {day.isRestDay ? (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-white">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-white">
                   <path d="M12 5v14M5 12h14" />
                 </svg>
               ) : (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-white">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-white">
                   <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z" />
                 </svg>
               )}
@@ -100,17 +100,17 @@ function DayColumn({
               <button
                 onClick={e => { e.stopPropagation(); onRequestAdd(); }}
                 title="Dodaj ćwiczenie"
-                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 active:bg-white/40 flex items-center justify-center transition-all cursor-pointer"
+                className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 active:bg-white/40 flex items-center justify-center transition-all cursor-pointer"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-white">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-white">
                   <path d="M12 5v14M5 12h14" />
                 </svg>
               </button>
             )}
 
             {/* Collapse chevron */}
-            <div className={`w-6 h-6 flex items-center justify-center transition-transform duration-200 ${collapsed ? 'rotate-180' : ''}`}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-white">
+            <div className={`w-8 h-8 flex items-center justify-center transition-transform duration-200 ${collapsed ? 'rotate-180' : ''}`}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-white">
                 <path d="M6 9l6 6 6-6" />
               </svg>
             </div>
