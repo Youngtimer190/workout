@@ -219,61 +219,12 @@ function NewPasswordScreen() {
   );
 }
 
-// ── Dev Toolbar (tylko w trybie development) ──────────────────────────────────
-type DevViewport = 'responsive' | 'mobile' | 'tablet' | 'desktop';
-
-const DEV_VIEWPORTS: { id: DevViewport; label: string; width: string; icon: string }[] = [
-  { id: 'responsive',  label: 'Auto',   width: '100%',   icon: '⊞' },
-  { id: 'mobile',      label: '375px',  width: '375px',  icon: '📱' },
-  { id: 'tablet',      label: '768px',  width: '768px',  icon: '🪟' },
-  { id: 'desktop',     label: '1280px', width: '1280px', icon: '🖥️' },
-];
-
-function DevToolbar({ viewport, onChange }: { viewport: DevViewport; onChange: (v: DevViewport) => void }) {
-  return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 99999,
-      background: 'linear-gradient(135deg, #1e1b4b, #312e81)',
-      borderBottom: '1px solid rgba(139,92,246,0.4)',
-      display: 'flex', alignItems: 'center', gap: '6px',
-      padding: '5px 12px', height: '36px',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-      boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
-    }}>
-      <span style={{ fontSize: '13px', fontWeight: 700, color: '#a5b4fc', marginRight: '4px' }}>
-        🏋️ Dev
-      </span>
-      <div style={{ width: '1px', height: '16px', background: 'rgba(139,92,246,0.4)', margin: '0 4px' }} />
-      {DEV_VIEWPORTS.map(vp => (
-        <button
-          key={vp.id}
-          onClick={() => onChange(vp.id)}
-          style={{
-            padding: '3px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer',
-            fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px',
-            background: viewport === vp.id ? 'rgba(139,92,246,0.8)' : 'rgba(255,255,255,0.06)',
-            color: viewport === vp.id ? '#fff' : '#a5b4fc',
-            transition: 'all 0.15s',
-          }}
-        >
-          <span style={{ fontSize: '10px' }}>{vp.icon}</span>
-          {vp.label}
-        </button>
-      ))}
-      <div style={{ marginLeft: 'auto', fontSize: '10px', color: 'rgba(165,180,252,0.5)', fontFamily: 'monospace' }}>
-        {viewport === 'responsive' ? 'dopasowane do okna' : DEV_VIEWPORTS.find(v => v.id === viewport)?.width}
-      </div>
-    </div>
-  );
-}
-
 // ── Main App ──────────────────────────────────────────────────────────────────
-const isDev = import.meta.env.DEV;
 
 export default function App() {
   const [activeView, setActiveView] = useState<View>('dashboard');
   const [offlineDismissed, setOfflineDismissed] = useState(false);
-  const [devViewport, setDevViewport] = useState<DevViewport>('responsive');
+  const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
   const topRef = useRef<HTMLDivElement>(null);
 
   const { user, initialized, isAuthenticated, isDemoMode, loginAsDemo, exitDemoMode, isPasswordRecovery } = useAuthStore();
@@ -302,6 +253,12 @@ export default function App() {
   };
 
   const handleViewChange = (view: View) => { setActiveView(view); scrollToTop(); };
+
+  const handleGoToDay = (dayIndex: number) => {
+    setSelectedDayIndex(dayIndex);
+    setActiveView('planner');
+    scrollToTop();
+  };
 
   const handleApplyGeneratedPlan = (generatedDays: WorkoutDay[]) => {
     loadGeneratedPlan(generatedDays);
@@ -339,7 +296,7 @@ export default function App() {
 
   const renderView = () => {
     switch (activeView) {
-      case 'dashboard': return <Dashboard days={days} onGoToPlanner={() => handleViewChange('planner')} />;
+      case 'dashboard': return <Dashboard days={days} onGoToPlanner={() => handleViewChange('planner')} onGoToDay={handleGoToDay} />;
       case 'generator': return <PlanGenerator onApplyPlan={handleApplyGeneratedPlan} onGoToPlanner={() => handleViewChange('planner')} />;
       case 'planner':
         return (
@@ -352,6 +309,7 @@ export default function App() {
             onNextWeek={goToNextWeek} onGoToCurrentWeek={goToCurrentWeek}
             onCopyFromPrevWeek={copyFromPrevWeek} customExercises={customExercises}
             onSaveCustomExercise={addCustomExercise} onDeleteCustomExercise={deleteCustomExercise}
+            highlightDayIndex={selectedDayIndex}
           />
         );
       case 'library':
@@ -361,46 +319,31 @@ export default function App() {
     }
   };
 
-  const vpWidth = DEV_VIEWPORTS.find(v => v.id === devViewport)?.width ?? '100%';
-  const isConstrained = isDev && devViewport !== 'responsive';
-
   return (
     <div className="min-h-screen bg-slate-50">
       <div ref={topRef} style={{ position: 'absolute', top: 0, left: 0, height: 0, width: 0 }} />
 
-      {isDev && <DevToolbar viewport={devViewport} onChange={setDevViewport} />}
+      <Sidebar activeView={activeView} onViewChange={handleViewChange} />
 
-      <div style={isConstrained ? {
-        width: vpWidth, maxWidth: vpWidth, margin: '0 auto',
-        marginTop: '36px', minHeight: 'calc(100vh - 36px)',
-        overflow: 'hidden',
-        boxShadow: '0 0 0 1px rgba(139,92,246,0.3), 0 8px 40px rgba(0,0,0,0.35)',
-        position: 'relative', background: '#f8fafc',
-      } : isDev ? { marginTop: '36px' } : {}}>
+      <div className="main-content">
+        {isDemoMode && <DemoBanner onExit={exitDemoMode} />}
+        {!isSupabaseConfigured && !offlineDismissed && <OfflineBanner onDismiss={() => setOfflineDismissed(true)} />}
 
-        <Sidebar activeView={activeView} onViewChange={handleViewChange} />
+        {syncing && isSupabaseConfigured && (
+          <div className="bg-violet-500/10 border-b border-violet-500/20 px-4 py-2 flex items-center gap-2">
+            <svg className="w-3.5 h-3.5 text-violet-400 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            <p className="text-violet-400 text-xs font-medium">Synchronizowanie danych...</p>
+          </div>
+        )}
 
-        <div className="main-content">
-          {isDemoMode && <DemoBanner onExit={exitDemoMode} />}
-          {!isSupabaseConfigured && !offlineDismissed && <OfflineBanner onDismiss={() => setOfflineDismissed(true)} />}
-
-          {syncing && isSupabaseConfigured && (
-            <div className="bg-violet-500/10 border-b border-violet-500/20 px-4 py-2 flex items-center gap-2">
-              <svg className="w-3.5 h-3.5 text-violet-400 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-              <p className="text-violet-400 text-xs font-medium">Synchronizowanie danych...</p>
-            </div>
-          )}
-
-          <main>
-            <div className="max-w-5xl mx-auto px-3 sm:px-5 lg:px-8 py-4 sm:py-6">
-              {isHydrating ? <SkeletonLoader /> : renderView()}
-            </div>
-          </main>
-        </div>
-
+        <main>
+          <div className="max-w-5xl mx-auto px-3 sm:px-5 lg:px-8 py-4 sm:py-6">
+            {isHydrating ? <SkeletonLoader /> : renderView()}
+          </div>
+        </main>
       </div>
     </div>
   );
