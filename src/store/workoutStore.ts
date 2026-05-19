@@ -84,7 +84,7 @@ export function useWorkoutStore(userId?: string) {
 
         // Wyczyść lokalne dane i zastąp danymi z chmury
         clearLocalData();
-        
+
         if (Object.keys(cloudWeeks).length > 0) {
           saveAllWeeksLocal(cloudWeeks);
         }
@@ -291,6 +291,26 @@ export function useWorkoutStore(userId?: string) {
     });
   }, [weekKey, persistDays]);
 
+  const moveExerciseToDay = useCallback((sourceDayId: string, exerciseId: string, targetDayId: string) => {
+    setDays(prev => {
+      const sourceDay = prev.find(d => d.id === sourceDayId);
+      if (!sourceDay) return prev;
+      const exercise = sourceDay.exercises.find(e => e.id === exerciseId);
+      if (!exercise) return prev;
+      const next = prev.map(d => {
+        if (d.id === sourceDayId) {
+          return { ...d, exercises: d.exercises.filter(e => e.id !== exerciseId) };
+        }
+        if (d.id === targetDayId) {
+          return { ...d, exercises: [...d.exercises, exercise] };
+        }
+        return d;
+      });
+      persistDays(next, weekKey);
+      return next;
+    });
+  }, [weekKey, persistDays]);
+
   const resetWeek = useCallback(() => {
     const fresh = createDefaultDays(weekKey);
     setDays(fresh);
@@ -380,6 +400,7 @@ export function useWorkoutStore(userId?: string) {
     replaceExercise,
     reorderExercises,
     moveExercise,
+    moveExerciseToDay,
     resetWeek,
     clearWeek,
     loadGeneratedPlan,
