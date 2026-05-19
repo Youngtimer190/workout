@@ -1,6 +1,7 @@
 import { useState, memo } from 'react';
 import { WorkoutDay, Exercise } from '../types';
 import ExerciseCard from './ExerciseCard';
+import MoveExerciseModal from './MoveExerciseModal';
 
 interface DayColumnProps {
   day: WorkoutDay;
@@ -9,6 +10,8 @@ interface DayColumnProps {
   onRemoveExercise: (exerciseId: string) => void;
   onUpdateExercise: (exerciseId: string, updates: Partial<Exercise>) => void;
   onMoveExercise: (exerciseId: string, direction: 'up' | 'down') => void;
+  onMoveExerciseToDay?: (sourceDayId: string, exerciseId: string, targetDayId: string) => void;
+  days?: WorkoutDay[];
   onRequestAdd: () => void;
   onRequestReplace: (exercise: Exercise) => void;
 }
@@ -22,16 +25,26 @@ function DayColumn({
   onRemoveExercise,
   onUpdateExercise,
   onMoveExercise,
+  onMoveExerciseToDay,
+  days,
   onRequestAdd,
   onRequestReplace,
 }: DayColumnProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const [moveExerciseState, setMoveExerciseState] = useState<{ exercise: Exercise; sourceDayId: string } | null>(null);
 
   const totalSets = day.exercises.reduce((acc, e) => acc + (e.sets || 0), 0);
   const completedExercises = day.exercises.filter(e =>
     e.setLogs && e.setLogs.length > 0 && e.setLogs.every(s => s.done)
   ).length;
   const shortLabel = DAY_LABELS[index] ?? '';
+
+  const handleMoveExercise = (targetDayId: string) => {
+    if (moveExerciseState && onMoveExerciseToDay) {
+      onMoveExerciseToDay(moveExerciseState.sourceDayId, moveExerciseState.exercise.id, targetDayId);
+      setMoveExerciseState(null);
+    }
+  };
 
   return (
     <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-all duration-200 ${
@@ -54,7 +67,7 @@ function DayColumn({
           <div className="flex-1 min-w-0">
             <p className="text-white font-bold text-base leading-tight truncate">{day.name}</p>
             {day.isRestDay ? (
-              <p className="text-white/70 text-xs mt-0.5">🌙 Dzień odpoczynku</p>
+              <p className="text-white/70 text-xs mt-0.5">Dzień odpoczynku</p>
             ) : day.exercises.length === 0 ? (
               <p className="text-white/70 text-xs mt-0.5">Brak ćwiczeń – kliknij aby dodać</p>
             ) : (
@@ -127,7 +140,7 @@ function DayColumn({
                 <span className="text-3xl flex-shrink-0">😴</span>
                 <div className="min-w-0">
                   <p className="text-slate-600 font-semibold text-sm">Dzień odpoczynku</p>
-                  <p className="text-slate-400 text-xs mt-0.5 hidden sm:block">Regeneracja mięśni jest kluczowa dla postępów</p>
+                  <p className="text-slate-400 text-xs mt-0.5 hidden sm-block">Regeneracja mięśni jest kluczowa dla postępów</p>
                 </div>
               </div>
               <button
@@ -157,38 +170,50 @@ function DayColumn({
                       <div key={exercise.id} className="flex gap-2 items-stretch">
 
                         {/* Order buttons — always visible, large touch targets */}
-                        {day.exercises.length > 1 && (
-                          <div className="flex flex-col gap-1 flex-shrink-0">
-                            <button
-                              onClick={() => onMoveExercise(exercise.id, 'up')}
-                              disabled={exIndex === 0}
-                              className={`flex-1 w-9 rounded-lg flex items-center justify-center transition-all cursor-pointer ${
-                                exIndex === 0
-                                  ? 'bg-slate-50 text-slate-200 cursor-not-allowed'
-                                  : 'bg-slate-100 hover:bg-violet-100 active:bg-violet-200 text-slate-400 hover:text-violet-600'
-                              }`}
-                              title="Przesuń wyżej"
-                            >
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                                <path d="M18 15l-6-6-6 6" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() => onMoveExercise(exercise.id, 'down')}
-                              disabled={exIndex === day.exercises.length - 1}
-                              className={`flex-1 w-9 rounded-lg flex items-center justify-center transition-all cursor-pointer ${
-                                exIndex === day.exercises.length - 1
-                                  ? 'bg-slate-50 text-slate-200 cursor-not-allowed'
-                                  : 'bg-slate-100 hover:bg-violet-100 active:bg-violet-200 text-slate-400 hover:text-violet-600'
-                              }`}
-                              title="Przesuń niżej"
-                            >
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                                <path d="M6 9l6 6 6-6" />
-                              </svg>
-                            </button>
-                          </div>
-                        )}
+                        <div className="flex flex-col gap-1 flex-shrink-0">
+                          {day.exercises.length > 1 && (
+                            <>
+                              <button
+                                onClick={() => onMoveExercise(exercise.id, 'up')}
+                                disabled={exIndex === 0}
+                                className={`flex-1 w-9 rounded-lg flex items-center justify-center transition-all cursor-pointer ${
+                                  exIndex === 0
+                                    ? 'bg-slate-50 text-slate-200 cursor-not-allowed'
+                                    : 'bg-slate-100 hover:bg-violet-100 active:bg-violet-200 text-slate-400 hover:text-violet-600'
+                                }`}
+                                title="Przesuń wyżej"
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                                  <path d="M18 15l-6-6-6 6" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => onMoveExercise(exercise.id, 'down')}
+                                disabled={exIndex === day.exercises.length - 1}
+                                className={`flex-1 w-9 rounded-lg flex items-center justify-center transition-all cursor-pointer ${
+                                  exIndex === day.exercises.length - 1
+                                    ? 'bg-slate-50 text-slate-200 cursor-not-allowed'
+                                    : 'bg-slate-100 hover:bg-violet-100 active:bg-violet-200 text-slate-400 hover:text-violet-600'
+                                }`}
+                                title="Przesuń niżej"
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                                  <path d="M6 9l6 6 6-6" />
+                                </svg>
+                              </button>
+                            </>
+                          )}
+                          {/* Move to another day button */}
+                          <button
+                            onClick={() => setMoveExerciseState({ exercise, sourceDayId: day.id })}
+                            className="flex-1 w-9 rounded-lg bg-slate-100 hover:bg-emerald-100 active:bg-emerald-200 text-slate-400 hover:text-emerald-600 flex items-center justify-center transition-all cursor-pointer"
+                            title="Przenieś na inny dzień"
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                              <path d="M5 12h14M12 5l7 7-7 7" />
+                            </svg>
+                          </button>
+                        </div>
 
                         {/* Exercise card */}
                         <div className="flex-1 min-w-0">
@@ -218,6 +243,17 @@ function DayColumn({
             </div>
           )}
         </div>
+      )}
+
+      {/* Move Exercise Modal */}
+      {moveExerciseState && days && (
+        <MoveExerciseModal
+          exercise={moveExerciseState.exercise}
+          sourceDay={day}
+          days={days}
+          onMove={(targetDayId) => handleMoveExercise(targetDayId)}
+          onClose={() => setMoveExerciseState(null)}
+        />
       )}
     </div>
   );

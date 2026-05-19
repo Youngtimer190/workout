@@ -16,6 +16,7 @@ interface WorkoutPlannerProps {
   onUpdateExercise: (dayId: string, exerciseId: string, updates: Partial<Exercise>) => void;
   onReplaceExercise: (dayId: string, exerciseId: string, newExercise: Exercise) => void;
   onMoveExercise: (dayId: string, exerciseId: string, direction: 'up' | 'down') => void;
+  onMoveExerciseToDay?: (sourceDayId: string, exerciseId: string, targetDayId: string) => void;
   onResetWeek: () => void;
   onPrevWeek: () => void;
   onNextWeek: () => void;
@@ -43,6 +44,7 @@ export default function WorkoutPlanner({
   onUpdateExercise,
   onReplaceExercise,
   onMoveExercise,
+  onMoveExerciseToDay,
   onResetWeek,
   onPrevWeek,
   onNextWeek,
@@ -213,6 +215,8 @@ export default function WorkoutPlanner({
               onRemoveExercise={(exId) => onRemoveExercise(day.id, exId)}
               onUpdateExercise={(exId, updates) => onUpdateExercise(day.id, exId, updates)}
               onMoveExercise={(exId, dir) => onMoveExercise(day.id, exId, dir)}
+              onMoveExerciseToDay={onMoveExerciseToDay}
+              days={days}
               onRequestAdd={() => handleRequestAdd(day.id, day.name)}
               onRequestReplace={(exercise) => handleRequestReplace(day.id, exercise)}
             />
@@ -258,5 +262,3 @@ export default function WorkoutPlanner({
     </div>
   );
 }
-
-
