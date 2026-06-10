@@ -17,6 +17,7 @@ interface WorkoutPlannerProps {
   onReplaceExercise: (dayId: string, exerciseId: string, newExercise: Exercise) => void;
   onMoveExercise: (dayId: string, exerciseId: string, direction: 'up' | 'down') => void;
   onMoveExerciseToDay?: (sourceDayId: string, exerciseId: string, targetDayId: string) => void;
+  onMoveAllExercisesToDay?: (sourceDayId: string, targetDayId: string) => void;
   onResetWeek: () => void;
   onPrevWeek: () => void;
   onNextWeek: () => void;
@@ -45,6 +46,7 @@ export default function WorkoutPlanner({
   onReplaceExercise,
   onMoveExercise,
   onMoveExerciseToDay,
+  onMoveAllExercisesToDay,
   onResetWeek,
   onPrevWeek,
   onNextWeek,
@@ -216,6 +218,7 @@ export default function WorkoutPlanner({
               onUpdateExercise={(exId, updates) => onUpdateExercise(day.id, exId, updates)}
               onMoveExercise={(exId, dir) => onMoveExercise(day.id, exId, dir)}
               onMoveExerciseToDay={onMoveExerciseToDay}
+              onMoveAllExercisesToDay={onMoveAllExercisesToDay}
               days={days}
               onRequestAdd={() => handleRequestAdd(day.id, day.name)}
               onRequestReplace={(exercise) => handleRequestReplace(day.id, exercise)}

@@ -2,6 +2,7 @@ import { useState, memo } from 'react';
 import { WorkoutDay, Exercise } from '../types';
 import ExerciseCard from './ExerciseCard';
 import MoveExerciseModal from './MoveExerciseModal';
+import MoveDayModal from './MoveDayModal';
 
 interface DayColumnProps {
   day: WorkoutDay;
@@ -11,6 +12,7 @@ interface DayColumnProps {
   onUpdateExercise: (exerciseId: string, updates: Partial<Exercise>) => void;
   onMoveExercise: (exerciseId: string, direction: 'up' | 'down') => void;
   onMoveExerciseToDay?: (sourceDayId: string, exerciseId: string, targetDayId: string) => void;
+  onMoveAllExercisesToDay?: (sourceDayId: string, targetDayId: string) => void;
   days?: WorkoutDay[];
   onRequestAdd: () => void;
   onRequestReplace: (exercise: Exercise) => void;
@@ -26,12 +28,14 @@ function DayColumn({
   onUpdateExercise,
   onMoveExercise,
   onMoveExerciseToDay,
+  onMoveAllExercisesToDay,
   days,
   onRequestAdd,
   onRequestReplace,
 }: DayColumnProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [moveExerciseState, setMoveExerciseState] = useState<{ exercise: Exercise; sourceDayId: string } | null>(null);
+  const [moveDayModalOpen, setMoveDayModalOpen] = useState(false);
 
   const totalSets = day.exercises.reduce((acc, e) => acc + (e.sets || 0), 0);
   const completedExercises = day.exercises.filter(e =>
@@ -107,6 +111,19 @@ function DayColumn({
                 </svg>
               )}
             </button>
+
+            {/* Move all exercises */}
+            {day.exercises.length > 0 && !day.isRestDay && onMoveAllExercisesToDay && (
+              <button
+                onClick={e => { e.stopPropagation(); setMoveDayModalOpen(true); }}
+                title="Przenieś trening na inny dzień"
+                className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 active:bg-white/40 flex items-center justify-center transition-all cursor-pointer"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-white">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </button>
+            )}
 
             {/* Add exercise */}
             {!day.isRestDay && (
@@ -253,6 +270,19 @@ function DayColumn({
           days={days}
           onMove={(targetDayId) => handleMoveExercise(targetDayId)}
           onClose={() => setMoveExerciseState(null)}
+        />
+      )}
+
+      {/* Move Day Modal */}
+      {moveDayModalOpen && days && (
+        <MoveDayModal
+          sourceDay={day}
+          days={days}
+          onMove={(targetDayId) => {
+            onMoveAllExercisesToDay?.(day.id, targetDayId);
+            setMoveDayModalOpen(false);
+          }}
+          onClose={() => setMoveDayModalOpen(false)}
         />
       )}
     </div>
