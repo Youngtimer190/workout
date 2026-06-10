@@ -233,7 +233,7 @@ export default function App() {
     days, weekMeta,
     goToPrevWeek, goToNextWeek, goToCurrentWeek, copyFromPrevWeek,
     toggleRestDay, addExercise, removeExercise, updateExercise,
-    replaceExercise, moveExercise, moveExerciseToDay, resetWeek, loadGeneratedPlan,
+    replaceExercise, moveExercise, moveExerciseToDay, moveAllExercisesToDay, resetWeek, loadGeneratedPlan,
     customExercises, addCustomExercise, updateCustomExercise, deleteCustomExercise,
     syncing, isHydrating,
   } = useWorkoutStore(user?.id);
@@ -306,6 +306,7 @@ export default function App() {
             onRemoveExercise={removeExercise} onUpdateExercise={updateExercise}
             onReplaceExercise={replaceExercise} onMoveExercise={moveExercise}
                 onMoveExerciseToDay={moveExerciseToDay}
+                onMoveAllExercisesToDay={moveAllExercisesToDay}
             onResetWeek={resetWeek} onPrevWeek={goToPrevWeek}
             onNextWeek={goToNextWeek} onGoToCurrentWeek={goToCurrentWeek}
             onCopyFromPrevWeek={copyFromPrevWeek} customExercises={customExercises}
