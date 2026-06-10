@@ -9,6 +9,7 @@ import {
   buildWeekMeta,
   offsetWeek,
   WeekMeta,
+  copyWeekDays,
   deleteWeekDays,
   migrateOldData,
   saveAllWeeksLocal,
@@ -171,47 +172,12 @@ export function useWorkoutStore(userId?: string) {
   const copyFromPrevWeek = useCallback(() => {
     const prevMonday = offsetWeek(currentMonday, -1);
     const prevKey = getWeekKey(prevMonday);
-    const sourceDays = loadWeekDays(prevKey);
-
-    setDays(prev => {
-      const merged = prev.map((day, i) => {
-        const sourceDay = sourceDays[i];
-        if (!sourceDay || sourceDay.exercises.length === 0) {
-          return day;
-        }
-
-        const sourceExercises = sourceDay.exercises.map(ex => {
-          // Reset done=false for every set
-          const freshSetLogs = Array.isArray(ex.setLogs)
-            ? ex.setLogs.map(log => ({
-                id: log.id,
-                setNumber: log.setNumber,
-                targetReps: log.targetReps,
-                actualReps: log.actualReps,
-                weight: log.weight,
-                done: false,
-                note: log.note,
-              }))
-            : [];
-
-          return {
-            ...ex,
-            id: `${weekKey}-${ex.id.split('-')[0]}-${i}-${Date.now()}-${Math.random()}`,
-            setLogs: freshSetLogs,
-          };
-        });
-
-        return {
-          ...day,
-          exercises: [...day.exercises, ...sourceExercises],
-          isRestDay: sourceExercises.length === 0 ? day.isRestDay : false,
-        };
-      });
-
-      persistDays(merged, weekKey);
-      return merged;
-    });
-  }, [currentMonday, weekKey, persistDays]);
+    const copied = copyWeekDays(prevKey, weekKey);
+    setDays(copied);
+    if (userId && isSupabaseConfigured) {
+      upsertWeekPlan(userId, weekKey, copied);
+    }
+  }, [currentMonday, weekKey, userId]);
 
   // ── Helpers ──
   const persistDays = useCallback((newDays: WorkoutDay[], key: string) => {
