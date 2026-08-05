@@ -231,9 +231,9 @@ export default function App() {
 
   const {
     days, weekMeta,
-    goToPrevWeek, goToNextWeek, goToCurrentWeek, copyFromPrevWeek,
+    goToPrevWeek, goToNextWeek, goToCurrentWeek, copyWorkoutToDay,
     toggleRestDay, addExercise, removeExercise, updateExercise,
-    replaceExercise, moveExercise, moveExerciseToDay, moveAllExercisesToDay, resetWeek, loadGeneratedPlan,
+    replaceExercise, moveExercise, moveExerciseToDay, moveAllExercisesToDate, resetWeek, loadGeneratedPlan,
     customExercises, addCustomExercise, updateCustomExercise, deleteCustomExercise,
     syncing, isHydrating,
   } = useWorkoutStore(user?.id);
@@ -306,10 +306,10 @@ export default function App() {
             onRemoveExercise={removeExercise} onUpdateExercise={updateExercise}
             onReplaceExercise={replaceExercise} onMoveExercise={moveExercise}
                 onMoveExerciseToDay={moveExerciseToDay}
-                onMoveAllExercisesToDay={moveAllExercisesToDay}
+                onMoveAllExercisesToDate={moveAllExercisesToDate}
             onResetWeek={resetWeek} onPrevWeek={goToPrevWeek}
             onNextWeek={goToNextWeek} onGoToCurrentWeek={goToCurrentWeek}
-            onCopyFromPrevWeek={copyFromPrevWeek} customExercises={customExercises}
+            userId={user?.id} onCopyWorkout={copyWorkoutToDay} customExercises={customExercises}
             onSaveCustomExercise={addCustomExercise} onDeleteCustomExercise={deleteCustomExercise}
             highlightDayIndex={selectedDayIndex}
           />

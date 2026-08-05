@@ -6,7 +6,6 @@ import WeekNavigator from './WeekNavigator';
 import AddExerciseModal from './AddExerciseModal';
 import ReplaceExerciseModal from './ReplaceExerciseModal';
 import CreateExerciseModal from './CreateExerciseModal';
-import CopyWorkoutModal from './CopyWorkoutModal';
 
 interface WorkoutPlannerProps {
   days: WorkoutDay[];
@@ -18,13 +17,11 @@ interface WorkoutPlannerProps {
   onReplaceExercise: (dayId: string, exerciseId: string, newExercise: Exercise) => void;
   onMoveExercise: (dayId: string, exerciseId: string, direction: 'up' | 'down') => void;
   onMoveExerciseToDay?: (sourceDayId: string, exerciseId: string, targetDayId: string) => void;
-  onMoveAllExercisesToDate?: (sourceDayId: string, targetDateStr: string) => void;
   onResetWeek: () => void;
   onPrevWeek: () => void;
   onNextWeek: () => void;
   onGoToCurrentWeek: () => void;
-  userId?: string;
-  onCopyWorkout?: (sourceExercises: Exercise[], targetDateStr: string) => void;
+  onCopyFromPrevWeek: () => void;
   customExercises?: Exercise[];
   onSaveCustomExercise?: (exercise: Exercise) => void;
   onDeleteCustomExercise?: (id: string) => void;
@@ -48,20 +45,17 @@ export default function WorkoutPlanner({
   onReplaceExercise,
   onMoveExercise,
   onMoveExerciseToDay,
-  onMoveAllExercisesToDate,
   onResetWeek,
   onPrevWeek,
   onNextWeek,
   onGoToCurrentWeek,
-  userId,
-  onCopyWorkout,
+  onCopyFromPrevWeek,
   customExercises = [],
   onSaveCustomExercise,
   onDeleteCustomExercise,
   highlightDayIndex,
 }: WorkoutPlannerProps) {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [copyModalOpen, setCopyModalOpen] = useState(false);
   const [modal, setModal] = useState<ModalState>({ type: 'none' });
   const modalRef = useRef(modal);
   modalRef.current = modal;
@@ -201,7 +195,7 @@ export default function WorkoutPlanner({
         onPrev={onPrevWeek}
         onNext={onNextWeek}
         onGoToday={onGoToCurrentWeek}
-        onOpenCopy={() => setCopyModalOpen(true)}
+        onCopyFromPrev={onCopyFromPrevWeek}
         trainingDays={trainingDays}
         restDays={restDays}
         totalExercises={totalExercises}
@@ -221,9 +215,6 @@ export default function WorkoutPlanner({
               onRemoveExercise={(exId) => onRemoveExercise(day.id, exId)}
               onUpdateExercise={(exId, updates) => onUpdateExercise(day.id, exId, updates)}
               onMoveExercise={(exId, dir) => onMoveExercise(day.id, exId, dir)}
-              onMoveExerciseToDay={onMoveExerciseToDay}
-              onMoveAllExercisesToDate={onMoveAllExercisesToDate}
-              days={days}
               onRequestAdd={() => handleRequestAdd(day.id, day.name)}
               onRequestReplace={(exercise) => handleRequestReplace(day.id, exercise)}
             />
@@ -266,17 +257,9 @@ export default function WorkoutPlanner({
           }}
         />
       )}
-
-      {copyModalOpen && (
-        <CopyWorkoutModal
-          userId={userId}
-          onCopy={(sourceExercises, targetDateStr) => {
-            onCopyWorkout?.(sourceExercises, targetDateStr);
-            setCopyModalOpen(false);
-          }}
-          onClose={() => setCopyModalOpen(false)}
-        />
-      )}
     </div>
   );
 }
+
+
+

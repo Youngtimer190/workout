@@ -12,7 +12,7 @@ interface DayColumnProps {
   onUpdateExercise: (exerciseId: string, updates: Partial<Exercise>) => void;
   onMoveExercise: (exerciseId: string, direction: 'up' | 'down') => void;
   onMoveExerciseToDay?: (sourceDayId: string, exerciseId: string, targetDayId: string) => void;
-  onMoveAllExercisesToDay?: (sourceDayId: string, targetDayId: string) => void;
+  onMoveAllExercisesToDate?: (sourceDayId: string, targetDateStr: string) => void;
   days?: WorkoutDay[];
   onRequestAdd: () => void;
   onRequestReplace: (exercise: Exercise) => void;
@@ -28,7 +28,7 @@ function DayColumn({
   onUpdateExercise,
   onMoveExercise,
   onMoveExerciseToDay,
-  onMoveAllExercisesToDay,
+  onMoveAllExercisesToDate,
   days,
   onRequestAdd,
   onRequestReplace,
@@ -113,7 +113,7 @@ function DayColumn({
             </button>
 
             {/* Move all exercises */}
-            {day.exercises.length > 0 && !day.isRestDay && onMoveAllExercisesToDay && (
+            {day.exercises.length > 0 && !day.isRestDay && onMoveAllExercisesToDate && (
               <button
                 onClick={e => { e.stopPropagation(); setMoveDayModalOpen(true); }}
                 title="Przenieś trening na inny dzień"
@@ -274,12 +274,11 @@ function DayColumn({
       )}
 
       {/* Move Day Modal */}
-      {moveDayModalOpen && days && (
+      {moveDayModalOpen && (
         <MoveDayModal
           sourceDay={day}
-          days={days}
-          onMove={(targetDayId) => {
-            onMoveAllExercisesToDay?.(day.id, targetDayId);
+          onMove={(targetDateStr) => {
+            onMoveAllExercisesToDate?.(day.id, targetDateStr);
             setMoveDayModalOpen(false);
           }}
           onClose={() => setMoveDayModalOpen(false)}

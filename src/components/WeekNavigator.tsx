@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { WeekMeta } from '../store/weekStore';
 
 interface WeekNavigatorProps {
@@ -6,7 +5,7 @@ interface WeekNavigatorProps {
   onPrev: () => void;
   onNext: () => void;
   onGoToday: () => void;
-  onCopyFromPrev: () => void;
+  onOpenCopy: () => void;
   trainingDays: number;
   restDays: number;
   totalExercises: number;
@@ -17,18 +16,11 @@ export default function WeekNavigator({
   onPrev,
   onNext,
   onGoToday,
-  onCopyFromPrev,
+  onOpenCopy,
   trainingDays,
   restDays,
   totalExercises,
 }: WeekNavigatorProps) {
-  const [showCopyConfirm, setShowCopyConfirm] = useState(false);
-
-  const handleCopy = () => {
-    setShowCopyConfirm(false);
-    onCopyFromPrev();
-  };
-
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const todayIndex = (() => {
@@ -164,27 +156,17 @@ export default function WeekNavigator({
               </button>
             )}
 
-            {showCopyConfirm ? (
-              <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5">
-                <span className="text-[11px] text-amber-700 font-medium whitespace-nowrap">Skopiować?</span>
-                <button onClick={handleCopy} className="text-[11px] font-bold text-emerald-700 active:text-emerald-900 cursor-pointer">Tak</button>
-                <span className="text-amber-300">·</span>
-                <button onClick={() => setShowCopyConfirm(false)} className="text-[11px] font-bold text-slate-500 cursor-pointer">Nie</button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setShowCopyConfirm(true)}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-500 text-xs font-semibold hover:bg-slate-50 hover:text-slate-700 active:bg-slate-100 transition-all cursor-pointer whitespace-nowrap"
-                title="Skopiuj plan z poprzedniego tygodnia"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 flex-shrink-0">
-                  <rect x="9" y="9" width="13" height="13" rx="2" />
-                  <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-                </svg>
-                <span className="hidden sm:inline">Kopiuj z poprzedniego</span>
-                <span className="sm:hidden">Kopiuj</span>
-              </button>
-            )}
+            <button
+              onClick={onOpenCopy}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-500 text-xs font-semibold hover:bg-slate-50 hover:text-slate-700 active:bg-slate-100 transition-all cursor-pointer whitespace-nowrap"
+              title="Skopiuj trening z innego tygodnia"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 flex-shrink-0">
+                <rect x="9" y="9" width="13" height="13" rx="2" />
+                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+              </svg>
+              Kopiuj
+            </button>
           </div>
         </div>
       </div>

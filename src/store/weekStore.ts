@@ -1,7 +1,7 @@
 import { WorkoutDay } from '../types';
 import { dayColors } from '../data/exercises';
 
-const DAY_NAMES = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela'];
+export const DAY_NAMES = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela'];
 const WEEKS_STORAGE_KEY = 'workout-planner-weeks';
 
 export interface WeekMeta {

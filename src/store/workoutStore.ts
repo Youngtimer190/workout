@@ -176,49 +176,62 @@ export function useWorkoutStore(userId?: string) {
     }
   }, [userId]);
 
-  const copyFromPrevWeek = useCallback(() => {
-    const prevMonday = offsetWeek(currentMonday, -1);
-    const prevKey = getWeekKey(prevMonday);
-    const sourceDays = loadWeekDays(prevKey);
+  // Skopiuj trening (listę ćwiczeń) z dowolnego tygodnia do dnia docelowego.
+  // Źródło pozostaje nienaruszone; stan serii (done ✓) resetowany na false
+  // (waga/powtórzenia zachowane jako referencja) — świeży szablon jak przy copy.
+  // Dzień docelowy może być w innym tygodniu niż bieżący (append, nie replace).
+  const copyWorkoutToDay = useCallback((sourceExercises: Exercise[], targetDateStr: string) => {
+    if (!targetDateStr || sourceExercises.length === 0) return;
+    // Parsuj w czasie lokalnym, żeby uniknąć przesunięcia dnia przez offset UTC
+    const targetDate = new Date(`${targetDateStr}T00:00:00`);
+    if (isNaN(targetDate.getTime())) return;
 
-    setDays(prev => {
-      const merged = prev.map((day, i) => {
-        const sourceDay = sourceDays[i];
-        if (!sourceDay || sourceDay.exercises.length === 0) {
-          return day;
-        }
+    const targetMonday = getMondayOf(targetDate);
+    const targetKey = getWeekKey(targetMonday);
+    const targetIdx = (targetDate.getDay() + 6) % 7; // Mon=0..Sun=6 (jak createDefaultDays)
 
-        const sourceExercises = sourceDay.exercises.map(ex => {
-          const freshSetLogs = Array.isArray(ex.setLogs)
-            ? ex.setLogs.map(log => ({
-                id: log.id,
-                setNumber: log.setNumber,
-                targetReps: log.targetReps,
-                actualReps: log.actualReps,
-                weight: log.weight,
-                done: false,
-                note: log.note,
-              }))
-            : [];
-
-          return {
-            ...ex,
-            id: `${weekKey}-${ex.id.split('-')[0]}-${i}-${Date.now()}-${Math.random()}`,
-            setLogs: freshSetLogs,
-          };
-        });
-
-        return {
-          ...day,
-          exercises: [...day.exercises, ...sourceExercises],
-          isRestDay: sourceExercises.length === 0 ? day.isRestDay : false,
-        };
-      });
-
-      persistDays(merged, weekKey);
-      return merged;
+    // Świeża kopia: re-id + reset done=false (zachowaj wagę/powt.)
+    const fresh = sourceExercises.map(ex => {
+      const freshSetLogs = Array.isArray(ex.setLogs)
+        ? ex.setLogs.map(log => ({
+            id: log.id,
+            setNumber: log.setNumber,
+            targetReps: log.targetReps,
+            actualReps: log.actualReps,
+            weight: log.weight,
+            done: false,
+            note: log.note,
+          }))
+        : [];
+      return {
+        ...ex,
+        id: `${targetKey}-${ex.id.split('-')[0]}-${Date.now()}-${Math.random()}`,
+        setLogs: freshSetLogs,
+      };
     });
-  }, [currentMonday, weekKey, persistDays]);
+
+    if (targetKey === weekKey) {
+      // TEN SAM TYDZIEŃ — doklej do dnia w bieżącym stanie
+      setDays(prev => {
+        const next = prev.map(d =>
+          d.dayIndex === targetIdx
+            ? { ...d, exercises: [...d.exercises, ...fresh], isRestDay: false }
+            : d
+        );
+        persistDays(next, weekKey);
+        return next;
+      });
+    } else {
+      // INNY TYDZIEŃ — doklej w tygodniu docelowym (lokalnie + chmura)
+      const targetDays = loadWeekDays(targetKey);
+      const nextTarget = targetDays.map(d =>
+        d.dayIndex === targetIdx
+          ? { ...d, exercises: [...d.exercises, ...fresh], isRestDay: false }
+          : d
+      );
+      persistDays(nextTarget, targetKey);
+    }
+  }, [weekKey, persistDays]);
 
   const updateDaysForCurrentWeek = useCallback((newDays: WorkoutDay[]) => {
     setDays(newDays);
@@ -344,22 +357,54 @@ export function useWorkoutStore(userId?: string) {
     });
   }, [weekKey, persistDays]);
 
-  const moveAllExercisesToDay = useCallback((sourceDayId: string, targetDayId: string) => {
-    if (sourceDayId === targetDayId) return;
+  // Przenieś cały trening (wszystkie ćwiczenia z dnia) na dowolną datę — również
+  // do innego tygodnia. Data docelowa pochodzi z <input type="date"> (YYYY-MM-DD).
+  // Stan serii (setLogs: ✓ done + ciężary) jest zachowywany — to cut&paste, nie reset.
+  const moveAllExercisesToDate = useCallback((sourceDayId: string, targetDateStr: string) => {
+    if (!targetDateStr) return;
+    // Parsuj w czasie lokalnym, żeby uniknąć przesunięcia dnia przez offset UTC
+    const targetDate = new Date(`${targetDateStr}T00:00:00`);
+    if (isNaN(targetDate.getTime())) return;
+
+    const targetMonday = getMondayOf(targetDate);
+    const targetKey = getWeekKey(targetMonday);
+    const targetIdx = (targetDate.getDay() + 6) % 7; // Mon=0..Sun=6 (jak createDefaultDays)
+
     setDays(prev => {
       const sourceDay = prev.find(d => d.id === sourceDayId);
       if (!sourceDay || sourceDay.exercises.length === 0) return prev;
-      const next = prev.map(d => {
-        if (d.id === sourceDayId) {
-          return { ...d, exercises: [] };
-        }
-        if (d.id === targetDayId) {
-          return { ...d, exercises: [...d.exercises, ...sourceDay.exercises], isRestDay: false };
-        }
-        return d;
-      });
-      persistDays(next, weekKey);
-      return next;
+      // Guard: data == dzień źródłowy → no-op
+      if (targetKey === weekKey && targetIdx === sourceDay.dayIndex) return prev;
+
+      if (targetKey === weekKey) {
+        // TEN SAM TYDZIEŃ — mutuj bieżący stan (jak dotychczas)
+        const next = prev.map(d => {
+          if (d.id === sourceDayId) return { ...d, exercises: [] };
+          if (d.dayIndex === targetIdx) {
+            return { ...d, exercises: [...d.exercises, ...sourceDay.exercises], isRestDay: false };
+          }
+          return d;
+        });
+        persistDays(next, weekKey);
+        return next;
+      }
+
+      // INNY TYDZIEŃ — cut&paste, setLogs zachowane (brak re-id)
+      // (a) Tydzień docelowy: doklej ćwiczenia do dnia (lokalnie + chmura, po jawnym key)
+      const targetDays = loadWeekDays(targetKey);
+      const nextTarget = targetDays.map(d =>
+        d.dayIndex === targetIdx
+          ? { ...d, exercises: [...d.exercises, ...sourceDay.exercises], isRestDay: false }
+          : d
+      );
+      persistDays(nextTarget, targetKey);
+
+      // (b) Bieżący tydzień: opróżnij dzień źródłowy
+      const nextSource = prev.map(d =>
+        d.id === sourceDayId ? { ...d, exercises: [] } : d
+      );
+      persistDays(nextSource, weekKey);
+      return nextSource; // `days` zawsze odzwierciedla bieżący tydzień
     });
   }, [weekKey, persistDays]);
 
@@ -441,7 +486,7 @@ export function useWorkoutStore(userId?: string) {
     goToCurrentWeek,
     goToWeekByKey,
     isHydrating,
-    copyFromPrevWeek,
+    copyWorkoutToDay,
     // Days
     days,
     toggleRestDay,
@@ -453,7 +498,7 @@ export function useWorkoutStore(userId?: string) {
     reorderExercises,
     moveExercise,
     moveExerciseToDay,
-    moveAllExercisesToDay,
+    moveAllExercisesToDate,
     resetWeek,
     clearWeek,
     loadGeneratedPlan,
