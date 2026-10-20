@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { Exercise, SetLog } from '../types';
 import { muscleGroupBgColors } from '../data/exercises';
 import SetTracker from './SetTracker';
+import { formatWeightDisplay, requiresDumbbells } from '../lib/weightUtils';
 
 interface ExerciseCardProps {
   exercise: Exercise;
@@ -200,7 +201,7 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
                   )}
                   {exercise.weight && (
                     <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-medium">
-                      {exercise.weight} kg
+                      {formatWeightDisplay(exercise)}
                     </span>
                   )}
                   {setLogs.length > 0 && (
@@ -276,6 +277,7 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
         {showSets && !editing && (
           <div className="px-3 pb-3">
             <SetTracker
+              exercise={exercise}
               sets={exercise.sets || 3}
               defaultReps={exercise.reps || '8-12'}
               defaultWeight={exercise.weight ?? null}
@@ -326,7 +328,9 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-500 mb-1.5 block">Kg</label>
+                  <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
+                    {requiresDumbbells(exercise) ? 'Kg (2 x)' : 'Kg'}
+                  </label>
                   <input
                     type="number"
                     inputMode="decimal"

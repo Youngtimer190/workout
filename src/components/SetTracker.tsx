@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { SetLog } from '../types';
+import { SetLog, Exercise } from '../types';
 
 interface SetTrackerProps {
+  exercise?: Exercise;
   sets: number;
   defaultReps: string;
   defaultWeight: number | null;
@@ -31,6 +32,7 @@ function buildLogs(existing: SetLog[], count: number, defaultReps: string, defau
 }
 
 export default function SetTracker({
+  exercise,
   sets,
   defaultReps,
   defaultWeight,
@@ -116,14 +118,19 @@ export default function SetTracker({
     isEditingRef.current = false;
   };
 
+  const isDumbbell = !!exercise?.requiredEquipment?.includes('dumbbells');
+
   const toggleDone = (idx: number) => {
     updateLog(idx, { done: !localLogs[idx].done });
   };
 
   const completedSets = localLogs.filter(s => s.done).length;
+  // For dumbbell exercises, weight is per-dumbbell (e.g. 20 kg per dumbbell = 40 kg total)
+  // so multiply by 2 for total volume calculation
+  const effectiveWeight = (s: SetLog) => isDumbbell && s.weight != null ? s.weight * 2 : s.weight;
   const totalVolume = localLogs
     .filter(s => s.done && s.actualReps != null && s.weight != null)
-    .reduce((acc, s) => acc + (s.actualReps! * s.weight!), 0);
+    .reduce((acc, s) => acc + (s.actualReps! * effectiveWeight(s)!), 0);
 
   const avgReps = (() => {
     const done = localLogs.filter(s => s.done && s.actualReps != null);
@@ -134,7 +141,8 @@ export default function SetTracker({
 
   const maxWeight = (() => {
     const done = localLogs.filter(s => s.done && s.weight != null);
-    return done.length > 0 ? Math.max(...done.map(s => s.weight!)) : null;
+    // For dumbbell exercises, show doubled weight (both dumbbells)
+    return done.length > 0 ? Math.max(...done.map(s => effectiveWeight(s)!)) : null;
   })();
 
   if (isCardio) {
@@ -178,7 +186,9 @@ export default function SetTracker({
         <div className="text-[10px] font-bold text-slate-400 text-center">#</div>
         <div className="text-[10px] font-bold text-slate-400 text-center">Plan</div>
         <div className="text-[10px] font-bold text-slate-400 text-center">Powt.</div>
-        <div className="text-[10px] font-bold text-slate-400 text-center">Kg</div>
+        <div className="text-[10px] font-bold text-slate-400 text-center">
+          {isDumbbell ? 'Kg (2 x)' : 'Kg'}
+        </div>
       </div>
 
       {/* Rows */}
@@ -282,7 +292,12 @@ export default function SetTracker({
                         : 'border-dashed border-slate-200 bg-transparent text-slate-300 hover:border-amber-300 hover:text-amber-400'
                     }`}
                   >
-                    {log.weight != null ? log.weight : '—'}
+                    {log.weight != null ? (
+                      <>
+                        {isDumbbell && <span className="text-[9px] font-bold text-slate-400 mr-0.5">2×</span>}
+                        {log.weight}
+                      </>
+                    ) : '—'}
                   </button>
                 )}
               </div>
@@ -327,7 +342,9 @@ export default function SetTracker({
       {/* Hint */}
       <div className="px-3 py-1.5 bg-slate-50/80 border-t border-slate-100">
         <p className="text-[10px] text-slate-400 text-center">
-          Dotknij <span className="font-semibold">Powt.</span> lub <span className="font-semibold">Kg</span> aby wpisać · ✓ gdy seria gotowa
+          {isDumbbell
+            ? 'Wpisuj wagę <span className="font-semibold">jednego hantla</span> — liczone 2×'
+            : 'Dotknij <span className="font-semibold">Powt.</span> lub <span className="font-semibold">Kg</span> aby wpisać · ✓ gdy seria gotowa'}
         </p>
       </div>
     </div>

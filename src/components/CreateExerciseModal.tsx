@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Exercise, MuscleGroup, Difficulty } from '../types';
+import { Exercise, MuscleGroup, Difficulty, EquipmentItem } from '../types';
 import { muscleGroupColors } from '../data/exercises';
 
 interface CreateExerciseModalProps {
@@ -34,6 +34,15 @@ const difficultyBg: Record<Difficulty, string> = {
   'Zaawansowany': 'bg-red-100 text-red-700 border-red-200',
 };
 
+const EQUIPMENT_OPTIONS: { id: EquipmentItem; label: string; emoji: string }[] = [
+  { id: 'dumbbells', label: 'Hantle', emoji: '🏃' },
+  { id: 'barbell', label: 'Sztanga', emoji: '🏋️' },
+  { id: 'kettlebell', label: 'Kettlebell', emoji: '🔔' },
+  { id: 'bench', label: 'Ławka', emoji: '🛋️' },
+  { id: 'cable_machine', label: 'Wyciąg', emoji: '⚙️' },
+  { id: 'resistance_bands', label: 'Gumy', emoji: '🟡' },
+];
+
 interface FormState {
   name: string;
   muscleGroup: MuscleGroup;
@@ -43,6 +52,7 @@ interface FormState {
   reps: string;
   restTime: string;
   duration: string;
+  requiredEquipment: EquipmentItem[];
 }
 
 function InputField({
@@ -85,6 +95,7 @@ export default function CreateExerciseModal({ onSave, onClose, editExercise }: C
     reps: editExercise?.reps ?? '10-12',
     restTime: String(editExercise?.restTime ?? 60),
     duration: String(editExercise?.duration ?? 30),
+    requiredEquipment: editExercise?.requiredEquipment ?? [],
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
@@ -93,6 +104,15 @@ export default function CreateExerciseModal({ onSave, onClose, editExercise }: C
   const setField = (key: keyof FormState) => (v: string) => {
     setForm(f => ({ ...f, [key]: v }));
     setErrors(e => ({ ...e, [key]: undefined }));
+  };
+
+  const toggleEquipment = (id: EquipmentItem) => {
+    setForm(f => ({
+      ...f,
+      requiredEquipment: f.requiredEquipment.includes(id)
+        ? f.requiredEquipment.filter(e => e !== id)
+        : [...f.requiredEquipment, id],
+    }));
   };
 
   const validate = (): boolean => {
@@ -130,6 +150,7 @@ export default function CreateExerciseModal({ onSave, onClose, editExercise }: C
       reps: isCardio ? '' : form.reps,
       restTime: isCardio ? undefined : parseInt(form.restTime) || 60,
       duration: isCardio ? parseInt(form.duration) || 30 : undefined,
+      requiredEquipment: form.requiredEquipment.length > 0 ? form.requiredEquipment : undefined,
     };
     onSave(exercise);
   };
@@ -337,6 +358,38 @@ export default function CreateExerciseModal({ onSave, onClose, editExercise }: C
                   />
                 </>
               )}
+
+              {/* Sprzęt */}
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
+                  Sprzęt wymagany
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {EQUIPMENT_OPTIONS.map(opt => {
+                    const active = form.requiredEquipment.includes(opt.id);
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => toggleEquipment(opt.id)}
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
+                          active
+                            ? 'border-violet-400 bg-violet-50 text-violet-700'
+                            : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 hover:bg-white'
+                        }`}
+                      >
+                        <span>{opt.emoji}</span>
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {form.requiredEquipment.includes('dumbbells') && (
+                  <p className="text-[10px] text-amber-600 mt-1.5 font-medium">
+                    ⚠️ Ćwiczenie z hantlami — ciężar będzie automatycznie podwajany w podsumowaniu (2 x).
+                  </p>
+                )}
+              </div>
 
               {/* Preview card */}
               <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 space-y-2">
