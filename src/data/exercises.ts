@@ -178,6 +178,18 @@ export const exerciseLibrary: Exercise[] = [
     requiredEquipment: ['barbell'],
   },
   {
+    id: 'back-29',
+    name: 'Wiosłowanie hantlami w skosie',
+    muscleGroup: 'Plecy',
+    difficulty: 'Średniozaawansowany',
+    description: 'Wiosłowanie hantlami na ławce skośnej — angażuje najszerszy grzbiet i średnią część pleców. Alternatywa dla wiośłowania sztangą, pozwalająca na niezależną pracę każdej ręki i większy zakres ruchu.',
+    sets: 4,
+    reps: '8-12',
+    restTime: 90,
+    notes: 'Ławka ustawiona pod kątem 30-45°. Hantle trzymaj wzdłuż ciała. Ściągaj łokcie za biodra, nie do klatki. Ściskaj łopatki na górze. Dla trudniejszej wersji można użyć jednej hantli na raz (wiosłowanie jednoręczne).',
+    requiredEquipment: ['dumbbells', 'bench'],
+  },
+  {
     id: 'back-6',
     name: 'Wiosłowanie hantlem jednoręczne',
     muscleGroup: 'Plecy',
