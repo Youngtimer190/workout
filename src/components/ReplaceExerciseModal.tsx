@@ -114,7 +114,7 @@ export default function ReplaceExerciseModal({
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1.5">
-                {requiresDumbbells(selectedExercise!) ? 'Ciężar (kg) — 2 x (każdy hantel)' : <>Ciężar (kg) <span className="text-slate-400 font-normal">opcjonalnie</span></>}
+                {requiresDumbbells(selectedExercise) ? 'Ciężar (kg) — 2 x (każdy hantel)' : <>Ciężar (kg) <span className="text-slate-400 font-normal">opcjonalnie</span></>}
               </label>
               <input
                 type="number"

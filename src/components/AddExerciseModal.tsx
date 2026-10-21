@@ -257,7 +257,7 @@ export default function AddExerciseModal({
                         </div>
                         <div>
                           <label className="block text-xs font-semibold text-slate-600 mb-1.5">
-                            {requiresDumbbells(selectedExercise!) ? 'Ciężar (kg) — 2 x (każdy hantel)' : 'Ciężar (kg) — opcjonalnie'}
+                            {requiresDumbbells(selectedExercise) ? 'Ciężar (kg) — 2 x (każdy hantel)' : 'Ciężar (kg) — opcjonalnie'}
                           </label>
                           <input type="number" min="0" step="0.5" placeholder="np. 60" value={weight} onChange={e => setWeight(e.target.value)} className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-300" />
                         </div>
@@ -387,7 +387,7 @@ export default function AddExerciseModal({
                           </div>
                           <div>
                             <label className="block text-xs font-semibold text-slate-600 mb-1.5">
-                            {requiresDumbbells(selectedExercise!) ? 'Ciężar (kg) — 2 x (każdy hantel)' : 'Ciężar (kg) — opcjonalnie'}
+                            {requiresDumbbells(selectedExercise) ? 'Ciężar (kg) — 2 x (każdy hantel)' : 'Ciężar (kg) — opcjonalnie'}
                           </label>
                             <input type="number" min="0" step="0.5" placeholder="np. 60" value={weight} onChange={e => setWeight(e.target.value)} className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-300" />
                           </div>
