@@ -342,9 +342,11 @@ export default function SetTracker({
       {/* Hint */}
       <div className="px-3 py-1.5 bg-slate-50/80 border-t border-slate-100">
         <p className="text-[10px] text-slate-400 text-center">
-          {isDumbbell
-            ? 'Wpisuj wagę <span className="font-semibold">jednego hantla</span> — liczone 2×'
-            : 'Dotknij <span className="font-semibold">Powt.</span> lub <span className="font-semibold">Kg</span> aby wpisać · ✓ gdy seria gotowa'}
+          {isDumbbell ? (
+            <>Wpisuj wagę <span className="font-semibold">jednego hantla</span> — liczone 2×</>
+          ) : (
+            <>Dotknij <span className="font-semibold">Powt.</span> lub <span className="font-semibold">Kg</span> aby wpisać · ✓ gdy seria gotowa</>
+          )}
         </p>
       </div>
     </div>
