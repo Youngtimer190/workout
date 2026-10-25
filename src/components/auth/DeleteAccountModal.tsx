@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
-import { isAdminConfigured } from '../../lib/supabase';
 
 interface Props {
   onClose: () => void;
@@ -78,32 +77,18 @@ export default function DeleteAccountModal({ onClose }: Props) {
               </div>
 
               {/* Info o metodzie usuwania */}
-              <div className={`rounded-xl p-3 flex items-start gap-2.5 text-xs ${
-                isAdminConfigured
-                  ? 'bg-green-500/10 border border-green-500/20'
-                  : 'bg-amber-500/10 border border-amber-500/20'
-              }`}>
-                <svg className={`w-4 h-4 flex-shrink-0 mt-0.5 ${isAdminConfigured ? 'text-green-400' : 'text-amber-400'}`}
+              <div className="rounded-xl p-3 flex items-start gap-2.5 text-xs bg-green-500/10 border border-green-500/20">
+                <svg className="w-4 h-4 flex-shrink-0 mt-0.5 text-green-400"
                   fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d={isAdminConfigured
-                      ? "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                      : "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    }
+                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
                   />
                 </svg>
                 <div>
-                  {isAdminConfigured ? (
-                    <span className="text-green-300">
-                      ✓ Klucz administracyjny skonfigurowany — usunięcie konta jest gwarantowane.
-                    </span>
-                  ) : (
-                    <span className="text-amber-300">
-                      Brak klucza <code className="bg-amber-500/20 px-1 rounded">service_role</code> — 
-                      dane zostaną usunięte z tabel, ale konto może wymagać ręcznego usunięcia w panelu Supabase.
-                      Dodaj <code className="bg-amber-500/20 px-1 rounded">VITE_SUPABASE_SERVICE_ROLE_KEY</code> do <code className="bg-amber-500/20 px-1 rounded">.env.local</code>.
-                    </span>
-                  )}
+                  <span className="text-green-300">
+                    Konto, plany treningowe, własne ćwiczenia oraz udostępnienia
+                    (także te, które otrzymałeś) zostaną usunięte trwale.
+                  </span>
                 </div>
               </div>
 
