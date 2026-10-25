@@ -247,6 +247,29 @@ input[type="number"] {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* ── Bottom sheet dla modali udostępniania (iPhone / PWA) ───────────────────
+      Kolejność deklaracji jest istotna — przeglądarki odrzucają nieznaną
+      jednostkę już na etapie parsowania, więc starsza wartość zostaje:
+        1. 90vh  — fallback dla iOS < 15.4 (brak obsługi dvh)
+        2. 90dvh — dynamic viewport: poprawna wysokość mimo widocznego
+                   paska adresu Safari
+        3. calc(90dvh - var(--kb-inset)) — przy otwartej klawiaturze ekranowej
+                   dvh się nie zmienia, a visualViewport tak; wysokość
+                   klawiatury ustawia useKeyboardInset() na kontenerze.
+      Fallback jest w osobnym @supports, bo minifikator CSS (Lightning CSS)
+      usuwa zbędne deklaracje przeglądarkom, które według niego zawsze
+      wspierają dvh.
+   */
+.modal-sheet {
+  max-height: 90vh;
+}
+@supports (height: 90dvh) {
+  .modal-sheet {
+    max-height: 90dvh;
+    max-height: calc(90dvh - var(--kb-inset, 0px));
+  }
+}
+
 /* ── Touch-friendly min sizes ── */
 .touch-target {
   min-height: 44px;
