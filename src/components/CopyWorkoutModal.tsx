@@ -13,7 +13,7 @@ import { isSupabaseConfigured } from '../lib/supabase';
 
 interface CopyWorkoutModalProps {
   userId?: string;
-  onCopy: (sourceExercises: Exercise[], targetDateStr: string) => void;
+  onCopy: (sourceExercises: Exercise[], targetDateStr: string) => void | Promise<unknown>;
   onClose: () => void;
 }
 
@@ -36,6 +36,8 @@ export default function CopyWorkoutModal({ userId, onCopy, onClose }: CopyWorkou
   );
   const [sourceIdx, setSourceIdx] = useState<number | null>(null);
   const [targetDateStr, setTargetDateStr] = useState<string>(todayLocal());
+  const [copying, setCopying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // ── Załaduj tydzień źródłowy: local-first, cloud-fallback (jak goToPrevWeek) ──
   useEffect(() => {
@@ -46,7 +48,7 @@ export default function CopyWorkoutModal({ userId, onCopy, onClose }: CopyWorkou
 
     if (userId && isSupabaseConfigured) {
       let cancelled = false;
-      fetchWeekPlan(userId, key).then(cloud => {
+      fetchWeekPlan(userId, key).then(({ days: cloud }) => {
         if (cancelled) return;
         if (cloud && cloud.length > 0) {
           setSourceDays(cloud);
@@ -95,9 +97,19 @@ export default function CopyWorkoutModal({ userId, onCopy, onClose }: CopyWorkou
   const hasAnyTraining = sourceDays.some(d => !d.isRestDay && d.exercises.length > 0);
   const canCopy = targetValid && !isSameDay && sourceExercises.length > 0;
 
-  const handleCopy = () => {
-    if (!canCopy || sourceExercises.length === 0) return;
-    onCopy(sourceExercises, targetDateStr);
+  const handleCopy = async () => {
+    if (!canCopy || sourceExercises.length === 0 || copying) return;
+    setCopying(true);
+    setError(null);
+    try {
+      await onCopy(sourceExercises, targetDateStr);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Nie udało się skopiować treningu.';
+      setError(message);
+    } finally {
+      // Przy powodzeniu rodzic zamknie modal — ustawienie stanu jest wtedy bezcelowe.
+      setCopying(false);
+    }
   };
 
   return (
@@ -302,6 +314,17 @@ export default function CopyWorkoutModal({ userId, onCopy, onClose }: CopyWorkou
           </div>
         </div>
 
+        {/* Błąd zapisu */}
+        {error && (
+          <div className="mx-4 mb-3 bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2 flex-shrink-0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 8v4M12 16h.01" />
+            </svg>
+            <p className="text-red-600 text-xs leading-relaxed">{error}</p>
+          </div>
+        )}
+
         {/* Footer */}
         <div className="px-4 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2 flex-shrink-0">
           <button
@@ -313,11 +336,11 @@ export default function CopyWorkoutModal({ userId, onCopy, onClose }: CopyWorkou
           </button>
           <button
             onClick={handleCopy}
-            disabled={!canCopy}
+            disabled={!canCopy || copying}
             className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-500 to-indigo-600 disabled:opacity-50 active:opacity-80"
             style={{ WebkitTapHighlightColor: 'transparent' }}
           >
-            Kopiuj
+            {copying ? 'Kopiuję…' : 'Kopiuj'}
           </button>
         </div>
       </div>

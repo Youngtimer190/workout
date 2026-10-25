@@ -18,17 +18,30 @@ interface WorkoutPlannerProps {
   onReplaceExercise: (dayId: string, exerciseId: string, newExercise: Exercise) => void;
   onMoveExercise: (dayId: string, exerciseId: string, direction: 'up' | 'down') => void;
   onMoveExerciseToDay?: (sourceDayId: string, exerciseId: string, targetDayId: string) => void;
-  onMoveAllExercisesToDate?: (sourceDayId: string, targetDateStr: string) => void;
+  onMoveAllExercisesToDate?: (sourceDayId: string, targetDateStr: string) => void | Promise<unknown>;
   onResetWeek: () => void;
   onPrevWeek: () => void;
   onNextWeek: () => void;
   onGoToCurrentWeek: () => void;
   userId?: string;
-  onCopyWorkout?: (sourceExercises: Exercise[], targetDateStr: string) => void;
+  onCopyWorkout?: (
+    sourceExercises: Exercise[],
+    targetDateStr: string
+  ) => Promise<{ error: Error | null }> | void;
   customExercises?: Exercise[];
   onSaveCustomExercise?: (exercise: Exercise) => void;
   onDeleteCustomExercise?: (id: string) => void;
   highlightDayIndex?: number | null;
+  /** Czy udostępnianie jest dostępne (Supabase + realne konto). */
+  canShare?: boolean;
+  /** E-mail zalogowanego użytkownika — nie może udostępnić samemu sobie. */
+  currentUserEmail?: string | null;
+  /** Wysyłka udostępnienia dnia — zwraca błąd albo `null` przy sukcesie. */
+  onSendShare?: (
+    recipientEmail: string,
+    day: WorkoutDay,
+    weekKey: string
+  ) => Promise<{ error: Error | null }>;
 }
 
 // Modal state type
@@ -59,6 +72,9 @@ export default function WorkoutPlanner({
   onSaveCustomExercise,
   onDeleteCustomExercise,
   highlightDayIndex,
+  canShare,
+  currentUserEmail,
+  onSendShare,
 }: WorkoutPlannerProps) {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [copyModalOpen, setCopyModalOpen] = useState(false);
@@ -226,6 +242,10 @@ export default function WorkoutPlanner({
               days={days}
               onRequestAdd={() => handleRequestAdd(day.id, day.name)}
               onRequestReplace={(exercise) => handleRequestReplace(day.id, exercise)}
+              canShare={canShare}
+              currentUserEmail={currentUserEmail}
+              weekKey={weekMeta.key}
+              onSendShare={onSendShare}
             />
           </div>
         ))}
@@ -270,8 +290,10 @@ export default function WorkoutPlanner({
       {copyModalOpen && (
         <CopyWorkoutModal
           userId={userId}
-          onCopy={(sourceExercises, targetDateStr) => {
-            onCopyWorkout?.(sourceExercises, targetDateStr);
+          onCopy={async (sourceExercises, targetDateStr) => {
+            const result = await onCopyWorkout?.(sourceExercises, targetDateStr);
+            // Błąd zapisu zostawia modal otwarty — komunikat pokazuje CopyWorkoutModal.
+            if (result && result.error) throw result.error;
             setCopyModalOpen(false);
           }}
           onClose={() => setCopyModalOpen(false)}

@@ -3,6 +3,7 @@ import { WorkoutDay, Exercise } from '../types';
 import ExerciseCard from './ExerciseCard';
 import MoveExerciseModal from './MoveExerciseModal';
 import MoveDayModal from './MoveDayModal';
+import ShareWorkoutModal from './ShareWorkoutModal';
 
 interface DayColumnProps {
   day: WorkoutDay;
@@ -12,10 +13,22 @@ interface DayColumnProps {
   onUpdateExercise: (exerciseId: string, updates: Partial<Exercise>) => void;
   onMoveExercise: (exerciseId: string, direction: 'up' | 'down') => void;
   onMoveExerciseToDay?: (sourceDayId: string, exerciseId: string, targetDayId: string) => void;
-  onMoveAllExercisesToDate?: (sourceDayId: string, targetDateStr: string) => void;
+  onMoveAllExercisesToDate?: (sourceDayId: string, targetDateStr: string) => void | Promise<unknown>;
   days?: WorkoutDay[];
   onRequestAdd: () => void;
   onRequestReplace: (exercise: Exercise) => void;
+  /** Czy udostępnianie jest dostępne (Supabase + realne konto). */
+  canShare?: boolean;
+  /** E-mail zalogowanego użytkownika — nie może udostępnić samemu sobie. */
+  currentUserEmail?: string | null;
+  /** Klucz tygodnia, do którego należy dzień (np. „2025-W03"). */
+  weekKey?: string;
+  /** Wysyłka udostępnienia — zwraca błąd albo `null` przy sukcesie. */
+  onSendShare?: (
+    recipientEmail: string,
+    day: WorkoutDay,
+    weekKey: string
+  ) => Promise<{ error: Error | null }>;
 }
 
 const DAY_LABELS = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Nd'];
@@ -32,16 +45,26 @@ function DayColumn({
   days,
   onRequestAdd,
   onRequestReplace,
+  canShare,
+  currentUserEmail,
+  weekKey,
+  onSendShare,
 }: DayColumnProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [moveExerciseState, setMoveExerciseState] = useState<{ exercise: Exercise; sourceDayId: string } | null>(null);
   const [moveDayModalOpen, setMoveDayModalOpen] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
   const totalSets = day.exercises.reduce((acc, e) => acc + (e.sets || 0), 0);
   const completedExercises = day.exercises.filter(e =>
     e.setLogs && e.setLogs.length > 0 && e.setLogs.every(s => s.done)
   ).length;
   const shortLabel = DAY_LABELS[index] ?? '';
+
+  // Klucz tygodnia: z propa, a w razie jego braku z identyfikatora dnia
+  // (format `${weekKey}-day-${index}`).
+  const resolvedWeekKey = weekKey ?? day.id.split('-day-')[0] ?? '';
+  const canShareDay = !!canShare && !!onSendShare && !day.isRestDay && day.exercises.length > 0;
 
   const handleMoveExercise = (targetDayId: string) => {
     if (moveExerciseState && onMoveExerciseToDay) {
@@ -134,6 +157,24 @@ function DayColumn({
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-white">
                   <path d="M12 5v14M5 12h14" />
+                </svg>
+              </button>
+            )}
+
+            {/* Share day */}
+            {canShareDay && (
+              <button
+                onClick={e => { e.stopPropagation(); setShareModalOpen(true); }}
+                title="Udostępnij trening"
+                aria-label="Udostępnij trening"
+                className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 active:bg-white/40 flex items-center justify-center transition-all cursor-pointer"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-white">
+                  <circle cx="18" cy="5" r="3" />
+                  <circle cx="6" cy="12" r="3" />
+                  <circle cx="18" cy="19" r="3" />
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
                 </svg>
               </button>
             )}
@@ -282,6 +323,17 @@ function DayColumn({
             setMoveDayModalOpen(false);
           }}
           onClose={() => setMoveDayModalOpen(false)}
+        />
+      )}
+
+      {/* Share Workout Modal */}
+      {shareModalOpen && canShareDay && (
+        <ShareWorkoutModal
+          day={day}
+          weekKey={resolvedWeekKey}
+          currentUserEmail={currentUserEmail}
+          onSend={(recipientEmail) => onSendShare!(recipientEmail, day, resolvedWeekKey)}
+          onClose={() => setShareModalOpen(false)}
         />
       )}
     </div>

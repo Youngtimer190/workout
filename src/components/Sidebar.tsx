@@ -6,6 +6,8 @@ import { useAuthStore } from '../store/authStore';
 interface SidebarProps {
   activeView: View;
   onViewChange: (v: View) => void;
+  /** Liczba udostępnień czekających na akceptację — do badge'a. */
+  pendingCount?: number;
 }
 
 const navItems: { id: View; label: string; shortLabel: string; icon: React.ReactNode }[] = [
@@ -66,9 +68,23 @@ const navItems: { id: View; label: string; shortLabel: string; icon: React.React
       </svg>
     ),
   },
+  {
+    id: 'shares',
+    label: 'Udostępnienia',
+    shortLabel: 'Udost.',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+        <circle cx="18" cy="5" r="3" />
+        <circle cx="6" cy="12" r="3" />
+        <circle cx="18" cy="19" r="3" />
+        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+      </svg>
+    ),
+  },
 ];
 
-export default function Sidebar({ activeView, onViewChange }: SidebarProps) {
+export default function Sidebar({ activeView, onViewChange, pendingCount = 0 }: SidebarProps) {
   const { isConfigured, isAuthenticated } = useAuthStore();
 
   return (
@@ -104,7 +120,14 @@ export default function Sidebar({ activeView, onViewChange }: SidebarProps) {
                   : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
               }`}
             >
-              {item.icon}
+              <span className="relative flex-shrink-0">
+                {item.icon}
+                {item.id === 'shares' && pendingCount > 0 && (
+                  <span className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] px-1 rounded-full bg-violet-500 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white">
+                    {pendingCount > 9 ? '9+' : pendingCount}
+                  </span>
+                )}
+              </span>
               <span className="flex-1 text-left">{item.label}</span>
             </button>
           ))}
@@ -139,10 +162,13 @@ export default function Sidebar({ activeView, onViewChange }: SidebarProps) {
                 aria-label={item.label}
               >
                 {/* Icon */}
-                <span className={`transition-all duration-200 ${
+                <span className={`relative transition-all duration-200 ${
                   isActive ? 'text-violet-600 scale-110' : 'text-slate-400'
                 }`}>
                   {item.icon}
+                  {item.id === 'shares' && pendingCount > 0 && (
+                    <span className="absolute -top-0.5 -right-1 w-2 h-2 rounded-full bg-violet-500 ring-2 ring-white" />
+                  )}
                 </span>
                 {/* Label */}
                 <span className={`text-[10px] font-semibold leading-none transition-all duration-200 ${
