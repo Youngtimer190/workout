@@ -1,16 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
-import { View, WorkoutDay } from './types';
+import { View, WorkoutDay, SharedWorkout } from './types';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import WorkoutPlanner from './components/WorkoutPlanner';
 import ExerciseLibrary from './components/ExerciseLibrary';
 import Stats from './components/Stats';
 import PlanGenerator from './components/PlanGenerator';
+import SharesView from './components/SharesView';
 import AuthScreen from './components/auth/AuthScreen';
 import OfflineBanner from './components/auth/OfflineBanner';
 import DemoBanner from './components/auth/DemoBanner';
 import { useWorkoutStore } from './store/workoutStore';
 import { useAuthStore } from './store/authStore';
+import { useShareStore } from './store/shareStore';
+import { buildDaySnapshot, snapshotToExercises } from './lib/shareService';
 import { isSupabaseConfigured } from './lib/supabase';
 
 // ── Skeleton Loader ───────────────────────────────────────────────────────────
@@ -231,12 +234,15 @@ export default function App() {
 
   const {
     days, weekMeta,
-    goToPrevWeek, goToNextWeek, goToCurrentWeek, copyWorkoutToDay,
+    goToPrevWeek, goToNextWeek, goToCurrentWeek, goToWeekContaining, copyWorkoutToDay,
     toggleRestDay, addExercise, removeExercise, updateExercise,
     replaceExercise, moveExercise, moveExerciseToDay, moveAllExercisesToDate, resetWeek, loadGeneratedPlan,
     customExercises, addCustomExercise, updateCustomExercise, deleteCustomExercise,
     syncing, isHydrating,
   } = useWorkoutStore(user?.id);
+
+  // ── Udostępnienia — jedna instancja store, dane idą do komponentów propami ──
+  const shareStore = useShareStore(user?.id);
 
   useEffect(() => {
     topRef.current?.scrollIntoView({ behavior: 'auto', block: 'start' });
@@ -264,6 +270,65 @@ export default function App() {
     loadGeneratedPlan(generatedDays);
     setActiveView('planner');
     scrollToTop();
+  };
+
+  // ── Udostępnianie ──────────────────────────────────────────────────────────
+
+  /** Nadawca: wysyła migawkę dnia na podany adres e-mail. */
+  const handleSendShare = async (
+    recipientEmail: string,
+    day: WorkoutDay,
+    weekKey: string
+  ): Promise<{ error: Error | null }> => {
+    return shareStore.sendShare({
+      recipientEmail,
+      weekKey,
+      dayIndex: day.dayIndex,
+      dayName: day.name,
+      dayData: buildDaySnapshot(day),
+    });
+  };
+
+  /**
+   * Odbiorca: akceptuje udostępnienie.
+   *
+   * KOLEJNOŚĆ JEST WAŻNA: najpierw zapisujemy ćwiczenia do planu i SPRAWDZAMY
+   * błąd, a dopiero potem oznaczamy udostępnienie jako zaakceptowane. W drugą
+   * stronę odbiorca zobaczyłby „Zaakceptowane" przy pustym dniu w planie.
+   */
+  const handleAcceptShare = async (
+    share: SharedWorkout,
+    targetDateStr: string
+  ): Promise<{ error: Error | null }> => {
+    const exercises = snapshotToExercises(share.day_data);
+    if (exercises.length === 0) {
+      return { error: new Error('To udostępnienie nie zawiera żadnych ćwiczeń.') };
+    }
+
+    const saved = await copyWorkoutToDay(exercises, targetDateStr);
+    if (saved.error) return { error: saved.error };
+
+    const response = await shareStore.respond(
+      share.id,
+      'accepted',
+      saved.weekKey,
+      saved.dayIndex
+    );
+    if (response.error) return { error: response.error };
+
+    // Pokaż odbiorcy tydzień, w którym wylądował trening.
+    goToWeekContaining(new Date(`${targetDateStr}T00:00:00`));
+    return { error: null };
+  };
+
+  /** Odbiorca: odrzuca udostępnienie — nic nie trafia do planu. */
+  const handleDeclineShare = async (share: SharedWorkout): Promise<{ error: Error | null }> => {
+    return shareStore.respond(share.id, 'declined');
+  };
+
+  /** Nadawca: anuluje oczekujące udostępnienie. */
+  const handleCancelShare = async (shareId: string): Promise<{ error: Error | null }> => {
+    return shareStore.cancel(shareId);
   };
 
   if (isSupabaseConfigured && !initialized) {
@@ -300,23 +365,71 @@ export default function App() {
       case 'generator': return <PlanGenerator onApplyPlan={handleApplyGeneratedPlan} onGoToPlanner={() => handleViewChange('planner')} />;
       case 'planner':
         return (
-          <WorkoutPlanner
-            days={days} weekMeta={weekMeta}
-            onToggleRest={toggleRestDay} onAddExercise={addExercise}
-            onRemoveExercise={removeExercise} onUpdateExercise={updateExercise}
-            onReplaceExercise={replaceExercise} onMoveExercise={moveExercise}
-                onMoveExerciseToDay={moveExerciseToDay}
-                onMoveAllExercisesToDate={moveAllExercisesToDate}
-            onResetWeek={resetWeek} onPrevWeek={goToPrevWeek}
-            onNextWeek={goToNextWeek} onGoToCurrentWeek={goToCurrentWeek}
-            userId={user?.id} onCopyWorkout={copyWorkoutToDay} customExercises={customExercises}
-            onSaveCustomExercise={addCustomExercise} onDeleteCustomExercise={deleteCustomExercise}
-            highlightDayIndex={selectedDayIndex}
-          />
+          <>
+            {/* Banner: oczekujące udostępnienia — klikalny, prowadzi do zakładki */}
+            {shareStore.pendingCount > 0 && (
+              <button
+                onClick={() => handleViewChange('shares')}
+                className="mb-3 w-full bg-violet-500/10 border border-violet-500/20 rounded-xl px-4 py-3 flex items-center gap-3 text-left hover:bg-violet-500/15 active:bg-violet-500/20 transition-colors cursor-pointer"
+              >
+                <span className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center flex-shrink-0">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-violet-500">
+                    <circle cx="18" cy="5" r="3" />
+                    <circle cx="6" cy="12" r="3" />
+                    <circle cx="18" cy="19" r="3" />
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                  </svg>
+                </span>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-violet-700 text-xs sm:text-sm font-bold">
+                    Masz {shareStore.pendingCount} {shareStore.pendingCount === 1 ? 'udostępnienie' : 'udostępnień'} do akceptacji
+                  </span>
+                  <span className="block text-violet-500 text-[11px] mt-0.5">
+                    Kliknij, aby zobaczyć szczegóły
+                  </span>
+                </span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-violet-400 flex-shrink-0">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            )}
+
+            <WorkoutPlanner
+              days={days} weekMeta={weekMeta}
+              onToggleRest={toggleRestDay} onAddExercise={addExercise}
+              onRemoveExercise={removeExercise} onUpdateExercise={updateExercise}
+              onReplaceExercise={replaceExercise} onMoveExercise={moveExercise}
+                  onMoveExerciseToDay={moveExerciseToDay}
+                  onMoveAllExercisesToDate={moveAllExercisesToDate}
+              onResetWeek={resetWeek} onPrevWeek={goToPrevWeek}
+              onNextWeek={goToNextWeek} onGoToCurrentWeek={goToCurrentWeek}
+              userId={user?.id} onCopyWorkout={copyWorkoutToDay} customExercises={customExercises}
+              onSaveCustomExercise={addCustomExercise} onDeleteCustomExercise={deleteCustomExercise}
+              highlightDayIndex={selectedDayIndex}
+              canShare={shareStore.canShare}
+              currentUserEmail={user?.email ?? null}
+              onSendShare={handleSendShare}
+            />
+          </>
         );
       case 'library':
         return <ExerciseLibrary customExercises={customExercises} onAddCustomExercise={addCustomExercise} onUpdateCustomExercise={updateCustomExercise} onDeleteCustomExercise={deleteCustomExercise} />;
       case 'stats': return <Stats days={days} />;
+      case 'shares':
+        return (
+          <SharesView
+            incoming={shareStore.incoming}
+            outgoing={shareStore.outgoing}
+            loading={shareStore.loading}
+            error={shareStore.error}
+            canShare={shareStore.canShare}
+            onRefresh={shareStore.refresh}
+            onAccept={handleAcceptShare}
+            onDecline={handleDeclineShare}
+            onCancel={handleCancelShare}
+          />
+        );
       default: return null;
     }
   };
@@ -325,7 +438,11 @@ export default function App() {
     <div className="min-h-screen bg-slate-50">
       <div ref={topRef} style={{ position: 'absolute', top: 0, left: 0, height: 0, width: 0 }} />
 
-      <Sidebar activeView={activeView} onViewChange={handleViewChange} />
+      <Sidebar
+        activeView={activeView}
+        onViewChange={handleViewChange}
+        pendingCount={shareStore.pendingCount}
+      />
 
       <div className="main-content">
         {isDemoMode && <DemoBanner onExit={exitDemoMode} />}

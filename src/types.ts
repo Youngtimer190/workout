@@ -54,7 +54,7 @@ export interface WeekPlan {
   createdAt: Date;
 }
 
-export type View = 'dashboard' | 'planner' | 'library' | 'stats' | 'generator';
+export type View = 'dashboard' | 'planner' | 'library' | 'stats' | 'generator' | 'shares';
 
 export type TrainingGoal = 'muscle_gain' | 'fat_loss' | 'strength' | 'endurance' | 'general_fitness';
 export type FitnessLevel = 'beginner' | 'intermediate' | 'advanced';
@@ -107,4 +107,65 @@ export interface GeneratedPlan {
   estimatedCalories: number;
   totalExercises: number;
   totalSets: number;
+}
+
+// ─── Udostępnianie dnia treningowego ────────────────────────────────────────
+
+/** Status udostępnienia. `pending` → odbiorca musi zaakceptować albo odrzucić. */
+export type ShareStatus = 'pending' | 'accepted' | 'declined';
+
+/**
+ * Migawka serii w udostępnionym dniu.
+ *
+ * Prywatna notatka `note` celowo NIE występuje w tym typie — jest usuwana
+ * po stronie nadawcy, zanim dane opuszczą jego przeglądarkę.
+ */
+export interface SharedSetSnapshot {
+  setNumber: number;
+  targetReps: string;
+  actualReps: number | null;
+  weight: number | null;
+}
+
+/** Migawka ćwiczenia w udostępnionym dniu (bez `id` — nadaje je odbiorca). */
+export interface SharedExerciseSnapshot {
+  name: string;
+  muscleGroup: MuscleGroup;
+  difficulty: Difficulty;
+  description: string;
+  sets?: number;
+  reps?: string;
+  weight?: number;
+  duration?: number;
+  restTime?: number;
+  requiredEquipment?: EquipmentItem[];
+  setLogs: SharedSetSnapshot[];
+}
+
+/** Migawka całego dnia treningowego — trafia do kolumny `day_data`. */
+export interface SharedDaySnapshot {
+  exercises: SharedExerciseSnapshot[];
+}
+
+/**
+ * Wiersz tabeli `shared_workouts` widziany przez RLS.
+ *
+ * Nadawca i odbiorca widzą ten sam typ — rozróżnia ich `owner_id`.
+ */
+export interface SharedWorkout {
+  id: string;
+  owner_id: string;
+  owner_email: string;
+  owner_name: string | null;
+  recipient_email: string;
+  week_key: string;
+  day_index: number;
+  day_name: string | null;
+  day_data: SharedDaySnapshot;
+  status: ShareStatus;
+  accepted_at: string | null;
+  accepted_week_key: string | null;
+  accepted_day_index: number | null;
+  created_at: string;
+  updated_at: string;
 }
