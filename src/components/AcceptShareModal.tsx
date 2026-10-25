@@ -123,7 +123,7 @@ export default function AcceptShareModal({ share, onAccept, onDecline, onClose }
           </h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center active:bg-white/30"
+            className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center active:bg-white/30 cursor-pointer"
             style={{ WebkitTapHighlightColor: 'transparent' }}
             aria-label="Zamknij"
           >
@@ -151,7 +151,7 @@ export default function AcceptShareModal({ share, onAccept, onDecline, onClose }
 
             <button
               onClick={onClose}
-              className="mt-5 w-full px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-500 to-indigo-600 active:opacity-80"
+              className="mt-5 w-full px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-500 to-indigo-600 active:opacity-80 cursor-pointer"
               style={{ WebkitTapHighlightColor: 'transparent' }}
             >
               Zamknij
@@ -203,7 +203,7 @@ export default function AcceptShareModal({ share, onAccept, onDecline, onClose }
 
               {/* Wybór dnia docelowego */}
               <div>
-                <label htmlFor="accept-share-date" className="block text-xs sm:text-sm font-semibold text-slate-700 mb-2">
+                <label htmlFor="accept-share-date" className="block text-xs sm:text-sm font-semibold text-slate-700 mb-2 cursor-pointer">
                   W którym dniu wykonać ten trening?
                 </label>
                 <input
@@ -248,7 +248,7 @@ export default function AcceptShareModal({ share, onAccept, onDecline, onClose }
               <button
                 onClick={handleDecline}
                 disabled={busy !== null}
-                className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 bg-white border border-slate-200 active:bg-slate-50 disabled:opacity-50"
+                className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 bg-white border border-slate-200 active:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 {busy === 'decline' ? 'Odrzucam…' : 'Odrzuć'}
@@ -256,7 +256,7 @@ export default function AcceptShareModal({ share, onAccept, onDecline, onClose }
               <button
                 onClick={handleAccept}
                 disabled={!isValid || busy !== null}
-                className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-500 to-indigo-600 disabled:opacity-50 active:opacity-80"
+                className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-500 to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed active:opacity-80 cursor-pointer"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 {busy === 'accept' ? 'Dodaję…' : 'Akceptuj i dodaj'}
