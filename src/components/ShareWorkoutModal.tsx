@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import type { CSSProperties } from 'react';
 import { WorkoutDay } from '../types';
 import { mondayOfWeekKey, formatWeekLabel } from '../store/weekStore';
+import { useKeyboardInset } from '../hooks/useKeyboardInset';
 
 /** Prosty walidator e-mail — ten sam warunek, który pilnuje baza (CHECK constraint). */
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -26,6 +28,10 @@ export default function ShareWorkoutModal({
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+
+  // Wysokość klawiatury ekranowej — na iPhone modal musi się podnieść,
+  // bo `position: fixed` nie reaguje na otwarcie klawiatury.
+  const keyboardInset = useKeyboardInset();
 
   const totalSets = day.exercises.reduce((acc, e) => acc + (e.sets || 0), 0);
 
@@ -79,19 +85,27 @@ export default function ShareWorkoutModal({
     <div
       className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/50"
       onClick={onClose}
-      style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'none' }}
+      style={{
+        WebkitTapHighlightColor: 'transparent',
+        // Notch / Dynamic Island — karta nie może wchodzić pod niego
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+        // Klawiatura ekranowa (iPhone) zasłania dół ekranu — modal podnosi się
+        paddingBottom: keyboardInset > 0 ? `${keyboardInset}px` : undefined,
+        // Wysokość klawiatury dla .modal-sheet (max-height: 90dvh - klawiatura)
+        '--kb-inset': `${keyboardInset}px`,
+      } as CSSProperties}
     >
       <div
-        className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom duration-200"
+        className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden modal-sheet animate-slide-up"
         onClick={(e) => e.stopPropagation()}
-        style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
+        style={{ display: 'flex', flexDirection: 'column' }}
       >
         {/* Header */}
         <div className="bg-gradient-to-r from-violet-500 to-indigo-600 px-4 py-3 flex items-center justify-between flex-shrink-0">
           <h2 className="text-white font-bold text-base sm:text-lg">Udostępnij trening</h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center active:bg-white/30 cursor-pointer"
+            className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-white/20 flex items-center justify-center active:bg-white/30 cursor-pointer flex-shrink-0"
             style={{ WebkitTapHighlightColor: 'transparent' }}
             aria-label="Zamknij"
           >
@@ -103,7 +117,10 @@ export default function ShareWorkoutModal({
 
         {/* ── Ekran sukcesu ── */}
         {sent ? (
-          <div className="p-5 sm:p-6 flex flex-col items-center text-center flex-1 overflow-y-auto">
+          <div
+            className="p-5 sm:p-6 flex flex-col items-center text-center flex-1 overflow-y-auto"
+            style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))' }}
+          >
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-500/10 border border-green-500/20 mb-4 flex-shrink-0">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7 text-green-500">
                 <path d="M5 12l5 5L20 7" />
@@ -119,7 +136,7 @@ export default function ShareWorkoutModal({
 
             <button
               onClick={onClose}
-              className="mt-5 w-full px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-500 to-indigo-600 active:opacity-80 cursor-pointer"
+              className="mt-5 w-full px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-500 to-indigo-600 active:opacity-80 cursor-pointer"
               style={{ WebkitTapHighlightColor: 'transparent' }}
             >
               Zamknij
@@ -128,7 +145,10 @@ export default function ShareWorkoutModal({
         ) : (
           <>
             {/* Content */}
-            <div className="p-4 space-y-4 overflow-y-auto flex-1" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div
+              className="p-4 space-y-4 overflow-y-auto flex-1"
+              style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
+            >
               {/* Podsumowanie dnia */}
               <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
                 <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide mb-1">
@@ -166,8 +186,11 @@ export default function ShareWorkoutModal({
                   onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
                   placeholder="np. kowalski@example.com"
                   autoComplete="off"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
                   autoFocus
-                  className={`w-full px-4 py-3 rounded-xl border-2 text-slate-800 text-sm font-medium focus:outline-none focus:ring-2 transition-all ${
+                  className={`w-full px-4 py-3 rounded-xl border-2 text-slate-800 text-base sm:text-sm font-medium focus:outline-none focus:ring-2 transition-all ${
                     isOwnEmail
                       ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20'
                       : 'border-slate-200 focus:border-violet-500 focus:ring-violet-500/20'
@@ -206,10 +229,14 @@ export default function ShareWorkoutModal({
             </div>
 
             {/* Footer */}
-            <div className="px-4 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2 flex-shrink-0">
+            <div
+              className="px-4 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2 flex-shrink-0"
+              // Home indicator iPhone — przyciski nie mogą pod niego wchodzić
+              style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
+            >
               <button
                 onClick={onClose}
-                className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 bg-white border border-slate-200 active:bg-slate-50 cursor-pointer"
+                className="px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold text-slate-600 bg-white border border-slate-200 active:bg-slate-50 cursor-pointer"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 Anuluj
@@ -217,7 +244,7 @@ export default function ShareWorkoutModal({
               <button
                 onClick={handleSend}
                 disabled={!isValidEmail || isOwnEmail || sending}
-                className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-500 to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed active:opacity-80 cursor-pointer"
+                className="px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-500 to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed active:opacity-80 cursor-pointer"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 {sending ? 'Wysyłam…' : 'Udostępnij'}

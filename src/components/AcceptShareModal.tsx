@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import type { CSSProperties } from 'react';
 import { SharedWorkout } from '../types';
 import { getMondayOf, formatWeekLabel, DAY_NAMES } from '../store/weekStore';
+import { useKeyboardInset } from '../hooks/useKeyboardInset';
 
 /** Zbuduj dzisiejszą datę jako lokalny `YYYY-MM-DD` (nigdy `toISOString` — to UTC). */
 function todayLocal(): string {
@@ -40,6 +42,10 @@ export default function AcceptShareModal({ share, onAccept, onDecline, onClose }
   const [busy, setBusy] = useState<'accept' | 'decline' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [acceptedTo, setAcceptedTo] = useState<string | null>(null);
+
+  // Wysokość klawiatury ekranowej — na iPhone modal musi się podnieść,
+  // bo `position: fixed` nie reaguje na otwarcie klawiatury.
+  const keyboardInset = useKeyboardInset();
 
   const exercises = Array.isArray(share.day_data?.exercises) ? share.day_data.exercises : [];
   const totalSets = exercises.reduce((acc, e) => acc + (e.sets || 0), 0);
@@ -109,12 +115,20 @@ export default function AcceptShareModal({ share, onAccept, onDecline, onClose }
     <div
       className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/50"
       onClick={onClose}
-      style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'none' }}
+      style={{
+        WebkitTapHighlightColor: 'transparent',
+        // Notch / Dynamic Island — karta nie może wchodzić pod niego
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+        // Klawiatura ekranowa (iPhone) zasłania dół ekranu — modal podnosi się
+        paddingBottom: keyboardInset > 0 ? `${keyboardInset}px` : undefined,
+        // Wysokość klawiatury dla .modal-sheet (max-height: 90dvh - klawiatura)
+        '--kb-inset': `${keyboardInset}px`,
+      } as CSSProperties}
     >
       <div
-        className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom duration-200"
+        className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden modal-sheet animate-slide-up"
         onClick={(e) => e.stopPropagation()}
-        style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
+        style={{ display: 'flex', flexDirection: 'column' }}
       >
         {/* Header */}
         <div className="bg-gradient-to-r from-violet-500 to-indigo-600 px-4 py-3 flex items-center justify-between flex-shrink-0">
@@ -123,7 +137,7 @@ export default function AcceptShareModal({ share, onAccept, onDecline, onClose }
           </h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center active:bg-white/30 cursor-pointer"
+            className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-white/20 flex items-center justify-center active:bg-white/30 cursor-pointer flex-shrink-0"
             style={{ WebkitTapHighlightColor: 'transparent' }}
             aria-label="Zamknij"
           >
@@ -135,7 +149,10 @@ export default function AcceptShareModal({ share, onAccept, onDecline, onClose }
 
         {/* ── Ekran sukcesu ── */}
         {acceptedTo ? (
-          <div className="p-5 sm:p-6 flex flex-col items-center text-center flex-1 overflow-y-auto">
+          <div
+            className="p-5 sm:p-6 flex flex-col items-center text-center flex-1 overflow-y-auto"
+            style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))' }}
+          >
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-500/10 border border-green-500/20 mb-4 flex-shrink-0">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7 text-green-500">
                 <path d="M5 12l5 5L20 7" />
@@ -151,7 +168,7 @@ export default function AcceptShareModal({ share, onAccept, onDecline, onClose }
 
             <button
               onClick={onClose}
-              className="mt-5 w-full px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-500 to-indigo-600 active:opacity-80 cursor-pointer"
+              className="mt-5 w-full px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-500 to-indigo-600 active:opacity-80 cursor-pointer"
               style={{ WebkitTapHighlightColor: 'transparent' }}
             >
               Zamknij
@@ -160,7 +177,10 @@ export default function AcceptShareModal({ share, onAccept, onDecline, onClose }
         ) : (
           <>
             {/* Content */}
-            <div className="p-4 space-y-4 overflow-y-auto flex-1" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div
+              className="p-4 space-y-4 overflow-y-auto flex-1"
+              style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
+            >
               {/* Nadawca */}
               <div className="flex items-center gap-3 bg-slate-50 rounded-xl p-3 border border-slate-100">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
@@ -211,7 +231,7 @@ export default function AcceptShareModal({ share, onAccept, onDecline, onClose }
                   type="date"
                   value={targetDateStr}
                   onChange={(e) => setTargetDateStr(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 text-slate-800 text-sm font-medium focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 text-slate-800 text-base sm:text-sm font-medium focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 />
 
@@ -244,11 +264,15 @@ export default function AcceptShareModal({ share, onAccept, onDecline, onClose }
             </div>
 
             {/* Footer */}
-            <div className="px-4 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2 flex-shrink-0">
+            <div
+              className="px-4 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2 flex-shrink-0"
+              // Home indicator iPhone — przyciski nie mogą pod niego wchodzić
+              style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
+            >
               <button
                 onClick={handleDecline}
                 disabled={busy !== null}
-                className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 bg-white border border-slate-200 active:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold text-slate-600 bg-white border border-slate-200 active:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 {busy === 'decline' ? 'Odrzucam…' : 'Odrzuć'}
@@ -256,7 +280,7 @@ export default function AcceptShareModal({ share, onAccept, onDecline, onClose }
               <button
                 onClick={handleAccept}
                 disabled={!isValid || busy !== null}
-                className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-500 to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed active:opacity-80 cursor-pointer"
+                className="px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-500 to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed active:opacity-80 cursor-pointer"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 {busy === 'accept' ? 'Dodaję…' : 'Akceptuj i dodaj'}
