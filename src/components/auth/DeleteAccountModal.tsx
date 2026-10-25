@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import type { CSSProperties } from 'react';
 import { useAuthStore } from '../../store/authStore';
+import { useKeyboardInset } from '../../hooks/useKeyboardInset';
 
 interface Props {
   onClose: () => void;
@@ -10,6 +12,10 @@ export default function DeleteAccountModal({ onClose }: Props) {
   const [step, setStep] = useState<1 | 2>(1);
   const [confirmText, setConfirmText] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  // Wysokość klawiatury ekranowej — na iPhone modal musi się podnieść,
+  // bo `position: fixed` nie reaguje na otwarcie klawiatury.
+  const keyboardInset = useKeyboardInset();
 
   const CONFIRM_PHRASE = 'USUŃ KONTO';
   const isConfirmValid = confirmText === CONFIRM_PHRASE;
@@ -28,15 +34,22 @@ export default function DeleteAccountModal({ onClose }: Props) {
   return (
     <div
       className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      style={{
+        // Notch / Dynamic Island — karta nie może pod niego wchodzić
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+        // Klawiatura ekranowa (iPhone) zasłania dół ekranu — modal podnosi się
+        paddingBottom: keyboardInset > 0 ? `${keyboardInset}px` : undefined,
+        // Wysokość klawiatury dla .modal-sheet (max-height: 90dvh - klawiatura)
+        '--kb-inset': `${keyboardInset}px`,
+      } as CSSProperties}
     >
       <div
-        className="bg-slate-800 sm:rounded-2xl rounded-t-2xl border border-red-500/20 shadow-2xl w-full sm:max-w-md overflow-hidden"
-        style={{ maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 1rem)' }}
+        className="bg-slate-800 sm:rounded-2xl rounded-t-2xl border border-red-500/20 shadow-2xl w-full sm:max-w-md overflow-hidden modal-sheet"
+        style={{ display: 'flex', flexDirection: 'column' }}
       >
 
         {/* Header */}
-        <div className="bg-gradient-to-r from-red-600/20 to-red-500/10 border-b border-red-500/20 p-5 flex items-start gap-3">
+        <div className="bg-gradient-to-r from-red-600/20 to-red-500/10 border-b border-red-500/20 p-5 flex items-start gap-3 flex-shrink-0">
           <div className="w-10 h-10 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center flex-shrink-0 mt-0.5">
             <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -57,7 +70,15 @@ export default function DeleteAccountModal({ onClose }: Props) {
           </button>
         </div>
 
-        <div className="p-5">
+        <div
+          className="p-5 overflow-y-auto flex-1"
+          // Home indicator iPhone — treść nie może pod niego wchodzić
+          style={{
+            WebkitOverflowScrolling: 'touch',
+            overscrollBehavior: 'contain',
+            paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))',
+          }}
+        >
           {/* Krok 1 — Przegląd co zostanie usunięte */}
           {step === 1 && (
             <div className="space-y-4">
@@ -106,13 +127,13 @@ export default function DeleteAccountModal({ onClose }: Props) {
               <div className="flex gap-3 pt-1">
                 <button
                   onClick={onClose}
-                  className="flex-1 py-2.5 rounded-xl border border-slate-600 text-slate-300 text-sm font-medium hover:bg-slate-700 transition-colors"
+                  className="flex-1 py-2.5 min-h-[44px] rounded-xl border border-slate-600 text-slate-300 text-sm font-medium hover:bg-slate-700 transition-colors cursor-pointer"
                 >
                   Anuluj
                 </button>
                 <button
                   onClick={() => setStep(2)}
-                  className="flex-1 py-2.5 rounded-xl bg-red-600/20 border border-red-500/30 text-red-400 text-sm font-medium hover:bg-red-600/30 transition-colors"
+                  className="flex-1 py-2.5 min-h-[44px] rounded-xl bg-red-600/20 border border-red-500/30 text-red-400 text-sm font-medium hover:bg-red-600/30 transition-colors cursor-pointer"
                 >
                   Rozumiem, kontynuuj →
                 </button>
@@ -139,7 +160,7 @@ export default function DeleteAccountModal({ onClose }: Props) {
                   value={confirmText}
                   onChange={e => { setConfirmText(e.target.value); setError(null); }}
                   placeholder="Wpisz potwierdzenie..."
-                  className={`w-full px-4 py-3 rounded-xl bg-slate-700/50 border text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 transition-all font-mono ${
+                  className={`w-full px-4 py-3 rounded-xl bg-slate-700/50 border text-white placeholder-slate-500 text-base sm:text-sm focus:outline-none focus:ring-2 transition-all font-mono ${
                     error
                       ? 'border-red-500/50 focus:ring-red-500/30'
                       : isConfirmValid
@@ -172,14 +193,14 @@ export default function DeleteAccountModal({ onClose }: Props) {
                 <button
                   onClick={() => { setStep(1); setConfirmText(''); setError(null); }}
                   disabled={loading}
-                  className="flex-1 py-2.5 rounded-xl border border-slate-600 text-slate-300 text-sm font-medium hover:bg-slate-700 transition-colors disabled:opacity-50"
+                  className="flex-1 py-2.5 min-h-[44px] rounded-xl border border-slate-600 text-slate-300 text-sm font-medium hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   ← Wróć
                 </button>
                 <button
                   onClick={handleDelete}
                   disabled={loading || !isConfirmValid}
-                  className="flex-1 py-2.5 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 min-h-[44px] rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {loading ? (
                     <>
