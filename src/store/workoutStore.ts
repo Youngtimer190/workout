@@ -13,6 +13,7 @@ import {
   migrateOldData,
   saveAllWeeksLocal,
   clearLocalData,
+  CUSTOM_EXERCISES_KEY,
 } from './weekStore';
 import {
   upsertWeekPlan,
@@ -24,7 +25,25 @@ import {
 } from '../lib/syncService';
 import { isSupabaseConfigured } from '../lib/supabase';
 
-const CUSTOM_EXERCISES_KEY = 'workout-planner-custom-exercises';
+/**
+ * Łączy tydzień z chmury z tygodniem z localStorage.
+ *
+ * Chmura jest bazą (źródło prawdy), a ćwiczenia znane tylko lokalnie
+ * są doklejane. Bez tego zapis do innego tygodnia nadpisywałby chmurę
+ * defaultami z localStorage i cicho kasował trening zapisany na innym
+ * urządzeniu.
+ */
+function mergeWeekDays(cloud: WorkoutDay[], local: WorkoutDay[]): WorkoutDay[] {
+  return cloud.map(day => {
+    const localDay = local.find(d => d.dayIndex === day.dayIndex);
+    if (!localDay) return day;
+    const cloudIds = new Set(day.exercises.map(e => e.id));
+    const extra = localDay.exercises.filter(e => !cloudIds.has(e.id));
+    return extra.length > 0
+      ? { ...day, exercises: [...day.exercises, ...extra] }
+      : day;
+  });
+}
 
 function loadCustomExercisesLocal(): Exercise[] {
   try {
@@ -87,9 +106,10 @@ export function useWorkoutStore(userId?: string) {
         if (Object.keys(cloudWeeks).length > 0) {
           saveAllWeeksLocal(cloudWeeks);
         }
-        if (cloudCustom.length > 0) {
-          saveCustomExercisesLocal(cloudCustom);
-        }
+        // Zapisujemy BEZWZGLĘDNIE — także pustą listę. Pod warunkiem
+        // „cloudCustom.length > 0" użytkownik bez własnych ćwiczeń zostawałby
+        // z ćwiczeniami poprzedniego użytkownika tego samego urządzenia.
+        saveCustomExercisesLocal(cloudCustom);
 
         // Załaduj bieżący tydzień z chmury (lub pusty jeśli nowe konto)
         const currentKey = getWeekKey(getMondayOf(new Date()));
@@ -116,7 +136,7 @@ export function useWorkoutStore(userId?: string) {
 
       // Fetch from cloud in background
       if (userId && isSupabaseConfigured) {
-        fetchWeekPlan(userId, newKey).then(cloudDays => {
+        fetchWeekPlan(userId, newKey).then(({ days: cloudDays }) => {
           if (cloudDays) {
             saveWeekDays(newKey, cloudDays);
             setDays(cloudDays);
@@ -136,7 +156,7 @@ export function useWorkoutStore(userId?: string) {
       setDays(loadedDays);
 
       if (userId && isSupabaseConfigured) {
-        fetchWeekPlan(userId, newKey).then(cloudDays => {
+        fetchWeekPlan(userId, newKey).then(({ days: cloudDays }) => {
           if (cloudDays) {
             saveWeekDays(newKey, cloudDays);
             setDays(cloudDays);
@@ -155,6 +175,33 @@ export function useWorkoutStore(userId?: string) {
     setDays(loadWeekDays(key));
   }, []);
 
+  /**
+   * Przechodzi do tygodnia zawierającego podaną datę.
+   *
+   * Wyprowadzamy poniedziałek z KONKRETNEJ daty (`getMondayOf`) i liczymy
+   * klucz tą samą funkcją, której używa reszta aplikacji (`getWeekKey`).
+   *
+   * NIE używamy `goToWeekByKey` — tamten algorytm jest zgodny z ISO-8601,
+   * a `getWeekKey` używa własnego (nie-ISO) formatu `YYYY-Www`, więc
+   * round-trip by się rozjechał (np. `getWeekKey(30.12.2024)` = "2024-W53",
+   * ISO = "2025-W01").
+   */
+  const goToWeekContaining = useCallback((date: Date) => {
+    const monday = getMondayOf(date);
+    const key = getWeekKey(monday);
+    setCurrentMonday(monday);
+    setDays(loadWeekDays(key));
+
+    if (userId && isSupabaseConfigured) {
+      fetchWeekPlan(userId, key).then(({ days: cloudDays }) => {
+        if (cloudDays) {
+          saveWeekDays(key, cloudDays);
+          setDays(cloudDays);
+        }
+      });
+    }
+  }, [userId]);
+
   const goToWeekByKey = useCallback((key: string) => {
     const [yearStr, weekStr] = key.split('-W');
     const year = parseInt(yearStr, 10);
@@ -172,23 +219,56 @@ export function useWorkoutStore(userId?: string) {
   const persistDays = useCallback((newDays: WorkoutDay[], key: string) => {
     saveWeekDays(key, newDays);
     if (userId && isSupabaseConfigured) {
-      upsertWeekPlan(userId, key, newDays);
+      upsertWeekPlan(userId, key, newDays).then(err => {
+        if (err) console.error('[WorkoutStore] persistDays — zapis w chmurze nieudany:', err);
+      });
     }
   }, [userId]);
 
-  // Skopiuj trening (listę ćwiczeń) z dowolnego tygodnia do dnia docelowego.
-  // Źródło pozostaje nienaruszone; stan serii (done ✓) resetowany na false
-  // (waga/powtórzenia zachowane jako referencja) — świeży szablon jak przy copy.
-  // Dzień docelowy może być w innym tygodniu niż bieżący (append, nie replace).
-  const copyWorkoutToDay = useCallback((sourceExercises: Exercise[], targetDateStr: string) => {
-    if (!targetDateStr || sourceExercises.length === 0) return;
+  /**
+   * Skopiuj trening (listę ćwiczeń) z dowolnego tygodnia do dnia docelowego.
+   *
+   * Źródło pozostaje nienaruszone; stan serii (done ✓) resetowany na false
+   * (waga/powtórzenia zachowane jako referencja) — świeży szablon jak przy copy.
+   * Dzień docelowy może być w innym tygodniu niż bieżący (append, nie replace).
+   *
+   * Przed zapisem tygodnia docelowego pobieramy jego stan Z CHMURY. Wcześniejsza
+   * wersja bazowała wyłącznie na localStorage, przez co przy zapisie z drugiego
+   * urządzenia nadpisywała chmurę defaultami — ciche utracenie danych.
+   *
+   * Zwraca błąd zapisu (albo `null`), żeby przepływ akceptacji udostępnienia
+   * mógł odrzucić akceptację, gdy trening nie trafił do planu.
+   */
+  const copyWorkoutToDay = useCallback(async (
+    sourceExercises: Exercise[],
+    targetDateStr: string
+  ): Promise<{ error: Error | null; weekKey: string; dayIndex: number }> => {
+    if (!targetDateStr || sourceExercises.length === 0) {
+      return { error: null, weekKey: '', dayIndex: -1 };
+    }
     // Parsuj w czasie lokalnym, żeby uniknąć przesunięcia dnia przez offset UTC
     const targetDate = new Date(`${targetDateStr}T00:00:00`);
-    if (isNaN(targetDate.getTime())) return;
+    if (isNaN(targetDate.getTime())) {
+      return { error: new Error('Nieprawidłowa data docelowa'), weekKey: '', dayIndex: -1 };
+    }
 
     const targetMonday = getMondayOf(targetDate);
     const targetKey = getWeekKey(targetMonday);
     const targetIdx = (targetDate.getDay() + 6) % 7; // Mon=0..Sun=6 (jak createDefaultDays)
+
+    // ── Baza: chmura (źródło prawdy) scalona z localStorage ──
+    let targetDays = loadWeekDays(targetKey);
+    if (userId && isSupabaseConfigured) {
+      const { days: cloudDays, error: fetchError } = await fetchWeekPlan(userId, targetKey);
+      if (fetchError) {
+        // Nie znamy aktualnego stanu chmury — zapis mógłby nadpisać cudze dane.
+        console.error('[WorkoutStore] copyWorkoutToDay — nie pobrano tygodnia z chmury:', fetchError);
+        return { error: fetchError, weekKey: targetKey, dayIndex: targetIdx };
+      }
+      if (cloudDays && cloudDays.length > 0) {
+        targetDays = mergeWeekDays(cloudDays, targetDays);
+      }
+    }
 
     // Świeża kopia: re-id + reset done=false (zachowaj wagę/powt.)
     const fresh = sourceExercises.map(ex => {
@@ -210,28 +290,27 @@ export function useWorkoutStore(userId?: string) {
       };
     });
 
-    if (targetKey === weekKey) {
-      // TEN SAM TYDZIEŃ — doklej do dnia w bieżącym stanie
-      setDays(prev => {
-        const next = prev.map(d =>
-          d.dayIndex === targetIdx
-            ? { ...d, exercises: [...d.exercises, ...fresh], isRestDay: false }
-            : d
-        );
-        persistDays(next, weekKey);
-        return next;
-      });
-    } else {
-      // INNY TYDZIEŃ — doklej w tygodniu docelowym (lokalnie + chmura)
-      const targetDays = loadWeekDays(targetKey);
-      const nextTarget = targetDays.map(d =>
-        d.dayIndex === targetIdx
-          ? { ...d, exercises: [...d.exercises, ...fresh], isRestDay: false }
-          : d
-      );
-      persistDays(nextTarget, targetKey);
+    const nextTarget = targetDays.map(d =>
+      d.dayIndex === targetIdx
+        ? { ...d, exercises: [...d.exercises, ...fresh], isRestDay: false }
+        : d
+    );
+
+    // ── Zapis: najpierw chmura (żeby błąd nie zostawił fałszywego „zapisano"),
+    //    potem localStorage ──
+    let error: Error | null = null;
+    if (userId && isSupabaseConfigured) {
+      error = await upsertWeekPlan(userId, targetKey, nextTarget);
     }
-  }, [weekKey, persistDays]);
+    saveWeekDays(targetKey, nextTarget);
+
+    // Bieżący tydzień — zaktualizuj stan widoczny w UI
+    if (targetKey === weekKey) {
+      setDays(nextTarget);
+    }
+
+    return { error, weekKey: targetKey, dayIndex: targetIdx };
+  }, [userId, weekKey]);
 
   const updateDaysForCurrentWeek = useCallback((newDays: WorkoutDay[]) => {
     setDays(newDays);
@@ -360,24 +439,33 @@ export function useWorkoutStore(userId?: string) {
   // Przenieś cały trening (wszystkie ćwiczenia z dnia) na dowolną datę — również
   // do innego tygodnia. Data docelowa pochodzi z <input type="date"> (YYYY-MM-DD).
   // Stan serii (setLogs: ✓ done + ciężary) jest zachowywany — to cut&paste, nie reset.
-  const moveAllExercisesToDate = useCallback((sourceDayId: string, targetDateStr: string) => {
-    if (!targetDateStr) return;
+  //
+  // UWAGA: zapis do innego tygodnia NIE jest skutkiem updatera `setDays` —
+  // updater musi być czysty, a React w trybie StrictMode wywołuje go
+  // dwukrotnie (podwójne doklejenie ćwiczeń).
+  const moveAllExercisesToDate = useCallback(async (
+    sourceDayId: string,
+    targetDateStr: string
+  ): Promise<{ error: Error | null }> => {
+    if (!targetDateStr) return { error: null };
     // Parsuj w czasie lokalnym, żeby uniknąć przesunięcia dnia przez offset UTC
     const targetDate = new Date(`${targetDateStr}T00:00:00`);
-    if (isNaN(targetDate.getTime())) return;
+    if (isNaN(targetDate.getTime())) {
+      return { error: new Error('Nieprawidłowa data docelowa') };
+    }
 
     const targetMonday = getMondayOf(targetDate);
     const targetKey = getWeekKey(targetMonday);
     const targetIdx = (targetDate.getDay() + 6) % 7; // Mon=0..Sun=6 (jak createDefaultDays)
 
-    setDays(prev => {
-      const sourceDay = prev.find(d => d.id === sourceDayId);
-      if (!sourceDay || sourceDay.exercises.length === 0) return prev;
-      // Guard: data == dzień źródłowy → no-op
-      if (targetKey === weekKey && targetIdx === sourceDay.dayIndex) return prev;
+    const sourceDay = days.find(d => d.id === sourceDayId);
+    if (!sourceDay || sourceDay.exercises.length === 0) return { error: null };
+    // Guard: data == dzień źródłowy → no-op
+    if (targetKey === weekKey && targetIdx === sourceDay.dayIndex) return { error: null };
 
-      if (targetKey === weekKey) {
-        // TEN SAM TYDZIEŃ — mutuj bieżący stan (jak dotychczas)
+    if (targetKey === weekKey) {
+      // TEN SAM TYDZIEŃ — mutuj bieżący stan (jak dotychczas)
+      setDays(prev => {
         const next = prev.map(d => {
           if (d.id === sourceDayId) return { ...d, exercises: [] };
           if (d.dayIndex === targetIdx) {
@@ -387,26 +475,49 @@ export function useWorkoutStore(userId?: string) {
         });
         persistDays(next, weekKey);
         return next;
+      });
+      return { error: null };
+    }
+
+    // INNY TYDZIEŃ — cut&paste, setLogs zachowane (brak re-id)
+    // (a) Tydzień docelowy: doklej ćwiczenia do dnia (lokalnie + chmura, po jawnym key)
+    //     Baza = chmura (źródło prawdy) scalona z localStorage — inaczej zapis
+    //     z drugiego urządzenia nadpisałby chmurę defaultami.
+    let targetDays = loadWeekDays(targetKey);
+    if (userId && isSupabaseConfigured) {
+      const { days: cloudDays, error: fetchError } = await fetchWeekPlan(userId, targetKey);
+      if (fetchError) {
+        console.error('[WorkoutStore] moveAllExercisesToDate — nie pobrano tygodnia z chmury:', fetchError);
+        return { error: fetchError };
       }
+      if (cloudDays && cloudDays.length > 0) {
+        targetDays = mergeWeekDays(cloudDays, targetDays);
+      }
+    }
 
-      // INNY TYDZIEŃ — cut&paste, setLogs zachowane (brak re-id)
-      // (a) Tydzień docelowy: doklej ćwiczenia do dnia (lokalnie + chmura, po jawnym key)
-      const targetDays = loadWeekDays(targetKey);
-      const nextTarget = targetDays.map(d =>
-        d.dayIndex === targetIdx
-          ? { ...d, exercises: [...d.exercises, ...sourceDay.exercises], isRestDay: false }
-          : d
-      );
-      persistDays(nextTarget, targetKey);
+    const nextTarget = targetDays.map(d =>
+      d.dayIndex === targetIdx
+        ? { ...d, exercises: [...d.exercises, ...sourceDay.exercises], isRestDay: false }
+        : d
+    );
 
-      // (b) Bieżący tydzień: opróżnij dzień źródłowy
+    let error: Error | null = null;
+    if (userId && isSupabaseConfigured) {
+      error = await upsertWeekPlan(userId, targetKey, nextTarget);
+    }
+    saveWeekDays(targetKey, nextTarget);
+
+    // (b) Bieżący tydzień: opróżnij dzień źródłowy
+    setDays(prev => {
       const nextSource = prev.map(d =>
         d.id === sourceDayId ? { ...d, exercises: [] } : d
       );
       persistDays(nextSource, weekKey);
       return nextSource; // `days` zawsze odzwierciedla bieżący tydzień
     });
-  }, [weekKey, persistDays]);
+
+    return { error };
+  }, [days, weekKey, persistDays, userId]);
 
   const resetWeek = useCallback(() => {
     const fresh = createDefaultDays(weekKey);
@@ -485,6 +596,7 @@ export function useWorkoutStore(userId?: string) {
     goToNextWeek,
     goToCurrentWeek,
     goToWeekByKey,
+    goToWeekContaining,
     isHydrating,
     copyWorkoutToDay,
     // Days

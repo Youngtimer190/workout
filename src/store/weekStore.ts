@@ -3,6 +3,14 @@ import { dayColors } from '../data/exercises';
 
 export const DAY_NAMES = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela'];
 const WEEKS_STORAGE_KEY = 'workout-planner-weeks';
+/**
+ * Klucz własnych ćwiczeń w localStorage.
+ *
+ * Jest tutaj (a nie tylko w `workoutStore.ts`), bo `clearLocalData()` musi
+ * czyścić OBA zbiory — inaczej po wylogowaniu następny użytkownik tego samego
+ * urządzenia zobaczyłby cudze ćwiczenia.
+ */
+export const CUSTOM_EXERCISES_KEY = 'workout-planner-custom-exercises';
 
 export interface WeekMeta {
   key: string;       // e.g. "2025-W03"
@@ -66,6 +74,28 @@ export function offsetWeek(monday: Date, delta: number): Date {
   const d = new Date(monday);
   d.setDate(d.getDate() + delta * 7);
   return d;
+}
+
+/**
+ * Odtwarza poniedziałek tygodnia o podanym kluczu `YYYY-Www`.
+ *
+ * `getWeekKey()` bierze rok z PONIEDZIAŁKU (nie z tygodnia), a jego
+ * numerycja jest własna, nie ISO-8601 — dlatego odwrócenie wzoru jest
+ * kruche. Zamiast tego przechodzimy po poniedziałkach i porównujemy klucze
+ * z tą samą funkcją, która je wygenerowała — rozwiązanie zawsze zgodne
+ * z `getWeekKey()`, bez zgadywania reguły numeracji.
+ */
+export function mondayOfWeekKey(weekKey: string): Date | null {
+  const m = /^(\d{4})-W(\d{2})$/.exec(weekKey);
+  if (!m) return null;
+  const year = Number(m[1]);
+  // Klucz bierze rok poniedziałku, więc szukamy od grudnia roku poprzedniego.
+  let cursor = getMondayOf(new Date(year - 1, 11, 1));
+  for (let i = 0; i < 70; i++) {
+    if (getWeekKey(cursor) === weekKey) return new Date(cursor);
+    cursor = offsetWeek(cursor, 1);
+  }
+  return null;
 }
 
 // ─── Storage helpers ──────────────────────────────────────────
@@ -162,6 +192,9 @@ export function copyWeekDays(fromKey: string, toKey: string): WorkoutDay[] {
 /** Clear ALL local workout data (call on logout to prevent data leakage between users) */
 export function clearLocalData() {
   localStorage.removeItem(WEEKS_STORAGE_KEY);
+  // Własne ćwiczenia też są danymi użytkownika — bez tego zostawały w
+  // localStorage i następny użytkownik tego samego urządzenia je widział.
+  localStorage.removeItem(CUSTOM_EXERCISES_KEY);
 }
 
 /** Migrate old single-week data to multi-week storage */

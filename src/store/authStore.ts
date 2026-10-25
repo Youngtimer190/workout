@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { User, Session, AuthError } from '@supabase/supabase-js';
-import { supabase, supabaseAdmin, isSupabaseConfigured } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 export type AuthView = 'login' | 'register';
 
@@ -118,11 +118,12 @@ export function useAuthStore() {
   /**
    * Usuwa konto użytkownika wraz ze wszystkimi danymi.
    *
-   * Strategia (w kolejności próbowania):
-   * 1. supabaseAdmin.auth.admin.deleteUser() — jeśli skonfigurowany service_role key
-   *    → Gwarantowane usunięcie z auth.users (kaskadowo usuwa też dane przez FK)
-   * 2. supabase.rpc('delete_user_account') — fallback przez funkcję SQL SECURITY DEFINER
-   *    → Wymaga że funkcja jest wgrana do bazy (patrz SUPABASE_SETUP.md)
+   * Wykonuje to wyłącznie funkcja SQL `delete_user_account()` (SECURITY DEFINER),
+   * która kasuje dane z tabel aplikacji ORAZ wiersz z auth.users.
+   * Klucz service_role nie jest używany w frontendzie — build wbudowuje
+   * wszystkie zmienne VITE_* do publicznego bundle, więc klucz admina
+   * byłby widoczny dla każdego odwiedzającego.
+   * Wymaga wgranej funkcji — patrz SUPABASE_SETUP.md.
    */
   const deleteAccount = useCallback(async (): Promise<{ error: string | null }> => {
     if (!user) return { error: 'Brak zalogowanego użytkownika' };
@@ -130,42 +131,24 @@ export function useAuthStore() {
     setLoading(true);
 
     try {
-      const userId = user.id;
+      // ── Krok 1: Usuń konto i wszystkie dane (funkcja SQL SECURITY DEFINER) ───
+      const { error: rpcError } = await supabase.rpc('delete_user_account');
 
-      // ── Krok 1: Usuń dane użytkownika z tabel (dla pewności, mimo ON DELETE CASCADE) ──
-      await supabase.from('week_plans').delete().eq('user_id', userId);
-      await supabase.from('custom_exercises').delete().eq('user_id', userId);
-
-      // ── Krok 2: Usuń konto z auth.users ──────────────────────────────────────
-      if (supabaseAdmin) {
-        // Metoda preferowana: admin API z service_role key
-        const { error: adminError } = await supabaseAdmin.auth.admin.deleteUser(userId);
-
-        if (adminError) {
-          console.error('[deleteAccount] Admin deleteUser error:', adminError);
-          throw new Error(adminError.message);
-        }
-      } else {
-        // Fallback: RPC funkcja SQL (SECURITY DEFINER)
-        // Wymaga wgranej funkcji delete_user_account() — patrz SUPABASE_SETUP.md
-        const { error: rpcError } = await supabase.rpc('delete_user_account');
-
-        if (rpcError) {
-          console.error('[deleteAccount] RPC error:', rpcError);
-          throw new Error(
-            'Nie udało się usunąć konta. Upewnij się że klucz VITE_SUPABASE_SERVICE_ROLE_KEY ' +
-            'jest ustawiony w .env.local lub funkcja delete_user_account() jest wgrana do bazy.'
-          );
-        }
+      if (rpcError) {
+        console.error('[deleteAccount] RPC error:', rpcError);
+        throw new Error(
+          'Nie udało się usunąć konta. Upewnij się, że funkcja delete_user_account() ' +
+          'jest wgrana do bazy (SUPABASE_SETUP.md → SQL Editor).'
+        );
       }
 
-      // ── Krok 3: Wyczyść sesję lokalnie bez wywoływania signOut() ─────────────
+      // ── Krok 2: Wyczyść sesję lokalnie bez wywoływania signOut() ─────────────
       // NIE wywołujemy supabase.auth.signOut() — konto już nie istnieje w bazie
       // i Supabase zwróciłby 403. Czyścimy stan lokalnie.
       setUser(null);
       setSession(null);
 
-      // ── Krok 4: Wyczyść localStorage ─────────────────────────────────────────
+      // ── Krok 3: Wyczyść localStorage ─────────────────────────────────────────
       const keysToRemove = Object.keys(localStorage).filter(k =>
         k.startsWith('fitplaner_') || k.startsWith('sb-')
       );
