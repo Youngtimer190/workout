@@ -17,6 +17,43 @@ const DEMO_USER = {
   user_metadata: { full_name: 'Użytkownik Demo' },
 } as unknown as User;
 
+/**
+ * Zdarzenie rozgłaszające wylogowanie w całej aplikacji.
+ *
+ * `useAuthStore()` jest wołany w kilku miejscach (App, Sidebar, UserMenu,
+ * DeleteAccountModal) i KAŻDE wywołanie tworzy własną instancję ze swoim
+ * stanem. `setUser(null)` w jednej instancji nie rusza pozostałych — bez
+ * tego zdarzenia wylogowanie w modalach usuwania konta nie wracałoby do
+ * ekranu logowania w App.
+ */
+const LOGOUT_EVENT = 'fitplaner:logout';
+
+/** Powiadamia wszystkie instancje useAuthStore, że użytkownik się wylogował. */
+function broadcastLogout() {
+  window.dispatchEvent(new Event(LOGOUT_EVENT));
+}
+
+/**
+ * Klucze localStorage należące do aplikacji.
+ *
+ * Po wylogowaniu (i po usunięciu konta) muszą zniknąć — inaczej następny
+ * użytkownik tego urządzenia zobaczy cudzy plan treningowy i cudze ćwiczenia.
+ */
+const APP_STORAGE_KEYS = [
+  'fitplaner-auth-token',
+  'workout-planner-weeks',
+  'workout-planner-custom-exercises',
+];
+
+function clearLocalAppData() {
+  APP_STORAGE_KEYS.forEach(k => localStorage.removeItem(k));
+  // Klucze sesji Supabase (`sb-<ref>-auth-token`) i ewentualne pozostałości
+  // po poprzednich wersjach aplikacji (`fitplaner…`).
+  Object.keys(localStorage)
+    .filter(k => k.startsWith('sb-') || k.startsWith('fitplaner'))
+    .forEach(k => localStorage.removeItem(k));
+}
+
 export function useAuthStore() {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -72,7 +109,20 @@ export function useAuthStore() {
       setUser(session?.user ?? null);
     });
 
-    return () => subscription.unsubscribe();
+    // Nasłuchuj wylogowania wywołanego w innym miejscu aplikacji
+    // (np. po usunięciu konta w DeleteAccountModal).
+    const handleLogout = () => {
+      setSession(null);
+      setUser(null);
+      setIsPasswordRecovery(false);
+      setIsDemoMode(false);
+    };
+    window.addEventListener(LOGOUT_EVENT, handleLogout);
+
+    return () => {
+      window.removeEventListener(LOGOUT_EVENT, handleLogout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = useCallback(async (
@@ -109,9 +159,9 @@ export function useAuthStore() {
   const signOut = useCallback(async () => {
     setLoading(true);
     await supabase.auth.signOut();
-    localStorage.removeItem('fitplaner-auth-token');
-    localStorage.removeItem('workout-planner-weeks');
-    localStorage.removeItem('workout-planner-custom-exercises');
+    // Gwarantujemy wylogowanie wszystkich instancji useAuthStore
+    broadcastLogout();
+    clearLocalAppData();
     setLoading(false);
   }, []);
 
@@ -142,18 +192,30 @@ export function useAuthStore() {
         );
       }
 
-      // ── Krok 2: Wyczyść sesję lokalnie bez wywoływania signOut() ─────────────
-      // NIE wywołujemy supabase.auth.signOut() — konto już nie istnieje w bazie
-      // i Supabase zwróciłby 403. Czyścimy stan lokalnie.
+      // ── Krok 2: Wyloguj użytkownika ──────────────────────────────────────────
+      // Konto już nie istnieje w bazie, więc serwer zwróci 403/401 — ale
+      // supabase-js IGNORUJE te błędy (GoTrueClient._signOut: „ignore 404s
+      // since user might not exist anymore") i mimo to usuwa lokalną sesję
+      // oraz wysyła zdarzenie SIGNED_OUT. Dzięki temu WSZYSTKIE instancje
+      // useAuthStore (App, Sidebar, UserMenu, modal) czyszczą swój stan
+      // i aplikacja wraca do ekranu logowania.
+      try {
+        await supabase.auth.signOut();
+      } catch (err: unknown) {
+        console.warn('[deleteAccount] signOut() zgłosił błąd:', err);
+      }
+
+      // Dodatkowo rozsyłamy własne zdarzenie — gwarantuje wylogowanie
+      // całej aplikacji także wtedy, gdy signOut() nie zdążył się wykonać.
+      broadcastLogout();
+
+      // ── Krok 3: Wyczyść dane lokalne ─────────────────────────────────────────
+      // Plan treningowy i własne ćwiczenia należą do usuwanego konta —
+      // nie mogą zostać na urządzeniu po wylogowaniu.
+      clearLocalAppData();
+
       setUser(null);
       setSession(null);
-
-      // ── Krok 3: Wyczyść localStorage ─────────────────────────────────────────
-      const keysToRemove = Object.keys(localStorage).filter(k =>
-        k.startsWith('fitplaner_') || k.startsWith('sb-')
-      );
-      keysToRemove.forEach(k => localStorage.removeItem(k));
-
       setLoading(false);
       return { error: null };
 
