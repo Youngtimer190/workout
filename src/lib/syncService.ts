@@ -8,24 +8,53 @@ import { WorkoutDay, Exercise } from '../types';
 
 // ─── Week Plans ──────────────────────────────────────────────────────────────
 
-export async function fetchWeekPlan(userId: string, weekKey: string): Promise<WorkoutDay[] | null> {
-  if (!isSupabaseConfigured) return null;
+/** Wynik pobrania tygodnia — rozróżnia „nie ma takiego tygodnia" od błędu. */
+export interface WeekPlanFetchResult {
+  days: WorkoutDay[] | null;
+  error: Error | null;
+}
+
+/**
+ * Pobiera tydzień z chmury.
+ *
+ * `maybeSingle()` (a nie `single()`) odróżnia „nie ma takiego tygodnia"
+ * (błąd PGRST116) od prawdziwego błędu sieci/RLS. To rozróżnienie jest
+ * istotne: przy błędzie nie wolno nadpisywać chmury danymi z localStorage,
+ * bo skasowałoby to trening zapisany na innym urządzeniu.
+ */
+export async function fetchWeekPlan(userId: string, weekKey: string): Promise<WeekPlanFetchResult> {
+  if (!isSupabaseConfigured) return { days: null, error: null };
   const { data, error } = await supabase
     .from('week_plans')
     .select('days_data')
     .eq('user_id', userId)
     .eq('week_key', weekKey)
-    .single();
-  if (error || !data) return null;
-  return data.days_data as WorkoutDay[];
+    .maybeSingle();
+  if (error) {
+    console.error('[syncService] fetchWeekPlan error:', error);
+    return { days: null, error: new Error(error.message) };
+  }
+  if (!data) return { days: null, error: null };
+  return { days: data.days_data as WorkoutDay[], error: null };
 }
 
-export async function upsertWeekPlan(userId: string, weekKey: string, days: WorkoutDay[]): Promise<void> {
-  if (!isSupabaseConfigured) return;
-  await supabase.from('week_plans').upsert(
+/**
+ * Zapisuje tydzień do chmury.
+ *
+ * Zwraca `Error` przy niepowodzeniu (albo `null` przy sukcesie) — samo
+ * „nie rzuciło wyjątku" nie znaczy, że dane zostały zapisane.
+ */
+export async function upsertWeekPlan(userId: string, weekKey: string, days: WorkoutDay[]): Promise<Error | null> {
+  if (!isSupabaseConfigured) return null;
+  const { error } = await supabase.from('week_plans').upsert(
     { user_id: userId, week_key: weekKey, days_data: days, updated_at: new Date().toISOString() },
     { onConflict: 'user_id,week_key' }
   );
+  if (error) {
+    console.error('[syncService] upsertWeekPlan error:', error);
+    return new Error(error.message);
+  }
+  return null;
 }
 
 export async function fetchAllWeekKeys(userId: string): Promise<string[]> {

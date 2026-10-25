@@ -2,7 +2,6 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
-const supabaseServiceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY as string;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn(
@@ -13,7 +12,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // ─── Klient standardowy (anon key) ───────────────────────────────────────────
-// Używany do wszystkich normalnych operacji: auth, odczyt/zapis danych
+// Używany do wszystkich normalnych operacji: auth, odczyt/zapis danych.
+// UWAGA: klucz service_role NIE MOŻE być importowany w kodzie frontendu —
+// build (vite-plugin-singlefile) wbudowuje wszystkie zmienne VITE_* do
+// publicznego bundle, więc klucz z service_role byłby widoczny dla każdego
+// odwiedzającego i dawałby pełny dostęp do bazy z pominięciem RLS.
+// Operacje wymagające uprawnień admina (np. usunięcie konta) wykonuje
+// funkcja SQL SECURITY DEFINER — patrz SUPABASE_SETUP.md.
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
   supabaseAnonKey || 'placeholder-key',
@@ -28,21 +33,4 @@ export const supabase = createClient(
   }
 );
 
-// ─── Klient administracyjny (service_role key) ───────────────────────────────
-// Używany TYLKO do usuwania konta użytkownika (wymaga uprawnień admina).
-// service_role omija RLS i ma pełny dostęp — używaj wyłącznie gdy konieczne.
-export const supabaseAdmin = supabaseServiceRoleKey
-  ? createClient(
-      supabaseUrl || 'https://placeholder.supabase.co',
-      supabaseServiceRoleKey,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      }
-    )
-  : null;
-
 export const isSupabaseConfigured = !!supabaseUrl && !!supabaseAnonKey;
-export const isAdminConfigured = !!supabaseUrl && !!supabaseServiceRoleKey;
