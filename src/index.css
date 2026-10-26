@@ -50,9 +50,61 @@ input[type="number"],
 input[type="search"],
 input[type="tel"],
 input[type="url"],
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"],
+input[type="month"],
+input[type="week"],
 textarea,
 select {
   font-size: 16px !important;
+}
+
+/* ── Natywne pole daty (iOS/Safari + Chrome/Edge) ──────────────────────────
+   Safari renderuje <input type="date"> jako własny widget: wewnętrzna
+   wartość (`::-webkit-date-and-time-value`) ma własną minimalną szerokość
+   (zmierzona: ~222 px z paddingiem). Bez poniższych reguł pole wysuwa się
+   poza kartę modalu albo — po kliknięciu i zoomie iOS — rozpycha cały modal.
+   Gasimy min-width i wyśrodkowujemy datę wewnątrz pola. */
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"],
+input[type="month"],
+input[type="week"] {
+  min-width: 0;
+  max-width: 100%;
+  text-align: center;
+}
+
+/* Safari — sama wartość daty: bez własnej min-width i wyśrodkowana. */
+input[type="date"]::-webkit-date-and-time-value,
+input[type="datetime-local"]::-webkit-date-and-time-value,
+input[type="time"]::-webkit-date-and-time-value {
+  min-width: 0;
+  text-align: center;
+}
+
+/* Chrome/Edge — inna struktura wnętrza pola. `::-webkit-date-and-time-value`
+   tam nie istnieje, a `text-align` na samym <input> nic nie daje: Chromium
+   układa wewnętrzne pudełka inline-blockiem, więc data zostaje przy lewej
+   krawędzi (zmierzone: środek tekstu ~62 px na lewo od środka pola).
+   Rozpieramy edytor na całą szerokość pola i centrujemy jego zawartość. */
+input[type="date"] {
+  position: relative;
+}
+input[type="date"]::-webkit-datetime-edit {
+  display: block;
+  text-align: center;
+}
+input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+  display: flex;
+  justify-content: center;
+}
+/* Wskaźnik kalendarza wyjmujemy z przepływu — inaczej zabiera ~26 px po
+   prawej stronie i data ląduje ~10 px na lewo od środka pola. */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 12px;
 }
 
 /* ── Input number — ukryj strzałki spinnerów ── */
