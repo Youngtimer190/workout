@@ -86,18 +86,6 @@ export default function CopyWorkoutModal({ userId, onCopy, onClose }: CopyWorkou
     };
   }, []);
 
-  // Na telefonie lista dni źródłowych zajmuje cały ekran, a pole wyboru
-  // daty jest pod spodem — przewijamy do niego od razu po otwarciu,
-  // tak jak w modalu udostępniania i przenoszenia.
-  useEffect(() => {
-    const el = dateInputRef.current;
-    if (!el) return;
-    const raf = requestAnimationFrame(() => {
-      el.scrollIntoView({ block: 'center' });
-    });
-    return () => cancelAnimationFrame(raf);
-  }, []);
-
   // Klawiatura ekranowa (iPhone) zasłania dół ekranu i zmniejsza widoczny
   // obszar modalu — pole podnosimy jeszcze raz, żeby zostało nad klawiaturą.
   // Nie sprawdzamy `activeElement`: picker dat nie focusuje pola, a to właśnie
@@ -156,20 +144,21 @@ export default function CopyWorkoutModal({ userId, onCopy, onClose }: CopyWorkou
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/50"
+      className="fixed inset-0 z-[100] flex items-start sm:items-center justify-center bg-black/50"
       onClick={onClose}
       style={{
         WebkitTapHighlightColor: 'transparent',
         // Notch / Dynamic Island — karta nie może wchodzić pod niego
         paddingTop: 'env(safe-area-inset-top, 0px)',
-        // Klawiatura ekranowa (iPhone) zasłania dół ekranu — modal podnosi się
+        // Klawiatura ekranowa (iPhone) zasłania dół ekranu — karta przyklejona
+        // do góry nie chowa się za nią, ale musi zmieścić się w widocznym obszarze
         paddingBottom: keyboardInset > 0 ? `${keyboardInset}px` : undefined,
         // Wysokość klawiatury dla .modal-sheet (max-height: 90dvh - klawiatura)
         '--kb-inset': `${keyboardInset}px`,
       } as CSSProperties}
     >
       <div
-        className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden modal-sheet animate-slide-up"
+        className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-b-2xl shadow-2xl overflow-hidden modal-sheet animate-slide-down"
         onClick={(e) => e.stopPropagation()}
         style={{ display: 'flex', flexDirection: 'column' }}
       >
