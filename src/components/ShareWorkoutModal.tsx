@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import { WorkoutDay } from '../types';
 import { mondayOfWeekKey, formatWeekLabel } from '../store/weekStore';
@@ -33,6 +33,11 @@ export default function ShareWorkoutModal({
   // bo `position: fixed` nie reaguje na otwarcie klawiatury.
   const keyboardInset = useKeyboardInset();
 
+  // Pole e-mail — na telefonie leży pod podsumowaniem dnia.
+  const emailInputRef = useRef<HTMLInputElement>(null);
+  // Czy zdążyliśmy już podnieść pole nad klawiaturę (jednokrotnie).
+  const keyboardLiftedRef = useRef(false);
+
   const totalSets = day.exercises.reduce((acc, e) => acc + (e.sets || 0), 0);
 
   // Tydzień, z którego pochodzi udostępniany dzień (np. „27 – 2 lis 2026").
@@ -55,6 +60,35 @@ export default function ShareWorkoutModal({
       document.body.style.overflow = '';
     };
   }, []);
+
+  // Na telefonie podsumowanie dnia z listą ćwiczeń zajmuje cały ekran,
+  // a pole e-mail jest pod spodem. Przewijamy do niego od razu po otwarciu,
+  // żeby użytkownik nie musiał zgadywać, że trzeba przewinąć w dół.
+  useEffect(() => {
+    const el = emailInputRef.current;
+    if (!el) return;
+    // rAF — layout musi być policzony, zanim zmierzymy pozycję pola.
+    const raf = requestAnimationFrame(() => {
+      el.scrollIntoView({ block: 'center' });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  // Klawiatura ekranowa (iPhone) zasłania dół ekranu i zmniejsza widoczny
+  // obszar modalu — pole podnosimy jeszcze raz, żeby zostało nad klawiaturą.
+  useEffect(() => {
+    const el = emailInputRef.current;
+    if (!el) return;
+    if (keyboardInset === 0) {
+      // Klawiatura się zamknęła — przy kolejnym otwarciu znów podniesiemy pole.
+      keyboardLiftedRef.current = false;
+      return;
+    }
+    if (keyboardLiftedRef.current) return;
+    if (document.activeElement !== el) return;
+    keyboardLiftedRef.current = true;
+    el.scrollIntoView({ block: 'center' });
+  }, [keyboardInset]);
 
   const trimmed = email.trim();
   const isValidEmail = EMAIL_RE.test(trimmed);
@@ -180,6 +214,7 @@ export default function ShareWorkoutModal({
                 </label>
                 <input
                   id="share-recipient-email"
+                  ref={emailInputRef}
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import type { CSSProperties } from 'react';
 import { WorkoutDay, Exercise } from '../types';
+import { useKeyboardInset } from '../hooks/useKeyboardInset';
 
 interface MoveExerciseModalProps {
   exercise: Exercise;
@@ -18,6 +20,11 @@ export default function MoveExerciseModal({
 }: MoveExerciseModalProps) {
   const [selectedDayId, setSelectedDayId] = useState<string>(sourceDay.id);
 
+  // Wysokość klawiatury ekranowej — na iPhone modal musi się podnieść,
+  // bo `position: fixed` nie reaguje na otwarcie klawiatury.
+  const keyboardInset = useKeyboardInset();
+
+  // Zamknij na Escape
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -46,25 +53,27 @@ export default function MoveExerciseModal({
       onClick={onClose}
       style={{
         WebkitTapHighlightColor: 'transparent',
-        touchAction: 'none'
-      }}
+        // Notch / Dynamic Island — karta nie może wchodzić pod niego
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+        // Klawiatura ekranowa (iPhone) zasłania dół ekranu — modal podnosi się
+        paddingBottom: keyboardInset > 0 ? `${keyboardInset}px` : undefined,
+        // Wysokość klawiatury dla .modal-sheet (max-height: 90dvh - klawiatura)
+        '--kb-inset': `${keyboardInset}px`,
+      } as CSSProperties}
     >
       <div
-        className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom duration-200"
+        className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden modal-sheet animate-slide-up"
         onClick={(e) => e.stopPropagation()}
-        style={{
-          maxHeight: '90vh',
-          display: 'flex',
-          flexDirection: 'column'
-        }}
+        style={{ display: 'flex', flexDirection: 'column' }}
       >
         {/* Header */}
         <div className="bg-gradient-to-r from-violet-500 to-indigo-600 px-4 py-3 flex items-center justify-between flex-shrink-0">
           <h2 className="text-white font-bold text-base sm:text-lg">Przenieś ćwiczenie</h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center active:bg-white/30"
+            className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-white/20 flex items-center justify-center active:bg-white/30 cursor-pointer flex-shrink-0"
             style={{ WebkitTapHighlightColor: 'transparent' }}
+            aria-label="Zamknij"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-white">
               <path d="M18 6L6 18M6 6l12 12" />
@@ -72,16 +81,23 @@ export default function MoveExerciseModal({
           </button>
         </div>
 
-        {/* Content - scrollable */}
-        <div className="p-4 space-y-3 overflow-y-auto flex-1" style={{ WebkitOverflowScrolling: 'touch' }}>
+        {/* Content */}
+        <div
+          className="p-4 space-y-4 overflow-y-auto flex-1"
+          style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
+        >
+          {/* Podsumowanie ćwiczenia */}
           <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-            <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide mb-1">Ćwiczenie</p>
+            <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide mb-1">
+              Ćwiczenie
+            </p>
             <p className="text-slate-800 font-bold text-sm sm:text-base truncate">{exercise.name}</p>
             <p className="text-slate-500 text-xs mt-1">
               <span className="font-semibold">Obecnie:</span> {sourceDay.name}
             </p>
           </div>
 
+          {/* Lista dni docelowych */}
           <div>
             <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-2">
               Wybierz dzień docelowy:
@@ -97,10 +113,10 @@ export default function MoveExerciseModal({
                     disabled={isSourceDay}
                     className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all active:scale-[0.98] ${
                       isSourceDay
-                        ? 'bg-slate-50 border-slate-200 opacity-50'
+                        ? 'bg-slate-50 border-slate-200 opacity-50 cursor-not-allowed'
                         : isSelected
-                        ? 'border-violet-500 bg-violet-50'
-                        : 'border-slate-200 active:border-violet-300 active:bg-slate-50'
+                        ? 'border-violet-500 bg-violet-50 cursor-pointer'
+                        : 'border-slate-200 active:border-violet-300 active:bg-slate-50 cursor-pointer'
                     }`}
                     style={{ WebkitTapHighlightColor: 'transparent' }}
                   >
@@ -120,14 +136,22 @@ export default function MoveExerciseModal({
                     <div className="flex-1 text-left min-w-0">
                       <p
                         className={`font-semibold text-xs sm:text-sm truncate ${
-                          isSourceDay ? 'text-slate-400' : isSelected ? 'text-violet-700' : 'text-slate-700'
+                          isSourceDay
+                            ? 'text-slate-400'
+                            : isSelected
+                            ? 'text-violet-700'
+                            : 'text-slate-700'
                         }`}
                       >
                         {day.name}
                       </p>
                       <p
                         className={`text-[10px] sm:text-xs ${
-                          isSourceDay ? 'text-slate-300' : isSelected ? 'text-violet-500' : 'text-slate-400'
+                          isSourceDay
+                            ? 'text-slate-300'
+                            : isSelected
+                            ? 'text-violet-500'
+                            : 'text-slate-400'
                         }`}
                       >
                         {day.isRestDay
@@ -158,10 +182,14 @@ export default function MoveExerciseModal({
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2 flex-shrink-0">
+        <div
+          className="px-4 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2 flex-shrink-0"
+          // Home indicator iPhone — przyciski nie mogą pod niego wchodzić
+          style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
+        >
           <button
             onClick={onClose}
-            className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 bg-white border border-slate-200 active:bg-slate-50"
+            className="px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold text-slate-600 bg-white border border-slate-200 active:bg-slate-50 cursor-pointer"
             style={{ WebkitTapHighlightColor: 'transparent' }}
           >
             Anuluj
@@ -169,7 +197,7 @@ export default function MoveExerciseModal({
           <button
             onClick={handleMove}
             disabled={selectedDayId === sourceDay.id}
-            className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-500 to-indigo-600 disabled:opacity-50 active:opacity-80"
+            className="px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-500 to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed active:opacity-80 cursor-pointer"
             style={{ WebkitTapHighlightColor: 'transparent' }}
           >
             Przenieś
