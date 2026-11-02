@@ -152,6 +152,10 @@ export default function SetTracker({
   };
 
   const isDumbbell = !!exercise?.requiredEquipment?.includes('dumbbells');
+  const isUnilateral = !!exercise?.isUnilateral;
+
+  /** Zwraca etykietę strony dla uni-lateralnych ćwiczeń: Prawa / Lewa */
+  const getSideLabel = (idx: number): 'Prawa' | 'Lewa' => (idx % 2 === 0 ? 'Prawa' : 'Lewa');
 
   const toggleDone = (idx: number) => {
     updateLog(idx, { done: !localLogs[idx].done });
@@ -189,7 +193,8 @@ export default function SetTracker({
   const completedSets = localLogs.filter(s => s.done).length;
   // For dumbbell exercises, weight is per-dumbbell (e.g. 20 kg per dumbbell = 40 kg total)
   // so multiply by 2 for total volume calculation
-  const effectiveWeight = (s: SetLog) => isDumbbell && s.weight != null ? s.weight * 2 : s.weight;
+  // BUT for unilateral exercises (single-arm/leg), weight is already for one side, so don't double
+  const effectiveWeight = (s: SetLog) => isDumbbell && !isUnilateral && s.weight != null ? s.weight * 2 : s.weight;
   const totalVolume = localLogs
     .filter(s => s.done && s.actualReps != null && s.weight != null)
     .reduce((acc, s) => acc + (s.actualReps! * effectiveWeight(s)!), 0);
@@ -243,13 +248,20 @@ export default function SetTracker({
       </div>
 
       {/* Column headers */}
-      <div className="grid grid-cols-[44px_28px_1fr_1fr_1fr_32px] gap-x-1 px-2 py-1.5 border-b border-slate-100 bg-white/70">
+      <div className={`grid gap-x-1 px-2 py-1.5 border-b border-slate-100 bg-white/70 ${
+        isUnilateral
+          ? 'grid-cols-[44px_28px_32px_1fr_1fr_1fr_32px]'
+          : 'grid-cols-[44px_28px_1fr_1fr_1fr_32px]'
+      }`}>
         <div className="text-[10px] font-bold text-slate-400 text-center">✓</div>
         <div className="text-[10px] font-bold text-slate-400 text-center">#</div>
+        {isUnilateral && (
+          <div className="text-[10px] font-bold text-slate-400 text-center">Strona</div>
+        )}
         <div className="text-[10px] font-bold text-slate-400 text-center">Plan</div>
         <div className="text-[10px] font-bold text-slate-400 text-center">Powt.</div>
         <div className="text-[10px] font-bold text-slate-400 text-center">
-          {isDumbbell ? 'Kg (2 x)' : 'Kg'}
+          {isDumbbell && !isUnilateral ? 'Kg (2 x)' : 'Kg'}
         </div>
         <div className="text-[10px] font-bold text-slate-400 text-center"></div>
       </div>
@@ -263,9 +275,11 @@ export default function SetTracker({
           return (
             <div
               key={log.id}
-              className={`grid grid-cols-[44px_28px_1fr_1fr_1fr_32px] gap-x-1 items-center px-2 py-1.5 transition-colors ${
-                log.done ? 'bg-emerald-50/70' : 'bg-white/50'
-              }`}
+              className={`grid gap-x-1 items-center px-2 py-1.5 transition-colors ${
+                isUnilateral
+                  ? 'grid-cols-[44px_28px_32px_1fr_1fr_1fr_32px]'
+                  : 'grid-cols-[44px_28px_1fr_1fr_1fr_32px]'
+              } ${log.done ? 'bg-emerald-50/70' : 'bg-white/50'}`}
             >
               {/* Checkbox */}
               <div className="flex justify-center">
@@ -287,6 +301,13 @@ export default function SetTracker({
               <div className={`text-xs font-bold text-center ${log.done ? 'text-emerald-600' : 'text-slate-400'}`}>
                 {log.setNumber}
               </div>
+
+              {/* Side label for unilateral exercises */}
+              {isUnilateral && (
+                <div className="text-xs font-bold text-center text-violet-700 px-1">
+                  {getSideLabel(idx)}
+                </div>
+              )}
 
               {/* Target reps */}
               <div className="text-xs text-center text-slate-400 font-medium truncate px-0.5">
@@ -357,7 +378,7 @@ export default function SetTracker({
                   >
                     {log.weight != null ? (
                       <>
-                        {isDumbbell && <span className="text-[9px] font-bold text-slate-400 mr-0.5">2×</span>}
+                        {isDumbbell && !isUnilateral && <span className="text-[9px] font-bold text-slate-400 mr-0.5">2×</span>}
                         {log.weight}
                       </>
                     ) : '—'}
@@ -432,8 +453,10 @@ export default function SetTracker({
       {/* Hint */}
       <div className="px-3 py-1.5 bg-slate-50/80 border-t border-slate-100">
         <p className="text-[10px] text-slate-400 text-center">
-          {isDumbbell ? (
+          {isDumbbell && !isUnilateral ? (
             <>Wpisuj wagę <span className="font-semibold">jednego hantla</span> — liczone 2×</>
+          ) : isDumbbell && isUnilateral ? (
+            <>Wpisuj wagę <span className="font-semibold">jednego hantla</span> (jednostronnie)</>
           ) : (
             <>Dotknij <span className="font-semibold">Powt.</span> lub <span className="font-semibold">Kg</span> aby wpisać · ✓ gdy seria gotowa</>
           )}
