@@ -87,8 +87,8 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
 
   const setLogs = exercise.setLogs ?? [];
   const completedSets = setLogs.filter(s => s.done).length;
-  const totalSets = exercise.sets || 3;
-  const isFullyDone = !isCardio && setLogs.length > 0 && completedSets === totalSets;
+  const totalSets = setLogs.length > 0 ? setLogs.length : (exercise.sets || 3);
+  const isFullyDone = !isCardio && setLogs.length > 0 && completedSets === setLogs.length;
   const hasProgress = setLogs.some(s => s.done || s.actualReps != null || s.weight != null);
 
   return (
