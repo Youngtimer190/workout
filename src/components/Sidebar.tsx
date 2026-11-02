@@ -58,17 +58,6 @@ const navItems: { id: View; label: string; shortLabel: string; icon: React.React
     ),
   },
   {
-    id: 'stats',
-    label: 'Statystyki',
-    shortLabel: 'Stats',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-        <path d="M3 3v18h18" />
-        <path d="M18 9l-5 5-4-4-3 3" />
-      </svg>
-    ),
-  },
-  {
     id: 'shares',
     label: 'Udostępnienia',
     shortLabel: 'Udost.',
@@ -79,6 +68,17 @@ const navItems: { id: View; label: string; shortLabel: string; icon: React.React
         <circle cx="18" cy="19" r="3" />
         <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
         <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+      </svg>
+    ),
+  },
+  {
+    id: 'stats',
+    label: 'Statystyki',
+    shortLabel: 'Stats',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+        <path d="M3 3v18h18" />
+        <path d="M18 9l-5 5-4-4-3 3" />
       </svg>
     ),
   },
