@@ -42,8 +42,11 @@ export default function SetTracker({
   onChange,
 }: SetTrackerProps) {
   // Local copy of logs — never re-synced from props while editing
+  // If setLogs has items, use its length (preserves manual add/delete).
+  // If empty, fall back to planned `sets` (handles generator exercises without setLogs).
+  const initialSetsCount = setLogs.length > 0 ? setLogs.length : sets;
   const [localLogs, setLocalLogs] = useState<SetLog[]>(() =>
-    buildLogs(setLogs, sets, defaultReps, defaultWeight)
+    buildLogs(setLogs, initialSetsCount, defaultReps, defaultWeight)
   );
 
   // Track previous sets count to detect structural changes only
@@ -78,6 +81,36 @@ export default function SetTracker({
 
     // Suppress unused var warning
     void prev;
+  }, [setLogs]);
+
+  // Sync with external changes to setLogs (e.g. added via store from another component, or after remount)
+  // If incoming setLogs has more items than localLogs, merge the new ones
+  const prevLogsLengthRef = useRef(setLogs.length);
+  useEffect(() => {
+    if (isEditingRef.current) return;
+
+    const prevLength = prevLogsLengthRef.current;
+    const currentLength = setLogs.length;
+    prevLogsLengthRef.current = currentLength;
+
+    if (currentLength > prevLength) {
+      // New sets were added externally - merge them
+      setLocalLogs(prev => {
+        // Find new logs in setLogs that don't exist in localLogs (by id)
+        const existingIds = new Set(prev.map(l => l.id));
+        const newLogs = setLogs.filter(l => !existingIds.has(l.id));
+
+        if (newLogs.length > 0) {
+          // Ensure setNumbers are correct
+          const merged = [...prev, ...newLogs].map((log, idx) => ({
+            ...log,
+            setNumber: idx + 1,
+          }));
+          return merged;
+        }
+        return prev;
+      });
+    }
   }, [setLogs]);
 
   // Editing cell state
@@ -124,6 +157,35 @@ export default function SetTracker({
     updateLog(idx, { done: !localLogs[idx].done });
   };
 
+  /** Usuwa serię o podanym indeksie. */
+  const deleteSet = (idx: number) => {
+    setLocalLogs(prev => {
+      const next = prev.filter((_, i) => i !== idx).map((log, newIdx) => ({
+        ...log,
+        setNumber: newIdx + 1,
+      }));
+      setTimeout(() => onChange(next), 0);
+      return next;
+    });
+  };
+
+  /** Dodaje kolejną serię na końcu listy (poza zaplanowaną liczbą). */
+  const addSet = () => {
+    const newLog: SetLog = {
+      id: `set-${localLogs.length + 1}-${Date.now()}-${Math.random()}`,
+      setNumber: localLogs.length + 1,
+      targetReps: defaultReps || '8-12',
+      actualReps: null,
+      weight: defaultWeight,
+      done: false,
+    };
+    setLocalLogs(prev => {
+      const next = [...prev, newLog];
+      setTimeout(() => onChange(next), 0);
+      return next;
+    });
+  };
+
   const completedSets = localLogs.filter(s => s.done).length;
   // For dumbbell exercises, weight is per-dumbbell (e.g. 20 kg per dumbbell = 40 kg total)
   // so multiply by 2 for total volume calculation
@@ -162,7 +224,7 @@ export default function SetTracker({
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-slate-700">Serie</span>
           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700">
-            {completedSets}/{sets}
+            {completedSets}/{localLogs.length}
           </span>
         </div>
         {totalVolume > 0 && (
@@ -176,12 +238,12 @@ export default function SetTracker({
       <div className="h-1 bg-slate-100">
         <div
           className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 transition-all duration-500"
-          style={{ width: `${sets > 0 ? (completedSets / sets) * 100 : 0}%` }}
+          style={{ width: `${localLogs.length > 0 ? (completedSets / localLogs.length) * 100 : 0}%` }}
         />
       </div>
 
       {/* Column headers */}
-      <div className="grid grid-cols-[44px_28px_1fr_1fr_1fr] gap-x-1 px-2 py-1.5 border-b border-slate-100 bg-white/70">
+      <div className="grid grid-cols-[44px_28px_1fr_1fr_1fr_32px] gap-x-1 px-2 py-1.5 border-b border-slate-100 bg-white/70">
         <div className="text-[10px] font-bold text-slate-400 text-center">✓</div>
         <div className="text-[10px] font-bold text-slate-400 text-center">#</div>
         <div className="text-[10px] font-bold text-slate-400 text-center">Plan</div>
@@ -189,6 +251,7 @@ export default function SetTracker({
         <div className="text-[10px] font-bold text-slate-400 text-center">
           {isDumbbell ? 'Kg (2 x)' : 'Kg'}
         </div>
+        <div className="text-[10px] font-bold text-slate-400 text-center"></div>
       </div>
 
       {/* Rows */}
@@ -200,7 +263,7 @@ export default function SetTracker({
           return (
             <div
               key={log.id}
-              className={`grid grid-cols-[44px_28px_1fr_1fr_1fr] gap-x-1 items-center px-2 py-1.5 transition-colors ${
+              className={`grid grid-cols-[44px_28px_1fr_1fr_1fr_32px] gap-x-1 items-center px-2 py-1.5 transition-colors ${
                 log.done ? 'bg-emerald-50/70' : 'bg-white/50'
               }`}
             >
@@ -301,10 +364,37 @@ export default function SetTracker({
                   </button>
                 )}
               </div>
+
+              {/* Delete button */}
+              <div className="flex justify-center">
+                <button
+                  onClick={() => deleteSet(idx)}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 active:bg-red-100 transition-colors cursor-pointer"
+                  title="Usuń serię"
+                  aria-label="Usuń serię"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
+                    <path d="M10 11v6M14 11v6M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" />
+                  </svg>
+                </button>
+              </div>
             </div>
           );
         })}
       </div>
+
+      {/* Add set button */}
+      <button
+        onClick={addSet}
+        className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-violet-600 hover:text-violet-800 hover:bg-violet-50 active:bg-violet-100 transition-colors cursor-pointer border-t border-dashed border-slate-200"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+        Dodaj serię
+      </button>
 
       {/* Footer summary */}
       {completedSets > 0 && (
@@ -327,7 +417,7 @@ export default function SetTracker({
                 </span>
               )}
             </div>
-            {completedSets === sets && (
+            {completedSets === localLogs.length && (
               <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3">
                   <polyline points="20 6 9 17 4 12" />
