@@ -250,13 +250,16 @@ export default function SetTracker({
       {/* Column headers */}
       <div className={`grid gap-x-1 px-2 py-1.5 border-b border-slate-100 bg-white/70 ${
         isUnilateral
-          ? 'grid-cols-[44px_28px_32px_1fr_1fr_1fr_32px]'
+          ? 'grid-cols-[44px_28px_44px_1fr_1fr_1fr_32px]'
           : 'grid-cols-[44px_28px_1fr_1fr_1fr_32px]'
       }`}>
         <div className="text-[10px] font-bold text-slate-400 text-center">✓</div>
         <div className="text-[10px] font-bold text-slate-400 text-center">#</div>
         {isUnilateral && (
-          <div className="text-[10px] font-bold text-slate-400 text-center">Strona</div>
+          <>
+            <div className="inline-block sm:hidden text-[9px] font-bold text-slate-400 text-center truncate">S</div>
+            <div className="hidden sm:inline-block text-[10px] font-bold text-slate-400 text-center truncate">Strona</div>
+          </>
         )}
         <div className="text-[10px] font-bold text-slate-400 text-center">Plan</div>
         <div className="text-[10px] font-bold text-slate-400 text-center">Powt.</div>
@@ -277,7 +280,7 @@ export default function SetTracker({
               key={log.id}
               className={`grid gap-x-1 items-center px-2 py-1.5 transition-colors ${
                 isUnilateral
-                  ? 'grid-cols-[44px_28px_32px_1fr_1fr_1fr_32px]'
+                  ? 'grid-cols-[44px_28px_44px_1fr_1fr_1fr_32px]'
                   : 'grid-cols-[44px_28px_1fr_1fr_1fr_32px]'
               } ${log.done ? 'bg-emerald-50/70' : 'bg-white/50'}`}
             >
@@ -304,9 +307,14 @@ export default function SetTracker({
 
               {/* Side label for unilateral exercises */}
               {isUnilateral && (
-                <div className="text-xs font-bold text-center text-violet-700 px-1">
-                  {getSideLabel(idx)}
-                </div>
+                <>
+                  <div className="inline-block sm:hidden text-[9px] font-bold text-center text-violet-700 px-0.5 truncate">
+                    {getSideLabel(idx) === 'Prawa' ? 'P' : 'L'}
+                  </div>
+                  <div className="hidden sm:inline-block text-xs font-bold text-center text-violet-700 px-1 truncate">
+                    {getSideLabel(idx)}
+                  </div>
+                </>
               )}
 
               {/* Target reps */}
