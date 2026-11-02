@@ -161,18 +161,6 @@ export default function SetTracker({
     updateLog(idx, { done: !localLogs[idx].done });
   };
 
-  /** Usuwa serię o podanym indeksie. */
-  const deleteSet = (idx: number) => {
-    setLocalLogs(prev => {
-      const next = prev.filter((_, i) => i !== idx).map((log, newIdx) => ({
-        ...log,
-        setNumber: newIdx + 1,
-      }));
-      setTimeout(() => onChange(next), 0);
-      return next;
-    });
-  };
-
   /** Dodaje kolejną serię na końcu listy (poza zaplanowaną liczbą). */
   const addSet = () => {
     const newLog: SetLog = {
@@ -185,6 +173,19 @@ export default function SetTracker({
     };
     setLocalLogs(prev => {
       const next = [...prev, newLog];
+      setTimeout(() => onChange(next), 0);
+      return next;
+    });
+  };
+
+  /** Usuwa ostatnią serię z listy. */
+  const deleteLastSet = () => {
+    if (localLogs.length <= 1) return; // Prevent removing all sets
+    setLocalLogs(prev => {
+      const next = prev.slice(0, -1).map((log, newIdx) => ({
+        ...log,
+        setNumber: newIdx + 1,
+      }));
       setTimeout(() => onChange(next), 0);
       return next;
     });
@@ -247,26 +248,40 @@ export default function SetTracker({
         />
       </div>
 
-      {/* Column headers */}
-      <div className={`grid gap-x-1 px-2 py-1.5 border-b border-slate-100 bg-white/70 ${
+      {/* Column headers - mobile */}
+      <div className={`sm:hidden grid gap-x-1 px-2 py-1.5 border-b border-slate-100 bg-white/70 ${
         isUnilateral
-          ? 'grid-cols-[44px_28px_44px_1fr_1fr_1fr_32px]'
-          : 'grid-cols-[44px_28px_1fr_1fr_1fr_32px]'
+          ? 'grid-cols-[44px_24px_28px_1fr_1fr_1fr]'
+          : 'grid-cols-[44px_24px_1fr_1fr_1fr]'
       }`}>
         <div className="text-[10px] font-bold text-slate-400 text-center">✓</div>
         <div className="text-[10px] font-bold text-slate-400 text-center">#</div>
         {isUnilateral && (
-          <>
-            <div className="inline-block sm:hidden text-[9px] font-bold text-slate-400 text-center truncate">S</div>
-            <div className="hidden sm:inline-block text-[10px] font-bold text-slate-400 text-center truncate">Strona</div>
-          </>
+          <div className="text-[9px] font-bold text-slate-400 text-center truncate">Str.</div>
         )}
         <div className="text-[10px] font-bold text-slate-400 text-center">Plan</div>
         <div className="text-[10px] font-bold text-slate-400 text-center">Powt.</div>
         <div className="text-[10px] font-bold text-slate-400 text-center">
           {isDumbbell && !isUnilateral ? 'Kg (2 x)' : 'Kg'}
         </div>
-        <div className="text-[10px] font-bold text-slate-400 text-center"></div>
+      </div>
+
+      {/* Column headers - desktop */}
+      <div className={`hidden sm:grid gap-x-1 px-2 py-1.5 border-b border-slate-100 bg-white/70 ${
+        isUnilateral
+          ? 'grid-cols-[44px_28px_44px_1fr_1fr_1fr]'
+          : 'grid-cols-[44px_28px_1fr_1fr_1fr]'
+      }`}>
+        <div className="text-[10px] font-bold text-slate-400 text-center">✓</div>
+        <div className="text-[10px] font-bold text-slate-400 text-center">#</div>
+        {isUnilateral && (
+          <div className="text-[10px] font-bold text-slate-400 text-center truncate">Strona</div>
+        )}
+        <div className="text-[10px] font-bold text-slate-400 text-center">Plan</div>
+        <div className="text-[10px] font-bold text-slate-400 text-center">Powt.</div>
+        <div className="text-[10px] font-bold text-slate-400 text-center">
+          {isDumbbell && !isUnilateral ? 'Kg (2 x)' : 'Kg'}
+        </div>
       </div>
 
       {/* Rows */}
@@ -276,140 +291,233 @@ export default function SetTracker({
           const isEditingWeight = editingCell?.setIdx === idx && editingCell.field === 'weight';
 
           return (
-            <div
-              key={log.id}
-              className={`grid gap-x-1 items-center px-2 py-1.5 transition-colors ${
+            <>
+              {/* Row - mobile */}
+              <div className={`sm:hidden grid gap-x-1 items-center px-2 py-1.5 transition-colors ${
                 isUnilateral
-                  ? 'grid-cols-[44px_28px_44px_1fr_1fr_1fr_32px]'
-                  : 'grid-cols-[44px_28px_1fr_1fr_1fr_32px]'
+                  ? 'grid-cols-[44px_24px_28px_1fr_1fr_1fr]'
+                  : 'grid-cols-[44px_24px_1fr_1fr_1fr]'
               } ${log.done ? 'bg-emerald-50/70' : 'bg-white/50'}`}
-            >
-              {/* Checkbox */}
-              <div className="flex justify-center">
-                <button
-                  onClick={() => toggleDone(idx)}
-                  className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all cursor-pointer border-2 active:scale-95 ${
-                    log.done
-                      ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm shadow-emerald-200'
-                      : 'border-slate-200 bg-white text-transparent hover:border-violet-400'
-                  }`}
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                </button>
-              </div>
+              >
+                {/* Checkbox */}
+                <div className="flex justify-center">
+                  <button
+                    onClick={() => toggleDone(idx)}
+                    className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all cursor-pointer border-2 active:scale-95 ${
+                      log.done
+                        ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm shadow-emerald-200'
+                        : 'border-slate-200 bg-white text-transparent hover:border-violet-400'
+                    }`}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </button>
+                </div>
 
-              {/* Set number */}
-              <div className={`text-xs font-bold text-center ${log.done ? 'text-emerald-600' : 'text-slate-400'}`}>
-                {log.setNumber}
-              </div>
+                {/* Set number */}
+                <div className={`text-xs font-bold text-center ${log.done ? 'text-emerald-600' : 'text-slate-400'}`}>
+                  {log.setNumber}
+                </div>
 
-              {/* Side label for unilateral exercises */}
-              {isUnilateral && (
-                <>
-                  <div className="inline-block sm:hidden text-[9px] font-bold text-center text-violet-700 px-0.5 truncate">
+                {/* Side label for unilateral exercises - mobile: larger P/L */}
+                {isUnilateral && (
+                  <div className="text-xs font-bold text-center text-violet-700 px-0.5 truncate">
                     {getSideLabel(idx) === 'Prawa' ? 'P' : 'L'}
                   </div>
-                  <div className="hidden sm:inline-block text-xs font-bold text-center text-violet-700 px-1 truncate">
+                )}
+
+                {/* Target reps */}
+                <div className="text-xs text-center text-slate-400 font-medium truncate px-0.5">
+                  {log.targetReps || '—'}
+                </div>
+
+                {/* Actual reps */}
+                <div className="flex justify-center">
+                  {isEditingReps ? (
+                    <input
+                      autoFocus
+                      type="number"
+                      inputMode="numeric"
+                      min="0"
+                      value={tempValue}
+                      onChange={e => setTempValue(e.target.value)}
+                      onBlur={commitEdit}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); commitEdit(); }
+                        if (e.key === 'Escape') cancelEdit();
+                      }}
+                      className="w-full text-center text-xs font-bold px-1 py-2.5 rounded-lg border-2 border-violet-400 bg-white focus:outline-none text-slate-800"
+                    />
+                  ) : (
+                    <button
+                      onClick={() => startEdit(idx, 'reps', log.actualReps != null ? String(log.actualReps) : '')}
+                      className={`w-full text-center text-xs font-bold py-2.5 px-1 rounded-lg border-2 transition-all cursor-pointer active:scale-95 ${
+                        log.actualReps != null
+                          ? log.done
+                            ? 'border-emerald-200 bg-emerald-100 text-emerald-800'
+                            : 'border-violet-200 bg-violet-50 text-violet-800'
+                          : 'border-dashed border-slate-200 bg-transparent text-slate-300 hover:border-violet-300 hover:text-violet-400'
+                      }`}
+                    >
+                      {log.actualReps != null ? log.actualReps : '—'}
+                    </button>
+                  )}
+                </div>
+
+                {/* Weight */}
+                <div className="flex justify-center">
+                  {isEditingWeight ? (
+                    <input
+                      autoFocus
+                      type="number"
+                      inputMode="decimal"
+                      min="0"
+                      step="0.5"
+                      value={tempValue}
+                      onChange={e => setTempValue(e.target.value)}
+                      onBlur={commitEdit}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); commitEdit(); }
+                        if (e.key === 'Escape') cancelEdit();
+                      }}
+                      className="w-full text-center text-xs font-bold px-1 py-2.5 rounded-lg border-2 border-amber-400 bg-white focus:outline-none text-slate-800"
+                    />
+                  ) : (
+                    <button
+                      onClick={() => startEdit(idx, 'weight', log.weight != null ? String(log.weight) : '')}
+                      className={`w-full text-center text-xs font-bold py-2.5 px-1 rounded-lg border-2 transition-all cursor-pointer active:scale-95 ${
+                        log.weight != null
+                          ? log.done
+                            ? 'border-emerald-200 bg-emerald-100 text-emerald-800'
+                            : 'border-amber-200 bg-amber-50 text-amber-800'
+                          : 'border-dashed border-slate-200 bg-transparent text-slate-300 hover:border-amber-300 hover:text-amber-400'
+                      }`}
+                    >
+                      {log.weight != null ? (
+                        <>
+                          {isDumbbell && !isUnilateral && <span className="text-[9px] font-bold text-slate-400 mr-0.5">2×</span>}
+                          {log.weight}
+                        </>
+                      ) : '—'}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Row - desktop */}
+              <div className={`hidden sm:grid gap-x-1 items-center px-2 py-1.5 transition-colors ${
+                isUnilateral
+                  ? 'grid-cols-[44px_28px_44px_1fr_1fr_1fr]'
+                  : 'grid-cols-[44px_28px_1fr_1fr_1fr]'
+              } ${log.done ? 'bg-emerald-50/70' : 'bg-white/50'}`}
+              >
+                {/* Checkbox */}
+                <div className="flex justify-center">
+                  <button
+                    onClick={() => toggleDone(idx)}
+                    className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all cursor-pointer border-2 active:scale-95 ${
+                      log.done
+                        ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm shadow-emerald-200'
+                        : 'border-slate-200 bg-white text-transparent hover:border-violet-400'
+                    }`}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Set number */}
+                <div className={`text-xs font-bold text-center ${log.done ? 'text-emerald-600' : 'text-slate-400'}`}>
+                  {log.setNumber}
+                </div>
+
+                {/* Side label for unilateral exercises - desktop: full text */}
+                {isUnilateral && (
+                  <div className="text-xs font-bold text-center text-violet-700 px-1 truncate">
                     {getSideLabel(idx)}
                   </div>
-                </>
-              )}
-
-              {/* Target reps */}
-              <div className="text-xs text-center text-slate-400 font-medium truncate px-0.5">
-                {log.targetReps || '—'}
-              </div>
-
-              {/* Actual reps */}
-              <div className="flex justify-center">
-                {isEditingReps ? (
-                  <input
-                    autoFocus
-                    type="number"
-                    inputMode="numeric"
-                    min="0"
-                    value={tempValue}
-                    onChange={e => setTempValue(e.target.value)}
-                    onBlur={commitEdit}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); commitEdit(); }
-                      if (e.key === 'Escape') cancelEdit();
-                    }}
-                    className="w-full text-center text-xs font-bold px-1 py-2.5 rounded-lg border-2 border-violet-400 bg-white focus:outline-none text-slate-800"
-                  />
-                ) : (
-                  <button
-                    onClick={() => startEdit(idx, 'reps', log.actualReps != null ? String(log.actualReps) : '')}
-                    className={`w-full text-center text-xs font-bold py-2.5 px-1 rounded-lg border-2 transition-all cursor-pointer active:scale-95 ${
-                      log.actualReps != null
-                        ? log.done
-                          ? 'border-emerald-200 bg-emerald-100 text-emerald-800'
-                          : 'border-violet-200 bg-violet-50 text-violet-800'
-                        : 'border-dashed border-slate-200 bg-transparent text-slate-300 hover:border-violet-300 hover:text-violet-400'
-                    }`}
-                  >
-                    {log.actualReps != null ? log.actualReps : '—'}
-                  </button>
                 )}
-              </div>
 
-              {/* Weight */}
-              <div className="flex justify-center">
-                {isEditingWeight ? (
-                  <input
-                    autoFocus
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    step="0.5"
-                    value={tempValue}
-                    onChange={e => setTempValue(e.target.value)}
-                    onBlur={commitEdit}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); commitEdit(); }
-                      if (e.key === 'Escape') cancelEdit();
-                    }}
-                    className="w-full text-center text-xs font-bold px-1 py-2.5 rounded-lg border-2 border-amber-400 bg-white focus:outline-none text-slate-800"
-                  />
-                ) : (
-                  <button
-                    onClick={() => startEdit(idx, 'weight', log.weight != null ? String(log.weight) : '')}
-                    className={`w-full text-center text-xs font-bold py-2.5 px-1 rounded-lg border-2 transition-all cursor-pointer active:scale-95 ${
-                      log.weight != null
-                        ? log.done
-                          ? 'border-emerald-200 bg-emerald-100 text-emerald-800'
-                          : 'border-amber-200 bg-amber-50 text-amber-800'
-                        : 'border-dashed border-slate-200 bg-transparent text-slate-300 hover:border-amber-300 hover:text-amber-400'
-                    }`}
-                  >
-                    {log.weight != null ? (
-                      <>
-                        {isDumbbell && !isUnilateral && <span className="text-[9px] font-bold text-slate-400 mr-0.5">2×</span>}
-                        {log.weight}
-                      </>
-                    ) : '—'}
-                  </button>
-                )}
-              </div>
+                {/* Target reps */}
+                <div className="text-xs text-center text-slate-400 font-medium truncate px-0.5">
+                  {log.targetReps || '—'}
+                </div>
 
-              {/* Delete button */}
-              <div className="flex justify-center">
-                <button
-                  onClick={() => deleteSet(idx)}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 active:bg-red-100 transition-colors cursor-pointer"
-                  title="Usuń serię"
-                  aria-label="Usuń serię"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
-                    <polyline points="3 6 5 6 21 6" />
-                    <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
-                    <path d="M10 11v6M14 11v6M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" />
-                  </svg>
-                </button>
+                {/* Actual reps */}
+                <div className="flex justify-center">
+                  {isEditingReps ? (
+                    <input
+                      autoFocus
+                      type="number"
+                      inputMode="numeric"
+                      min="0"
+                      value={tempValue}
+                      onChange={e => setTempValue(e.target.value)}
+                      onBlur={commitEdit}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); commitEdit(); }
+                        if (e.key === 'Escape') cancelEdit();
+                      }}
+                      className="w-full text-center text-xs font-bold px-1 py-2.5 rounded-lg border-2 border-violet-400 bg-white focus:outline-none text-slate-800"
+                    />
+                  ) : (
+                    <button
+                      onClick={() => startEdit(idx, 'reps', log.actualReps != null ? String(log.actualReps) : '')}
+                      className={`w-full text-center text-xs font-bold py-2.5 px-1 rounded-lg border-2 transition-all cursor-pointer active:scale-95 ${
+                        log.actualReps != null
+                          ? log.done
+                            ? 'border-emerald-200 bg-emerald-100 text-emerald-800'
+                            : 'border-violet-200 bg-violet-50 text-violet-800'
+                          : 'border-dashed border-slate-200 bg-transparent text-slate-300 hover:border-violet-300 hover:text-violet-400'
+                      }`}
+                    >
+                      {log.actualReps != null ? log.actualReps : '—'}
+                    </button>
+                  )}
+                </div>
+
+                {/* Weight */}
+                <div className="flex justify-center">
+                  {isEditingWeight ? (
+                    <input
+                      autoFocus
+                      type="number"
+                      inputMode="decimal"
+                      min="0"
+                      step="0.5"
+                      value={tempValue}
+                      onChange={e => setTempValue(e.target.value)}
+                      onBlur={commitEdit}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); commitEdit(); }
+                        if (e.key === 'Escape') cancelEdit();
+                      }}
+                      className="w-full text-center text-xs font-bold px-1 py-2.5 rounded-lg border-2 border-amber-400 bg-white focus:outline-none text-slate-800"
+                    />
+                  ) : (
+                    <button
+                      onClick={() => startEdit(idx, 'weight', log.weight != null ? String(log.weight) : '')}
+                      className={`w-full text-center text-xs font-bold py-2.5 px-1 rounded-lg border-2 transition-all cursor-pointer active:scale-95 ${
+                        log.weight != null
+                          ? log.done
+                            ? 'border-emerald-200 bg-emerald-100 text-emerald-800'
+                            : 'border-amber-200 bg-amber-50 text-amber-800'
+                          : 'border-dashed border-slate-200 bg-transparent text-slate-300 hover:border-amber-300 hover:text-amber-400'
+                      }`}
+                    >
+                      {log.weight != null ? (
+                        <>
+                          {isDumbbell && !isUnilateral && <span className="text-[9px] font-bold text-slate-400 mr-0.5">2×</span>}
+                          {log.weight}
+                        </>
+                      ) : '—'}
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
+            </>
           );
         })}
       </div>
@@ -424,6 +532,21 @@ export default function SetTracker({
         </svg>
         Dodaj serię
       </button>
+
+      {/* Delete last set button */}
+      {localLogs.length > 1 && (
+        <button
+          onClick={deleteLastSet}
+          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-red-600 hover:text-red-800 hover:bg-red-50 active:bg-red-100 transition-colors cursor-pointer border-t border-dashed border-slate-200"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
+            <path d="M10 11v6M14 11v6M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" />
+          </svg>
+          Usuń serię
+        </button>
+      )}
 
       {/* Footer summary */}
       {completedSets > 0 && (
