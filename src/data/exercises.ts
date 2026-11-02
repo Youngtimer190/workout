@@ -200,6 +200,7 @@ export const exerciseLibrary: Exercise[] = [
     restTime: 75,
     notes: 'Oprzyj kolano i rękę o ławkę. Hantel ściągaj do bioder, nie do klatki. Rotacja tułowia jest dozwolona i naturalna przy dużych ciężarach.',
     requiredEquipment: ['dumbbells', 'bench'],
+    isUnilateral: true,
   },
   {
     id: 'back-7',
@@ -282,12 +283,13 @@ export const exerciseLibrary: Exercise[] = [
     name: 'Przysiady bułgarskie (Bulgarian Split Squat)',
     muscleGroup: 'Nogi',
     difficulty: 'Średniozaawansowany',
-    description: 'Jedno z najlepszych jednostronnych ćwiczeń na nogi. Intensywnie angażuje pośladki i czworogłowe, koryguje dysbalanse.',
+    description: 'Jedno z najlepszych jednostronnych ćwiczeń na nogi. Intensywnie angažuje pośladki i czworogłowe, koryguje dysbalanse.',
     sets: 3,
     reps: '8-10 na nogę',
     restTime: 90,
     notes: 'Tylna noga na ławce (grzbiet stopy). Przednia stopa daleko przed ciałem. Kolano nie wychodzi poza linię palców. Tors lekko pochylony do przodu dla lepszego zaangażowania pośladków.',
     requiredEquipment: ['dumbbells', 'bench'],
+    isUnilateral: true,
   },
   {
     id: 'legs-4',
@@ -336,6 +338,7 @@ export const exerciseLibrary: Exercise[] = [
     restTime: 75,
     notes: 'Długi krok, kolano tylnej nogi prawie dotyka podłogi. Tors prosto. Krok rób z piętą wiodącą nogi.',
     requiredEquipment: ['dumbbells'],
+    isUnilateral: true,
   },
   {
     id: 'legs-8',
@@ -1073,6 +1076,7 @@ export const exerciseLibrary: Exercise[] = [
     restTime: 75,
     notes: 'Stopa przednia płasko, stopa tylna na palcach. Kolano tylnej nogi 2-3 cm nad podłogą. Tors prosto przez cały ruch.',
     requiredEquipment: ['dumbbells'],
+    isUnilateral: true,
   },
   {
     id: 'legs-15',
@@ -1169,6 +1173,7 @@ export const exerciseLibrary: Exercise[] = [
     restTime: 60,
     notes: 'Stój na krawędzi schodka lub podwyższenia. Trzymaj się czegoś dla balansu. Pełen zakres od maks. rozciągnięcia do maks. zacisku.',
     requiredEquipment: ['bodyweight'],
+    isUnilateral: true,
   },
 
   // ═══════════════════════════════════════════════════════
@@ -1699,6 +1704,7 @@ export const exerciseLibrary: Exercise[] = [
     restTime: 60,
     notes: 'Stań bokiem lub przodem do maszyny. Uchwyć pojedynczy uchwyt ręką po zewnętrznej stronie. Prowadź rękę łukiem ku dołowi i do środka. Zaciśnij klatkę w dolnym punkcie przez 1 sek. Tułów lekko pochylony do przodu.',
     requiredEquipment: ['cable_machine'],
+    isUnilateral: true,
   },
   {
     id: 'chest-17',
@@ -1711,6 +1717,7 @@ export const exerciseLibrary: Exercise[] = [
     restTime: 60,
     notes: 'Stań bokiem do maszyny, uchwyć dolny pulley. Prowadź rękę łukiem od biodra ku górze i środkowi klatki. Lekkie ugięcie łokcia przez cały ruch. Czuj zacisk górnej klatki na szczycie.',
     requiredEquipment: ['cable_machine'],
+    isUnilateral: true,
   },
   {
     id: 'chest-18',
@@ -1923,6 +1930,7 @@ export const exerciseLibrary: Exercise[] = [
     restTime: 60,
     notes: 'Uchwyć pojedynczy uchwyt. Ściągaj łokieć w dół i do tyłu — ku biodru. Lekka rotacja tułowia jest naturalna. Zaciśnij najszerszy w dolnym punkcie.',
     requiredEquipment: ['cable_machine'],
+    isUnilateral: true,
   },
   {
     id: 'back-20',
@@ -1935,6 +1943,7 @@ export const exerciseLibrary: Exercise[] = [
     restTime: 60,
     notes: 'Stój bokiem lub przodem do maszyny. Ściągaj łokieć za biodro. Ściśnij łopatkę w końcowym punkcie. Nie kręcaj torsem — tylko ramię pracuje.',
     requiredEquipment: ['cable_machine'],
+    isUnilateral: true,
   },
   {
     id: 'back-21',
@@ -2035,6 +2044,7 @@ export const exerciseLibrary: Exercise[] = [
     restTime: 75,
     notes: 'Kettlebell w rack position (przy barku) bardziej angażuje core. Długi krok, kolano tylne prawie dotyka podłogi. Wróć siłą nogi przedniej.',
     requiredEquipment: ['kettlebell'],
+    isUnilateral: true,
   },
   {
     id: 'legs-27',
@@ -2071,6 +2081,7 @@ export const exerciseLibrary: Exercise[] = [
     restTime: 90,
     notes: 'Stój na jednej nodze, hantel w przeciwnej ręce. Opadaj do przodu utrzymując plecy neutralnie — tylna noga unosi się jak balast. Zaciśnij pośladek stojącej nogi na górze.',
     requiredEquipment: ['dumbbells'],
+    isUnilateral: true,
   },
   {
     id: 'legs-30',
@@ -2434,6 +2445,7 @@ export const exerciseLibrary: Exercise[] = [
     restTime: 75,
     notes: 'Tylna stopa na ławce, przednia noga daleko przed ciałem. Opuszczaj tułów pochylając go do przodu (hip hinge) — czuj rozciągnięcie dwugłowych. Hantle trzymaj wzdłuż ciała.',
     requiredEquipment: ['dumbbells', 'bench'],
+    isUnilateral: true,
   },
 
   // ═══════════════════════════════════════════════════════
@@ -2640,12 +2652,13 @@ export const exerciseLibrary: Exercise[] = [
     name: 'Wiosłowanie jednoręczne na wyciągu stojąc',
     muscleGroup: 'Plecy',
     difficulty: 'Średniozaawansowany',
-    description: 'Jednostronne wiosłowanie na wyciągu dolnym w pozycji stojącej. Pozwala na pełną rotację tułowia i większy zakres ruchu — lepiej angażuje najszerszy i środkową część pleców.',
+    description: 'Jednostronne wiosłowanie na wyciągu dolnym w pozycji stojącej. Pozwala na pełną rotację tułowia i większy zakres ruchu — lepiej angažuje najszerszy i środkową część pleców.',
     sets: 3,
     reps: '12-15 na stronę',
     restTime: 60,
     notes: 'Stań przodem do wyciągu. Ściągaj łokieć za tułów — poczuj ściśnięcie łopatki. Dozwolona naturalna rotacja tułowia. Pełne rozciągnięcie w dolnym punkcie.',
     requiredEquipment: ['cable_machine'],
+    isUnilateral: true,
   },
   {
     id: 'back-27',
@@ -2750,6 +2763,7 @@ export const exerciseLibrary: Exercise[] = [
     restTime: 60,
     notes: 'Technika identyczna jak w swingu obustronnym — ruch pochodzi z bioder. Wolna ręka dynamicznie odchyla się na bok dla równowagi. Zmień rękę po każdej serii.',
     requiredEquipment: ['kettlebell'],
+    isUnilateral: true,
   },
   {
     id: 'fullbody-21',
@@ -2970,6 +2984,7 @@ export const exerciseLibrary: Exercise[] = [
     restTime: 75,
     notes: 'Krok wystarczająco szeroki — kolano tylnej nogi prawie dotyka podłogi. Kolano przedniej nogi nie przekracza linii palców stopy. Tułów wyprostowany.',
     requiredEquipment: ['smith_machine'],
+    isUnilateral: true,
   },
 ];
 
