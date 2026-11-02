@@ -36,6 +36,9 @@ export interface Exercise {
   notes?: string;
   requiredEquipment?: EquipmentItem[];
   setLogs?: SetLog[]; // per-set tracking
+  /** Czy ćwiczenie wykonywane jest jednostronnie (np. jednorączowo/jednonóż).
+   *  Wtedy serie rozdzielamy na Prawą i Lewą stronę na przemian. */
+  isUnilateral?: boolean;
 }
 
 export interface WorkoutDay {
