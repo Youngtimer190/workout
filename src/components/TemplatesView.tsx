@@ -31,9 +31,9 @@ function TemplateCard({
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full">
       {/* Header with color gradient */}
-      <div className={`p-4 ${gradientClass}`}>
+      <div className={`p-4 ${gradientClass} flex-shrink-0`}>
         <div className="flex items-start justify-between">
           <div>
             <h3 className="text-lg font-bold text-white truncate pr-8">{template.name}</h3>
@@ -75,35 +75,38 @@ function TemplateCard({
         </div>
       )}
 
-      <div className="p-4 space-y-3">
-        {/* Stats */}
-        <div className="flex items-center gap-4 text-sm">
-          <span className="flex items-center gap-1 text-slate-600">
-            <span className="font-bold text-violet-600">{template.exercises.length}</span> ćwiczeń
-          </span>
-          <span className="flex items-center gap-1 text-slate-600">
-            <span className="font-bold text-emerald-600">{totalSets}</span> serii
-          </span>
-          {cardioCount > 0 && (
+      <div className="p-4 flex flex-col h-full">
+        {/* Stats & Muscle groups - flexible area */}
+        <div className="space-y-3 flex-1 min-h-0">
+          {/* Stats */}
+          <div className="flex items-center gap-4 text-sm">
             <span className="flex items-center gap-1 text-slate-600">
-              <span className="font-bold text-amber-600">{cardioCount}</span> cardio
+              <span className="font-bold text-violet-600">{template.exercises.length}</span> ćwiczeń
             </span>
-          )}
+            <span className="flex items-center gap-1 text-slate-600">
+              <span className="font-bold text-emerald-600">{totalSets}</span> serii
+            </span>
+            {cardioCount > 0 && (
+              <span className="flex items-center gap-1 text-slate-600">
+                <span className="font-bold text-amber-600">{cardioCount}</span> cardio
+              </span>
+            )}
+          </div>
+
+          {/* Muscle groups */}
+          <div className="flex flex-wrap gap-1.5">
+            {Array.from(new Set(template.exercises.map(e => e.muscleGroup))).map(mg => (
+              <span key={mg} className={`text-xs font-semibold px-2 py-0.5 rounded-full ${muscleGroupColors[mg] || 'bg-slate-100 text-slate-600'}`}>
+                {muscleGroupEmoji[mg]} {mg}
+              </span>
+            ))}
+          </div>
         </div>
 
-        {/* Muscle groups */}
-        <div className="flex flex-wrap gap-1.5">
-          {Array.from(new Set(template.exercises.map(e => e.muscleGroup))).map(mg => (
-            <span key={mg} className={`text-xs font-semibold px-2 py-0.5 rounded-full ${muscleGroupColors[mg] || 'bg-slate-100 text-slate-600'}`}>
-              {muscleGroupEmoji[mg]} {mg}
-            </span>
-          ))}
-        </div>
-
-        {/* Category badge */}
-        <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+        {/* Category badge + Apply button - always at bottom */}
+        <div className="pt-2 border-t border-slate-100 flex items-center justify-between mt-auto">
           <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 capitalize">{template.category.toLowerCase()}</span>
-          <button onClick={onApply} className="py-2 px-4 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:scale-[1.01] transition-all cursor-pointer whitespace-nowrap">
+          <button onClick={onApply} className="py-2 px-4 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:scale-[1.01] transition-all cursor-pointer whitespace-nowrap flex-shrink-0">
             Zastosuj
           </button>
         </div>
