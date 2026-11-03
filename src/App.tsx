@@ -519,7 +519,7 @@ export default function App() {
         pendingCount={shareStore.pendingCount}
       />
 
-      <div className="main-content">
+      <div className="main-content pt-safe">
         {isDemoMode && <DemoBanner onExit={exitDemoMode} />}
         {!isSupabaseConfigured && !offlineDismissed && <OfflineBanner onDismiss={() => setOfflineDismissed(true)} />}
 
