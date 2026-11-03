@@ -110,11 +110,8 @@ export default function Sidebar({ activeView, onViewChange, pendingCount = 0 }: 
       >
         {/* Logo */}
         <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100 flex-shrink-0">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200 flex-shrink-0">
-            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-              <path d="M6 4v6a6 6 0 0012 0V4" />
-              <path d="M4 4h2M18 4h2M4 20h16" />
-            </svg>
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200 flex-shrink-0">
+            <span className="text-2xl">🏋️</span>
           </div>
           <div>
             <p className="font-bold text-slate-800 text-base leading-tight">FitPlaner</p>
