@@ -232,7 +232,7 @@ export default function ExerciseLibrary({
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Biblioteka ćwiczeń</h1>
+            <h1 className="text-2xl font-bold text-slate-800">Biblioteka ćwiczeń</h1>
             <p className="text-slate-500 mt-1">
               {exerciseLibrary.length} wbudowanych
               {customExercises.length > 0 && ` · ${customExercises.length} własnych`}

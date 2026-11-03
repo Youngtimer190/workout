@@ -171,7 +171,7 @@ export default function TemplatesView({
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Moje treningi</h1>
+          <h1 className="text-2xl font-bold text-slate-800">Moje treningi</h1>
           <p className="text-slate-500 mt-1">Zapisz szablony treningów i szybko dodawaj je do planu</p>
         </div>
         <button
