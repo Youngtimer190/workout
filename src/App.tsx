@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { View, WorkoutDay, SharedWorkout } from './types';
+import { View, WorkoutDay, SharedWorkout, WorkoutTemplate } from './types';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import WorkoutPlanner from './components/WorkoutPlanner';
@@ -7,14 +7,17 @@ import ExerciseLibrary from './components/ExerciseLibrary';
 import Stats from './components/Stats';
 import PlanGenerator from './components/PlanGenerator';
 import SharesView from './components/SharesView';
+import TemplatesView from './components/TemplatesView';
 import AuthScreen from './components/auth/AuthScreen';
 import OfflineBanner from './components/auth/OfflineBanner';
 import DemoBanner from './components/auth/DemoBanner';
 import { useWorkoutStore } from './store/workoutStore';
 import { useAuthStore } from './store/authStore';
 import { useShareStore } from './store/shareStore';
+import { useTemplateStore } from './store/templateStore';
 import { buildDaySnapshot, snapshotToExercises } from './lib/shareService';
 import { isSupabaseConfigured } from './lib/supabase';
+import { exerciseLibrary } from './data/exercises';
 
 // ── Skeleton Loader ───────────────────────────────────────────────────────────
 function SkeletonBox({ className }: { className?: string }) {
@@ -244,6 +247,17 @@ export default function App() {
   // ── Udostępnienia — jedna instancja store, dane idą do komponentów propami ──
   const shareStore = useShareStore(user?.id);
 
+  // ── Szablony treningów (Moje treningi) ──
+  const templateStore = useTemplateStore(user?.id);
+  const allExercisesForTemplates = [
+    ...exerciseLibrary,
+    ...templateStore.templates.flatMap(t => t.exercises),
+    ...customExercises,
+  ].reduce((acc, ex) => {
+    if (!acc.some(e => e.id === ex.id)) acc.push(ex);
+    return acc;
+  }, [] as (typeof customExercises)[0][]);
+
   useEffect(() => {
     topRef.current?.scrollIntoView({ behavior: 'auto', block: 'start' });
     window.scrollTo(0, 0);
@@ -331,6 +345,42 @@ export default function App() {
     return shareStore.cancel(shareId);
   };
 
+  // ── Szablony treningów ──
+  const handleApplyTemplate = async (
+    template: WorkoutTemplate,
+    exercises: Exercise[],
+    mode: 'append' | 'replace',
+    dayId: string
+  ) => {
+    const targetDay = days.find(d => d.id === dayId);
+    if (!targetDay) return;
+
+    // Prepare exercises with fresh IDs and reset setLogs
+    const cleanExercises = exercises.map(ex => ({
+      ...ex,
+      id: `${template.id}-${ex.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      setLogs: ex.setLogs?.map(log => ({
+        ...log,
+        id: `set-${Date.now()}-${Math.random()}`,
+        done: false,
+        actualReps: null,
+      })) ?? [],
+    }));
+
+    if (mode === 'replace') {
+      // Clear existing exercises first
+      targetDay.exercises.forEach(ex => removeExercise(targetDay.id, ex.id));
+    }
+
+    // Add new exercises
+    for (const ex of cleanExercises) {
+      addExercise(targetDay.id, ex);
+    }
+
+    // If we were highlighting a day, clear it
+    setSelectedDayIndex(null);
+  };
+
   if (isSupabaseConfigured && !initialized) {
     return (
       <div className="bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 flex items-center justify-center" style={{ minHeight: '100dvh' }}>
@@ -410,6 +460,8 @@ export default function App() {
               canShare={shareStore.canShare}
               currentUserEmail={user?.email ?? null}
               onSendShare={handleSendShare}
+              templates={templateStore.templates}
+              onApplyTemplate={handleApplyTemplate}
             />
           </>
         );
@@ -428,6 +480,20 @@ export default function App() {
             onAccept={handleAcceptShare}
             onDecline={handleDeclineShare}
             onCancel={handleCancelShare}
+          />
+        );
+      case 'templates':
+        return (
+          <TemplatesView
+            templates={templateStore.templates}
+            availableExercises={allExercisesForTemplates}
+            days={days}
+            loading={templateStore.loading}
+            error={templateStore.error}
+            onCreateTemplate={templateStore.addTemplate}
+            onUpdateTemplate={templateStore.updateTemplate}
+            onDeleteTemplate={templateStore.deleteTemplate}
+            onApplyTemplate={(template, exercises, mode, dayId) => handleApplyTemplate(template, exercises, mode, dayId)}
           />
         );
       default: return null;

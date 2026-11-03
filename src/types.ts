@@ -57,7 +57,7 @@ export interface WeekPlan {
   createdAt: Date;
 }
 
-export type View = 'dashboard' | 'planner' | 'library' | 'stats' | 'generator' | 'shares';
+export type View = 'dashboard' | 'planner' | 'library' | 'stats' | 'generator' | 'shares' | 'templates';
 
 export type TrainingGoal = 'muscle_gain' | 'fat_loss' | 'strength' | 'endurance' | 'general_fitness';
 export type FitnessLevel = 'beginner' | 'intermediate' | 'advanced';
@@ -172,3 +172,33 @@ export interface SharedWorkout {
   created_at: string;
   updated_at: string;
 }
+
+// ─── Workout Templates (Moje treningi) ──────────────────────────────────────────
+
+/** Szablon treningu – nazwany zbiór ćwiczeń do wielokrotnego użycia. */
+export interface WorkoutTemplate {
+  id: string;
+  name: string;
+  description: string;
+  exercises: Exercise[];  // ćwiczenia bez setLogs (szablon)
+  createdAt: string;
+  updatedAt: string;
+  /** Opcjonalny tag/kolor do grupowania */
+  color?: string;
+  /** Opcjonalny tag kategorii np. "Push", "Pull", "Legs", "Full Body" */
+  category?: string;
+}
+
+export const TEMPLATE_COLORS = [
+  'bg-violet-500', 'bg-indigo-500', 'bg-blue-500', 'bg-sky-500',
+  'bg-emerald-500', 'bg-amber-500', 'bg-orange-500', 'bg-red-500',
+  'bg-pink-500', 'bg-fuchsia-500', 'bg-slate-500', 'bg-stone-500',
+] as const;
+
+export const TEMPLATE_CATEGORIES = [
+  'Push', 'Pull', 'Nogi', 'Full Body', 'Upper', 'Lower',
+  'Klatka', 'Plecy', 'Barki', 'Ramiona', 'Brzuch', 'Cardio',
+  'Własne',
+] as const;
+
+export type TemplateCategory = typeof TEMPLATE_CATEGORIES[number];
