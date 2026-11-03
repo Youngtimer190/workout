@@ -53,6 +53,7 @@ interface FormState {
   restTime: string;
   duration: string;
   requiredEquipment: EquipmentItem[];
+  isUnilateral: boolean;
 }
 
 function InputField({
@@ -96,6 +97,7 @@ export default function CreateExerciseModal({ onSave, onClose, editExercise }: C
     restTime: String(editExercise?.restTime ?? 60),
     duration: String(editExercise?.duration ?? 30),
     requiredEquipment: editExercise?.requiredEquipment ?? [],
+    isUnilateral: editExercise?.isUnilateral ?? false,
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
@@ -151,6 +153,7 @@ export default function CreateExerciseModal({ onSave, onClose, editExercise }: C
       restTime: isCardio ? undefined : parseInt(form.restTime) || 60,
       duration: isCardio ? parseInt(form.duration) || 30 : undefined,
       requiredEquipment: form.requiredEquipment.length > 0 ? form.requiredEquipment : undefined,
+      isUnilateral: form.isUnilateral,
     };
     onSave(exercise);
   };
@@ -389,6 +392,26 @@ export default function CreateExerciseModal({ onSave, onClose, editExercise }: C
                     ⚠️ Ćwiczenie z hantlami — ciężar będzie automatycznie podwajany w podsumowaniu (2 x).
                   </p>
                 )}
+
+                {/* Unilateral toggle */}
+                {!isCardio && (
+                  <div className="mt-4 pt-4 border-t border-slate-100">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.isUnilateral}
+                        onChange={e => setForm(f => ({ ...f, isUnilateral: e.target.checked }))}
+                        className="mt-1 w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 cursor-pointer"
+                      />
+                      <div className="text-sm leading-relaxed">
+                        <span className="font-semibold text-slate-700">Ćwiczenie jednostronne (jednorączowe/jednonóż)</span>
+                        <p className="text-[10px] text-slate-500 mt-0.5">
+                          Serie będą na przemian: Prawa strona → Lewa strona → Prawa...
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                )}
               </div>
 
               {/* Preview card */}
@@ -406,6 +429,11 @@ export default function CreateExerciseModal({ onSave, onClose, editExercise }: C
                         <span className="text-[10px] text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full">🔁 {form.sets} serie</span>
                         <span className="text-[10px] text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full">💪 {form.reps} powt.</span>
                         {form.restTime && <span className="text-[10px] text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full">⏸ {form.restTime}s</span>}
+                        {form.isUnilateral && (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 border border-violet-200">
+                            🔄 Jednostronne
+                          </span>
+                        )}
                       </>
                   }
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700">✨ Własne</span>

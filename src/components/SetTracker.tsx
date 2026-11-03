@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Fragment } from 'react';
 import { SetLog, Exercise } from '../types';
 
 interface SetTrackerProps {
@@ -291,7 +291,7 @@ export default function SetTracker({
           const isEditingWeight = editingCell?.setIdx === idx && editingCell.field === 'weight';
 
           return (
-            <>
+            <Fragment key={log.id}>
               {/* Row - mobile */}
               <div className={`sm:hidden grid gap-x-1 items-center px-2 py-1.5 transition-colors ${
                 isUnilateral
@@ -517,7 +517,7 @@ export default function SetTracker({
                   )}
                 </div>
               </div>
-            </>
+            </Fragment>
           );
         })}
       </div>

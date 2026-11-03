@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { WorkoutDay, Exercise } from '../types';
+import { WorkoutDay, Exercise, WorkoutTemplate } from '../types';
 import { WeekMeta } from '../store/weekStore';
 import DayColumn from './DayColumn';
 import WeekNavigator from './WeekNavigator';
@@ -42,6 +42,10 @@ interface WorkoutPlannerProps {
     day: WorkoutDay,
     weekKey: string
   ) => Promise<{ error: Error | null }>;
+  /** Szablony treningów do wyboru w DayColumn. */
+  templates?: WorkoutTemplate[];
+  /** Callback: zastosuj szablon do dnia. */
+  onApplyTemplate?: (template: WorkoutTemplate, exercises: Exercise[], mode: 'append' | 'replace') => void;
 }
 
 // Modal state type
@@ -75,6 +79,8 @@ export default function WorkoutPlanner({
   canShare,
   currentUserEmail,
   onSendShare,
+  templates = [],
+  onApplyTemplate,
 }: WorkoutPlannerProps) {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [copyModalOpen, setCopyModalOpen] = useState(false);
@@ -246,6 +252,8 @@ export default function WorkoutPlanner({
               currentUserEmail={currentUserEmail}
               weekKey={weekMeta.key}
               onSendShare={onSendShare}
+              templates={templates}
+              onApplyTemplate={onApplyTemplate}
             />
           </div>
         ))}
