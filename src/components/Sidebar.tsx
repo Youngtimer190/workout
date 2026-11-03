@@ -149,7 +149,7 @@ export default function Sidebar({ activeView, onViewChange, pendingCount = 0 }: 
           {isConfigured && isAuthenticated ? (
             <UserMenu />
           ) : (
-            <p className="text-xs text-slate-400 text-center">© 2025 FitPlaner</p>
+            <p className="text-xs text-slate-400 text-center">© 2026 FitPlaner</p>
           )}
         </div>
       </aside>
