@@ -6,7 +6,6 @@ import { muscleGroupColors } from '../data/exercises';
 interface CreateTemplateModalProps {
   onSave: (template: Omit<WorkoutTemplate, 'id' | 'createdAt' | 'updatedAt'>) => void;
   onClose: () => void;
-  onDelete?: () => void;
   editTemplate?: WorkoutTemplate | null;
   availableExercises: Exercise[];
 }
@@ -112,7 +111,6 @@ export default function CreateTemplateModal({
   onClose,
   editTemplate,
   availableExercises,
-  onDelete,
 }: CreateTemplateModalProps) {
   const isEdit = !!editTemplate;
 
@@ -130,7 +128,6 @@ export default function CreateTemplateModal({
   const [search, setSearch] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<string>('Wszystkie');
   const [selectedCategory, setSelectedCategory] = useState<string>('Wszystkie');
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     if (editTemplate) {
@@ -384,46 +381,13 @@ export default function CreateTemplateModal({
                   <span className="text-white/80 text-sm">{form.exercises.length} ćwiczeń</span>
                 </div>
               </div>
-              {isEdit && (
-                <div className="flex items-center gap-1.5">
-                  {showDeleteConfirm ? (
-                    <div className="flex items-center gap-2 bg-white/20 rounded-full px-3 py-1.5">
-                      <p className="text-xs text-white font-medium">Usunąć <span className="font-bold">"{form.name || editTemplate?.name}"</span>?</p>
-                      <button
-                        onClick={() => { onDelete?.(); setShowDeleteConfirm(false); }}
-                        className="px-2.5 py-1 rounded-full bg-red-500 text-white text-xs font-semibold active:bg-red-600 transition-colors cursor-pointer"
-                      >
-                        Usuń
-                      </button>
-                      <button
-                        onClick={() => setShowDeleteConfirm(false)}
-                        className="px-2.5 py-1 rounded-full bg-white/20 text-white text-xs font-semibold active:bg-white/30 transition-colors cursor-pointer"
-                      >
-                        Anuluj
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setShowDeleteConfirm(true)}
-                      className="w-9 h-9 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-red-500 hover:bg-white/30 transition-colors cursor-pointer flex-shrink-0"
-                      title="Usuń szablon"
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                        <polyline points="3 6 5 6 21 6" />
-                        <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
-                        <path d="M10 11v6M14 11v6M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" />
-                      </svg>
-                    </button>
-                  )}
-                  <button
-                    onClick={onClose}
-                    className="w-9 h-9 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors cursor-pointer flex-shrink-0"
-                    title="Zamknij"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M18 6L6 18M6 6l12 12" /></svg>
-                  </button>
-                </div>
-              )}
+              <button
+                onClick={onClose}
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors cursor-pointer flex-shrink-0"
+                title="Zamknij"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M18 6L6 18M6 6l12 12" /></svg>
+              </button>
             </div>
           </div>
         </div>

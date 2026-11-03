@@ -5,6 +5,7 @@ import MoveExerciseModal from './MoveExerciseModal';
 import MoveDayModal from './MoveDayModal';
 import ShareWorkoutModal from './ShareWorkoutModal';
 import ApplyTemplateModal from './ApplyTemplateModal';
+import CreateTemplateModal from './CreateTemplateModal';
 
 interface DayColumnProps {
   day: WorkoutDay;
@@ -34,6 +35,8 @@ interface DayColumnProps {
   templates?: WorkoutTemplate[];
   /** Callback: zastosuj szablon do tego dnia. */
   onApplyTemplate?: (template: WorkoutTemplate, exercises: Exercise[], mode: 'append' | 'replace', dayId: string) => void;
+  /** Callback: utwórz szablon z ćwiczeń tego dnia. */
+  onCreateTemplateFromDay?: (day: WorkoutDay, exercises: Exercise[]) => void;
 }
 
 const DAY_LABELS = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Nd'];
@@ -56,6 +59,7 @@ function DayColumn({
   onSendShare,
   templates = [],
   onApplyTemplate,
+  onCreateTemplateFromDay,
 }: DayColumnProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [moveExerciseState, setMoveExerciseState] = useState<{ exercise: Exercise; sourceDayId: string } | null>(null);
@@ -63,6 +67,7 @@ function DayColumn({
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [restConfirmOpen, setRestConfirmOpen] = useState(false);
   const [applyTemplateModal, setApplyTemplateModal] = useState<{ template: WorkoutTemplate } | null>(null);
+  const [createTemplateModalOpen, setCreateTemplateModalOpen] = useState(false);
 
   // Ustawienie dnia odpoczynku KASUJE jego ćwiczenia (toggleRestDay zeruje
   // tablicę ćwiczeń) — operacji nie da się cofnąć. Dlatego przy przełączniku
@@ -240,6 +245,27 @@ function DayColumn({
                     <line x1="16" y1="13" x2="8" y2="13" />
                     <line x1="16" y1="17" x2="8" y2="17" />
                     <polyline points="10 9 9 9 8 9" />
+                  </svg>
+                </button>
+              )}
+
+              {/* Save as template - only when day has exercises */}
+              {!day.isRestDay && day.exercises.length > 0 && onCreateTemplateFromDay && (
+                <button
+                  onClick={e => {
+                    e.stopPropagation();
+                    setCreateTemplateModalOpen(true);
+                  }}
+                  title="Zapisz jako szablon"
+                  aria-label="Zapisz trening jako szablon"
+                  className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 active:bg-white/40 flex items-center justify-center transition-all cursor-pointer"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4.5 h-4.5 text-white">
+                    <path d="M21 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v3" />
+                    <path d="M21 12v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V12" />
+                    <path d="M3 12h18" />
+                    <path d="M17 8v1" />
+                    <path d="M7 8v1" />
                   </svg>
                 </button>
               )}
@@ -445,6 +471,28 @@ function DayColumn({
           preselectedDayId={day.id}
           onApply={(exercises, mode) => onApplyTemplate(applyTemplateModal.template, exercises, mode, day.id)}
           onClose={() => setApplyTemplateModal(null)}
+        />
+      )}
+
+      {/* Create Template Modal */}
+      {createTemplateModalOpen && onCreateTemplateFromDay && (
+        <CreateTemplateModal
+          onSave={(templateData) => {
+            onCreateTemplateFromDay(day, templateData);
+            setCreateTemplateModalOpen(false);
+          }}
+          onClose={() => setCreateTemplateModalOpen(false)}
+          editTemplate={{
+            id: '',
+            name: '',
+            description: '',
+            exercises: day.exercises,
+            color: 'bg-violet-500',
+            category: 'Custom',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }}
+          availableExercises={[]}
         />
       )}
     </div>

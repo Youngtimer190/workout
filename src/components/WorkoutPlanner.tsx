@@ -46,6 +46,8 @@ interface WorkoutPlannerProps {
   templates?: WorkoutTemplate[];
   /** Callback: zastosuj szablon do dnia. */
   onApplyTemplate?: (template: WorkoutTemplate, exercises: Exercise[], mode: 'append' | 'replace') => void;
+  /** Callback: utwórz szablon z ćwiczeń dnia. */
+  onCreateTemplateFromDay?: (day: WorkoutDay, templateData: Omit<WorkoutTemplate, 'id' | 'createdAt' | 'updatedAt'>) => void;
 }
 
 // Modal state type
@@ -81,6 +83,7 @@ export default function WorkoutPlanner({
   onSendShare,
   templates = [],
   onApplyTemplate,
+  onCreateTemplateFromDay,
 }: WorkoutPlannerProps) {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [copyModalOpen, setCopyModalOpen] = useState(false);
@@ -254,6 +257,7 @@ export default function WorkoutPlanner({
               onSendShare={onSendShare}
               templates={templates}
               onApplyTemplate={onApplyTemplate}
+              onCreateTemplateFromDay={onCreateTemplateFromDay}
             />
           </div>
         ))}

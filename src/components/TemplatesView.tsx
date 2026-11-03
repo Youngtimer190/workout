@@ -244,7 +244,6 @@ export default function TemplatesView({
         <CreateTemplateModal
           onSave={handleSaveTemplate}
           onClose={() => { setShowCreateModal(false); setEditingTemplate(null); }}
-          onDelete={editingTemplate ? () => { onDeleteTemplate(editingTemplate.id); setShowCreateModal(false); setEditingTemplate(null); } : undefined}
           editTemplate={editingTemplate}
           availableExercises={availableExercises}
         />
