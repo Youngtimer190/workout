@@ -519,7 +519,10 @@ export default function App() {
         pendingCount={shareStore.pendingCount}
       />
 
-      <div className="main-content pt-safe">
+      <div className="main-content">
+        {/* Top safe area bar with theme color - prevents frosted glass blur on PWA */}
+        <div className="h-safe bg-indigo-600 sticky top-0 z-10" aria-hidden="true" />
+
         {isDemoMode && <DemoBanner onExit={exitDemoMode} />}
         {!isSupabaseConfigured && !offlineDismissed && <OfflineBanner onDismiss={() => setOfflineDismissed(true)} />}
 
@@ -534,7 +537,7 @@ export default function App() {
         )}
 
         <main>
-          <div className="max-w-5xl mx-auto px-3 sm:px-5 lg:px-8 py-4 sm:py-6">
+          <div className="max-w-5xl mx-auto px-3 sm:px-5 lg:px-8 pt-8 pb-4 sm:pt-10 sm:pb-6">
             {isHydrating ? <SkeletonLoader /> : renderView()}
           </div>
         </main>
