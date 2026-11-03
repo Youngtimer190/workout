@@ -226,7 +226,7 @@ export default function SharesView({
           <div>
             <p className="text-sm font-bold text-amber-700">Udostępnianie niedostępne</p>
             <p className="text-xs text-amber-600 mt-0.5">
-              Funkcja wymaga skonfigurowanego Supabase i zalogowanego konta (tryb demo jej nie obsługuje).
+              Funkcja wymaga zalogowania (tryb demo jej nie obsługuje).
             </p>
           </div>
         </div>
