@@ -381,6 +381,14 @@ export default function App() {
     setSelectedDayIndex(null);
   };
 
+  const handleCreateTemplateFromDay = async (
+    day: WorkoutDay,
+    templateData: Omit<WorkoutTemplate, 'id' | 'createdAt' | 'updatedAt'>
+  ) => {
+    // The template data comes from CreateTemplateModal with name, description, color, category, exercises
+    await templateStore.addTemplate(templateData);
+  };
+
   if (isSupabaseConfigured && !initialized) {
     return (
       <div className="bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 flex items-center justify-center" style={{ minHeight: '100dvh' }}>
@@ -462,6 +470,7 @@ export default function App() {
               onSendShare={handleSendShare}
               templates={templateStore.templates}
               onApplyTemplate={handleApplyTemplate}
+              onCreateTemplateFromDay={handleCreateTemplateFromDay}
             />
           </>
         );
