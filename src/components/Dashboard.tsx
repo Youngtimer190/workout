@@ -77,7 +77,12 @@ export default function Dashboard({ days, onGoToPlanner, onGoToDay }: DashboardP
           onClick={onGoToDay ? () => onGoToDay(todayIndex) : undefined}
           clickable={!!onGoToDay}
         />
-        <DayCard day={tomorrowDay} label="Jutro" />
+        <DayCard
+          day={tomorrowDay}
+          label="Jutro"
+          onClick={onGoToDay ? () => onGoToDay((todayIndex + 1) % 7) : undefined}
+          clickable={!!onGoToDay}
+        />
       </div>
 
       {/* Week Overview */}
@@ -87,7 +92,12 @@ export default function Dashboard({ days, onGoToPlanner, onGoToDay }: DashboardP
           {days.map((day, i) => {
             const isToday = i === todayIndex;
             return (
-              <div key={day.id} className="flex flex-col items-center gap-1 sm:gap-1.5">
+              <div
+                key={day.id}
+                onClick={onGoToDay ? () => onGoToDay(i) : undefined}
+                className={`flex flex-col items-center gap-1 sm:gap-1.5 ${onGoToDay ? 'cursor-pointer hover:scale-[1.02] transition-transform' : ''}`}
+                title={onGoToDay ? 'Kliknij, aby przejść do planera' : undefined}
+              >
                 <span className={`text-[10px] sm:text-xs font-semibold ${isToday ? 'text-violet-600' : 'text-slate-400'}`}>
                   {day.name.substring(0, 2)}
                 </span>
@@ -100,7 +110,7 @@ export default function Dashboard({ days, onGoToPlanner, onGoToDay }: DashboardP
                       : day.exercises.length > 0
                       ? 'bg-emerald-100 text-emerald-700'
                       : 'bg-slate-50 text-slate-300'
-                  }`}
+                  }${onGoToDay ? ' hover:shadow-md' : ''}`}
                 >
                   <span className="text-[10px] sm:text-xs">
                     {day.isRestDay ? '😴' : day.exercises.length > 0 ? day.exercises.length : '–'}
