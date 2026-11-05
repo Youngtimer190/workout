@@ -78,6 +78,15 @@ export function useWorkoutStore(userId?: string) {
   const [syncing, setSyncing] = useState(false);
   const [isHydrating, setIsHydrating] = useState(() => !!isSupabaseConfigured);
 
+  // ── Undo state for exercise removal ──
+  interface RemovedExercise {
+    dayId: string;
+    exercise: Exercise;
+    index: number;
+    timestamp: number;
+  }
+  const [removedExercise, setRemovedExercise] = useState<RemovedExercise | null>(null);
+
   // ── On userId change: sync data from cloud ──
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -342,6 +351,22 @@ export function useWorkoutStore(userId?: string) {
 
   const removeExercise = useCallback((dayId: string, exerciseId: string) => {
     setDays(prev => {
+      const day = prev.find(d => d.id === dayId);
+      if (!day) return prev;
+
+      const exercise = day.exercises.find(e => e.id === exerciseId);
+      const index = day.exercises.findIndex(e => e.id === exerciseId);
+
+      if (!exercise) return prev;
+
+      // Zapisz usunięte ćwiczenie z informacją o indeksie
+      setRemovedExercise({
+        dayId,
+        exercise,
+        index,
+        timestamp: Date.now(),
+      });
+
       const next = prev.map(d =>
         d.id === dayId ? { ...d, exercises: d.exercises.filter(e => e.id !== exerciseId) } : d
       );
@@ -349,6 +374,30 @@ export function useWorkoutStore(userId?: string) {
       return next;
     });
   }, [weekKey, persistDays]);
+
+  const restoreExercise = useCallback(() => {
+    setDays(prev => {
+      if (!removedExercise) return prev;
+
+      const { dayId, exercise, index } = removedExercise;
+      const day = prev.find(d => d.id === dayId);
+      if (!day) return prev;
+
+      const newExercises = [...day.exercises];
+      newExercises.splice(index, 0, exercise);
+
+      const next = prev.map(d =>
+        d.id === dayId ? { ...d, exercises: newExercises } : d
+      );
+      persistDays(next, weekKey);
+      setRemovedExercise(null);
+      return next;
+    });
+  }, [removedExercise, weekKey, persistDays]);
+
+  const expireAndRemoveExercise = useCallback(() => {
+    setRemovedExercise(null);
+  }, []);
 
   const updateExercise = useCallback((dayId: string, exerciseId: string, updates: Partial<Exercise>) => {
     setDays(prev => {
@@ -615,6 +664,10 @@ export function useWorkoutStore(userId?: string) {
     clearWeek,
     loadGeneratedPlan,
     updateDaysForCurrentWeek,
+    // Undo remove
+    removedExercise,
+    restoreExercise,
+    expireAndRemoveExercise,
     // Custom exercises
     customExercises,
     addCustomExercise,
