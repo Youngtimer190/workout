@@ -9,7 +9,7 @@ interface ApplyTemplateModalProps {
   days: WorkoutDay[];
   /** Optional: if provided, skips day picker and uses this day */
   preselectedDayId?: string;
-  onApply: (exercises: Exercise[], mode: 'append' | 'replace', dayId: string) => void;
+  onApply: (exercises: Exercise[], mode: 'append' | 'replace', dayId: string, templateId: string) => void;
   onClose: () => void;
 }
 
@@ -70,7 +70,6 @@ export default function ApplyTemplateModal({ template, templates, days, preselec
   // Use all templates if provided, otherwise just the single template
   const allTemplates = templates && templates.length > 0 ? templates : [template];
 
-  const isCardioOnly = selectedTemplate.exercises.every(e => e.muscleGroup === 'Cardio');
   const strengthExercises = selectedTemplate.exercises.filter(e => e.muscleGroup !== 'Cardio');
   const totalSets = strengthExercises.reduce((a, e) => a + (e.sets || 0), 0);
 
@@ -103,11 +102,11 @@ export default function ApplyTemplateModal({ template, templates, days, preselec
         actualReps: null,
       })) ?? [],
     }));
-    onApply(cleanExercises, mode, selectedDayId);
+    onApply(cleanExercises, mode, selectedDayId, selectedTemplate.id);
     onClose();
   };
 
-  const gradientClass = getGradientClass(selectedTemplate.color);
+  const gradientClass = selectedTemplate.color ? getGradientClass(selectedTemplate.color) : 'bg-gradient-to-r from-violet-500 to-indigo-600';
 
   // Step 1: Template picker (only if multiple templates provided)
   if (step === 'pickTemplate') {
@@ -137,7 +136,7 @@ export default function ApplyTemplateModal({ template, templates, days, preselec
             <p className="text-sm font-semibold text-slate-700">Wybierz szablon do zastosowania:</p>
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {allTemplates.map(t => {
-                const tGradient = getGradientClass(t.color);
+                const tGradient = t.color ? getGradientClass(t.color) : 'bg-gradient-to-r from-violet-500 to-indigo-600';
                 const tStrengthExercises = t.exercises.filter(e => e.muscleGroup !== 'Cardio');
                 const tTotalSets = tStrengthExercises.reduce((a, e) => a + (e.sets || 0), 0);
                 const tCardioCount = t.exercises.filter(e => e.muscleGroup === 'Cardio').length;
@@ -294,7 +293,7 @@ export default function ApplyTemplateModal({ template, templates, days, preselec
           <div>
             <h3 className="text-sm font-bold text-slate-700 mb-3">Ćwiczenia do dodania</h3>
             <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-              {selectedTemplate.exercises.map((ex, idx) => (
+              {selectedTemplate.exercises.map((ex) => (
                 <ExerciseRow key={ex.id} exercise={ex} />
               ))}
             </div>
