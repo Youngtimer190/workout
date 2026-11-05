@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { View, WorkoutDay, SharedWorkout, WorkoutTemplate } from './types';
+import { View, WorkoutDay, SharedWorkout, WorkoutTemplate, Exercise } from './types';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import WorkoutPlanner from './components/WorkoutPlanner';
@@ -11,6 +11,7 @@ import TemplatesView from './components/TemplatesView';
 import AuthScreen from './components/auth/AuthScreen';
 import OfflineBanner from './components/auth/OfflineBanner';
 import DemoBanner from './components/auth/DemoBanner';
+import { UndoRemoveBar } from './components/WorkoutPlanner';
 import { useWorkoutStore } from './store/workoutStore';
 import { useAuthStore } from './store/authStore';
 import { useShareStore } from './store/shareStore';
@@ -242,6 +243,7 @@ export default function App() {
     replaceExercise, moveExercise, moveExerciseToDay, moveAllExercisesToDate, resetWeek, loadGeneratedPlan,
     customExercises, addCustomExercise, updateCustomExercise, deleteCustomExercise,
     syncing, isHydrating,
+    removedExercise, restoreExercise, expireAndRemoveExercise,
   } = useWorkoutStore(user?.id);
 
   // ── Udostępnienia — jedna instancja store, dane idą do komponentów propami ──
@@ -346,7 +348,7 @@ export default function App() {
   };
 
   // ── Szablony treningów ──
-  const handleApplyTemplate = async (
+  const handleApplyTemplate = (
     template: WorkoutTemplate,
     exercises: Exercise[],
     mode: 'append' | 'replace',
@@ -382,7 +384,7 @@ export default function App() {
   };
 
   const handleCreateTemplateFromDay = async (
-    day: WorkoutDay,
+    _day: WorkoutDay,
     templateData: Omit<WorkoutTemplate, 'id' | 'createdAt' | 'updatedAt'>
   ) => {
     // The template data comes from CreateTemplateModal with name, description, color, category, exercises
@@ -471,6 +473,8 @@ export default function App() {
               templates={templateStore.templates}
               onApplyTemplate={handleApplyTemplate}
               onCreateTemplateFromDay={handleCreateTemplateFromDay}
+              removedExercise={removedExercise}
+              onRestoreExercise={restoreExercise}
             />
           </>
         );
@@ -541,6 +545,17 @@ export default function App() {
             {isHydrating ? <SkeletonLoader /> : renderView()}
           </div>
         </main>
+
+        {/* Undo remove bar - visible on all pages */}
+        {removedExercise && (
+          <UndoRemoveBar
+            key={removedExercise.exercise.id + '-' + removedExercise.timestamp}
+            days={days}
+            removedExercise={removedExercise}
+            onRestore={restoreExercise}
+            onExpire={expireAndRemoveExercise}
+          />
+        )}
       </div>
     </div>
   );
