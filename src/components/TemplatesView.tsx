@@ -4,7 +4,6 @@ import { TEMPLATE_CATEGORIES } from '../types';
 import { muscleGroupColors } from '../data/exercises';
 import CreateTemplateModal from './CreateTemplateModal';
 import ApplyTemplateModal from './ApplyTemplateModal';
-import { TEMPLATE_COLORS } from '../types';
 
 const muscleGroupEmoji: Record<string, string> = {
   'Klatka piersiowa': '💪', 'Plecy': '🔙', 'Nogi': '🦵', 'Barki': '🏋️',
@@ -23,7 +22,7 @@ function TemplateCard({
   onDelete: () => void;
   onApply: () => void;
 }) {
-  const colorBase = template.color.replace('bg-', '').replace('-500', '');
+  const colorBase = template.color?.replace('bg-', '').replace('-500', '') ?? 'violet';
   const gradientClass = `bg-gradient-to-r from-${colorBase}-500 to-${colorBase}-600`;
   const strengthExercises = template.exercises.filter(e => e.muscleGroup !== 'Cardio');
   const totalSets = strengthExercises.reduce((a, e) => a + (e.sets || 0), 0);
@@ -105,7 +104,7 @@ function TemplateCard({
 
         {/* Category badge + Apply button - always at bottom */}
         <div className="pt-2 border-t border-slate-100 flex items-center justify-between mt-auto">
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 capitalize">{template.category.toLowerCase()}</span>
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 capitalize">{template.category?.toLowerCase() ?? 'custom'}</span>
           <button onClick={onApply} className="py-2 px-4 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:scale-[1.01] transition-all cursor-pointer whitespace-nowrap flex-shrink-0">
             Zastosuj
           </button>
@@ -124,7 +123,7 @@ interface TemplatesViewProps {
   onCreateTemplate: (template: Omit<WorkoutTemplate, 'id' | 'createdAt' | 'updatedAt'>) => void;
   onUpdateTemplate: (template: WorkoutTemplate) => void;
   onDeleteTemplate: (id: string) => void;
-  onApplyTemplate: (template: WorkoutTemplate) => void;
+  onApplyTemplate: (template: WorkoutTemplate, exercises: Exercise[], mode: 'append' | 'replace', dayId: string) => void;
 }
 
 export default function TemplatesView({
@@ -257,7 +256,12 @@ export default function TemplatesView({
         <ApplyTemplateModal
           template={applyingTemplate}
           days={days}
-          onApply={(exercises, mode, dayId) => onApplyTemplate(applyingTemplate, exercises, mode, dayId)}
+          onApply={(exercises, mode, dayId, templateId) => {
+            const templateToUse = templates.find(t => t.id === templateId) ?? applyingTemplate;
+            if (templateToUse) {
+              onApplyTemplate(templateToUse, exercises, mode, dayId);
+            }
+          }}
           onClose={() => setApplyingTemplate(null)}
         />
       )}

@@ -36,7 +36,7 @@ interface DayColumnProps {
   /** Callback: zastosuj szablon do tego dnia. */
   onApplyTemplate?: (template: WorkoutTemplate, exercises: Exercise[], mode: 'append' | 'replace', dayId: string) => void;
   /** Callback: utwórz szablon z ćwiczeń tego dnia. */
-  onCreateTemplateFromDay?: (day: WorkoutDay, exercises: Exercise[]) => void;
+  onCreateTemplateFromDay?: (day: WorkoutDay, templateData: Omit<WorkoutTemplate, 'id' | 'createdAt' | 'updatedAt'>) => void;
 }
 
 const DAY_LABELS = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Nd'];
