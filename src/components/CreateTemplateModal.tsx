@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { WorkoutTemplate, Exercise, MuscleGroup } from '../types';
+import { WorkoutTemplate, Exercise } from '../types';
 import { TEMPLATE_COLORS, TEMPLATE_CATEGORIES } from '../types';
 import { muscleGroupColors } from '../data/exercises';
 
@@ -127,7 +127,6 @@ export default function CreateTemplateModal({
   const [editingExerciseIndex, setEditingExerciseIndex] = useState<number | null>(null);
   const [search, setSearch] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<string>('Wszystkie');
-  const [selectedCategory, setSelectedCategory] = useState<string>('Wszystkie');
 
   useEffect(() => {
     if (editTemplate) {
@@ -143,11 +142,10 @@ export default function CreateTemplateModal({
   }, [editTemplate]);
 
   const groups = ['Wszystkie', ...Array.from(new Set(availableExercises.map(e => e.muscleGroup)))];
-  const categories = ['Wszystkie', ...Array.from(new Set(availableExercises.map(e => e.category ?? 'Custom'))).filter(Boolean)];
   const filteredExercises = availableExercises.filter(e => {
     const matchSearch = e.name.toLowerCase().includes(search.toLowerCase());
     const matchGroup = selectedGroup === 'Wszystkie' || e.muscleGroup === selectedGroup;
-    const matchCat = selectedCategory === 'Wszystkie' || e.category === selectedCategory;
+    const matchCat = true; // All exercises shown (no category property on Exercise)
     return matchSearch && matchGroup && matchCat;
   });
 
