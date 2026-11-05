@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { User, Session, AuthError } from '@supabase/supabase-js';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { supabase, isSupabaseConfigured, startSessionKeepAlive, stopSessionKeepAlive, setupAutoRefresh } from '../lib/supabase';
 
 export type AuthView = 'login' | 'register';
 
@@ -119,9 +119,17 @@ export function useAuthStore() {
     };
     window.addEventListener(LOGOUT_EVENT, handleLogout);
 
+    // Start keep-alive dla PWA - utrzymuje sesję aktywną
+    startSessionKeepAlive();
+
+    // Automatyczne odświeżanie sesji
+    const stopRefresh = setupAutoRefresh();
+
     return () => {
       window.removeEventListener(LOGOUT_EVENT, handleLogout);
       subscription.unsubscribe();
+      stopSessionKeepAlive();
+      stopRefresh();
     };
   }, []);
 
