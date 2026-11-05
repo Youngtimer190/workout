@@ -8,6 +8,100 @@ import ReplaceExerciseModal from './ReplaceExerciseModal';
 import CreateExerciseModal from './CreateExerciseModal';
 import CopyWorkoutModal from './CopyWorkoutModal';
 
+export interface RemovedExercise {
+  dayId: string;
+  exercise: Exercise;
+  index: number;
+  timestamp: number;
+}
+
+interface UndoRemoveBarProps {
+  days: WorkoutDay[];
+  removedExercise: RemovedExercise | null;
+  onRestore: () => void;
+  onExpire: () => void;
+}
+
+export function UndoRemoveBar({ days, removedExercise, onRestore, onExpire }: UndoRemoveBarProps) {
+  const [progress, setProgress] = useState(0);
+  const startTimeRef = useRef<number | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (!removedExercise) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      startTimeRef.current = null;
+      setProgress(0);
+      return;
+    }
+
+    // Czyrkamy ewentualny poprzedni timer
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
+    startTimeRef.current = Date.now();
+    setProgress(0); // Resetuj progress przy każdym nowym usunięciu
+    const duration = 5000;
+
+    intervalRef.current = setInterval(() => {
+      if (startTimeRef.current === null) return;
+
+      const elapsed = Date.now() - startTimeRef.current;
+      const newProgress = Math.min(100, (elapsed / duration) * 100);
+      setProgress(newProgress);
+
+      if (elapsed >= duration) {
+        clearInterval(intervalRef.current!);
+        intervalRef.current = null;
+        startTimeRef.current = null;
+        onExpire();
+      }
+    }, 100);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      startTimeRef.current = null;
+    };
+  }, [removedExercise, onExpire]);
+
+  if (!removedExercise) return null;
+
+  const day = days.find(d => d.id === removedExercise.dayId);
+  const dayName = day?.name ?? 'ten dzień';
+
+  return (
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 max-w-md w-full">
+      <div className="bg-slate-800 text-white rounded-xl shadow-2xl px-4 py-3 flex items-center gap-3">
+        <div className="flex-1">
+          <div className="text-sm font-medium mb-1">
+            Usunięto ćwiczenie „{removedExercise.exercise.name}” z {dayName}
+          </div>
+          <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-violet-500 transition-all duration-100"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+        <button
+          onClick={onRestore}
+          className="px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold transition-colors cursor-pointer"
+        >
+          Przywróć
+        </button>
+      </div>
+    </div>
+  );
+}
+
 interface WorkoutPlannerProps {
   days: WorkoutDay[];
   weekMeta: WeekMeta;
@@ -45,9 +139,13 @@ interface WorkoutPlannerProps {
   /** Szablony treningów do wyboru w DayColumn. */
   templates?: WorkoutTemplate[];
   /** Callback: zastosuj szablon do dnia. */
-  onApplyTemplate?: (template: WorkoutTemplate, exercises: Exercise[], mode: 'append' | 'replace') => void;
+  onApplyTemplate?: (template: WorkoutTemplate, exercises: Exercise[], mode: 'append' | 'replace', dayId: string) => void;
   /** Callback: utwórz szablon z ćwiczeń dnia. */
   onCreateTemplateFromDay?: (day: WorkoutDay, templateData: Omit<WorkoutTemplate, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  /** Usunięte ćwiczenie do przywrócenia (jeśli istnieje). */
+  removedExercise?: RemovedExercise | null;
+  /** Callback: przywróć usunięte ćwiczenie. */
+  onRestoreExercise?: () => void;
 }
 
 // Modal state type
