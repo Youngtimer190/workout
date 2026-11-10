@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { User, Session, AuthError } from '@supabase/supabase-js';
-import { supabase, isSupabaseConfigured, startSessionKeepAlive, stopSessionKeepAlive, setupAutoRefresh } from '../lib/supabase';
+import { supabase, isSupabaseConfigured, startSessionKeepAlive, stopSessionKeepAlive, setupAutoRefresh, getEnabledOAuthProviders } from '../lib/supabase';
 
 export type AuthView = 'login' | 'register';
 
@@ -164,6 +164,52 @@ export function useAuthStore() {
     return { error };
   }, []);
 
+  /**
+   * Logowanie przez zewnętrznego dostawcę tożsamości (Google / Apple).
+   *
+   * Supabase przekierowuje przeglądarkę na stronę dostawcy, a po zalogowaniu
+   * wraca z tokenem w adresie URL. Dlatego `redirectTo` musi wskazywać na ten
+   * sam adres, z którego otwarto aplikację — `window.location.origin` działa
+   * zarówno na produkcji (Vercel), jak i na localhost. Adres ten musi być
+   * dopisany do listy „Redirect URLs" w ustawieniach projektu Supabase.
+   *
+   * Po udanym logowaniu przeglądarka opuszcza aplikację, więc stan komponentu
+   * po wywołaniu nie jest już istotny — ale błąd (np. wyłączony provider)
+   * zostaje zwrócony i pokazany w formularzu.
+   */
+  const signInWithOAuth = useCallback(async (
+    provider: 'google' | 'apple'
+  ): Promise<{ error: AuthError | null }> => {
+    const label = provider === 'google' ? 'Google' : 'Apple';
+    try {
+      // Sprawdzamy, czy dostawca w ogóle jest włączony w projekcie.
+      // Bez tego kliknięcie w nieskonfigurowany provider kończy się
+      // surowym ekranem JSON z Supabase (HTTP 400), a nie powrotem do aplikacji.
+      const enabled = await getEnabledOAuthProviders();
+      if (enabled && enabled[provider] === false) {
+        return {
+          error: new AuthError(
+            `Logowanie przez ${label} nie jest skonfigurowane w tym projekcie Supabase. ` +
+            `Włącz provider w Authentication → Providers i podaj Client ID / Client Secret.`
+          ),
+        };
+      }
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: window.location.origin },
+      });
+      return { error };
+    } catch (err: unknown) {
+      // Np. provider nieobsługiwany przez bibliotekę — zamiast nieobsłużonego
+      // wyjątku zwracamy błąd, który ekran logowania pokaże użytkownikowi.
+      const message = err instanceof Error
+        ? err.message
+        : `Logowanie przez ${label} nie powiodło się.`;
+      return { error: new AuthError(message) };
+    }
+  }, []);
+
   const signOut = useCallback(async () => {
     setLoading(true);
     await supabase.auth.signOut();
@@ -280,6 +326,7 @@ export function useAuthStore() {
     isConfigured: isSupabaseConfigured,
     signUp,
     signIn,
+    signInWithOAuth,
     signOut,
     deleteAccount,
     resetPassword,

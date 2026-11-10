@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { WorkoutTemplate, Exercise } from '../types';
+import { WorkoutTemplate } from '../types';
 import { isSupabaseConfigured } from '../lib/supabase';
 import {
   fetchTemplates,
