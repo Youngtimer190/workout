@@ -82,6 +82,17 @@ CREATE TABLE IF NOT EXISTS public.custom_exercises (
   UNIQUE(user_id, exercise_id)
 );
 
+-- ── Tabela ulubionych ćwiczeń ─────────────────────────────────
+-- Synchronizowana z aplikacją (src/store/favoritesStore.ts).
+-- Przechowuje same identyfikatory — pełne dane ćwiczenia są w bibliotece.
+CREATE TABLE IF NOT EXISTS public.favorite_exercises (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  exercise_id TEXT NOT NULL,              -- ID ćwiczenia z aplikacji
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(user_id, exercise_id)
+);
+
 -- ── Automatyczna aktualizacja updated_at ──────────────────────
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
 RETURNS TRIGGER AS $$
@@ -106,6 +117,7 @@ CREATE TRIGGER set_updated_at_custom_exercises
 
 ALTER TABLE public.week_plans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.custom_exercises ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.favorite_exercises ENABLE ROW LEVEL SECURITY;
 
 -- Usuń stare polityki jeśli istnieją
 DROP POLICY IF EXISTS "week_plans_select" ON public.week_plans;
@@ -116,6 +128,10 @@ DROP POLICY IF EXISTS "custom_exercises_select" ON public.custom_exercises;
 DROP POLICY IF EXISTS "custom_exercises_insert" ON public.custom_exercises;
 DROP POLICY IF EXISTS "custom_exercises_update" ON public.custom_exercises;
 DROP POLICY IF EXISTS "custom_exercises_delete" ON public.custom_exercises;
+DROP POLICY IF EXISTS "favorite_exercises_select" ON public.favorite_exercises;
+DROP POLICY IF EXISTS "favorite_exercises_insert" ON public.favorite_exercises;
+DROP POLICY IF EXISTS "favorite_exercises_update" ON public.favorite_exercises;
+DROP POLICY IF EXISTS "favorite_exercises_delete" ON public.favorite_exercises;
 
 -- Polityki dla week_plans
 CREATE POLICY "week_plans_select" ON public.week_plans
@@ -143,11 +159,30 @@ CREATE POLICY "custom_exercises_update" ON public.custom_exercises
 CREATE POLICY "custom_exercises_delete" ON public.custom_exercises
   FOR DELETE USING (auth.uid() = user_id);
 
+-- Polityki dla favorite_exercises
+CREATE POLICY "favorite_exercises_select" ON public.favorite_exercises
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "favorite_exercises_insert" ON public.favorite_exercises
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "favorite_exercises_update" ON public.favorite_exercises
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "favorite_exercises_delete" ON public.favorite_exercises
+  FOR DELETE USING (auth.uid() = user_id);
+
 -- ── Indeksy dla wydajności ────────────────────────────────────
 CREATE INDEX IF NOT EXISTS idx_week_plans_user_id ON public.week_plans(user_id);
 CREATE INDEX IF NOT EXISTS idx_week_plans_week_key ON public.week_plans(user_id, week_key);
 CREATE INDEX IF NOT EXISTS idx_custom_exercises_user_id ON public.custom_exercises(user_id);
+CREATE INDEX IF NOT EXISTS idx_favorite_exercises_user_id ON public.favorite_exercises(user_id);
 ```
+
+> 💜 **Ulubione ćwiczenia** mają osobny, gotowy skrypt:
+> `SUPABASE_SETUP_FAVORITES.sql` (tabela `favorite_exercises` + RLS).
+> Jeśli wkleisz **całą sekcję 2 poniżej**, tabela powstanie automatycznie —
+> skrypt jest idempotentny.
 
 > 📌 **Funkcja `delete_user_account()` instaluje się razem z udostępnianiem**
 > (plik `SUPABASE_SETUP_SHARES.sql`, sekcja 7) — nie z tego miejsca. Patrz
@@ -240,7 +275,7 @@ Dwie rzeczy warto wiedzieć:
 
 Po wykonaniu SQL sprawdź w panelu Supabase:
 
-- **Table Editor** → widoczne tabele `week_plans`, `custom_exercises` i `shared_workouts`
+- **Table Editor** → widoczne tabele `week_plans`, `custom_exercises`, `shared_workouts` i `favorite_exercises`
 - **Authentication → Policies** → `week_plans` i `custom_exercises` mają po 4
   polityki, `shared_workouts` ma 4 (SELECT / INSERT / UPDATE / DELETE)
 - **SQL Editor** → kontrolka uprawnień (anon nie ma dostępu do tabel):

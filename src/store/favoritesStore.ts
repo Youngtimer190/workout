@@ -1,17 +1,37 @@
 import { useState, useCallback, useEffect } from 'react';
+import {
+  addFavoriteRemote,
+  fetchFavoriteIds,
+  removeFavoriteRemote,
+} from '../lib/favoritesService';
 
 /**
- * Ulubione ćwiczenia.
+ * Ulubione ćwiczenia — synchronizowane z Supabase.
  *
- * Trzymane lokalnie w localStorage (klucz zależny od użytkownika), więc
- * działają też offline i w trybie demo. Cloud sync ulubionych wymagałby
- * osobnej tabeli w Supabase — na razie świadomie zostawiamy to lokalnie.
+ * Model „offline-first”:
+ *  • stan w React + localStorage = natychmiastowa reakcja UI (działa offline),
+ *  • Supabase = źródło prawdy między urządzeniami,
+ *  • kolejka `pending` trzyma operacje wykonane offline (dodanie/usunięcie),
+ *    które zostaną dołożone do chmury przy najbliższym połączeniu.
+ *
+ * Dzięki temu usunięcie ćwiczenia na jednym urządzeniu znika też
+ * na drugim (operacja „remove" nie jest nigdy nadpisywana przez
+ * lokalną listę przy syncowaniu).
  */
 
 const STORAGE_PREFIX = 'fitplanner-favorites';
 
+interface PendingOps {
+  adds: string[];
+  removes: string[];
+}
+
 function storageKey(userId?: string): string {
   return `${STORAGE_PREFIX}-${userId ?? 'demo'}`;
+}
+
+function pendingKey(userId?: string): string {
+  return `${STORAGE_PREFIX}-pending-${userId ?? 'demo'}`;
 }
 
 function loadFavorites(userId?: string): string[] {
@@ -27,36 +47,151 @@ function loadFavorites(userId?: string): string[] {
   return [];
 }
 
+function saveFavorites(userId: string | undefined, ids: string[]) {
+  try {
+    localStorage.setItem(storageKey(userId), JSON.stringify(ids));
+  } catch {
+    // brak miejsca w localStorage — lista zostaje tylko w pamięci sesji
+  }
+}
+
+function loadPending(userId?: string): PendingOps {
+  try {
+    const raw = localStorage.getItem(pendingKey(userId));
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return {
+        adds: Array.isArray(parsed?.adds) ? parsed.adds : [],
+        removes: Array.isArray(parsed?.removes) ? parsed.removes : [],
+      };
+    }
+  } catch {
+    // uszkodzony JSON — pusta kolejka
+  }
+  return { adds: [], removes: [] };
+}
+
+function savePending(userId: string | undefined, pending: PendingOps) {
+  try {
+    localStorage.setItem(pendingKey(userId), JSON.stringify(pending));
+  } catch {
+    // brak miejsca — kolejka zostaje tylko w pamięci sesji
+  }
+}
+
 export function useFavoritesStore(userId?: string) {
   const [favoriteIds, setFavoriteIds] = useState<string[]>(() => loadFavorites(userId));
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [synced, setSynced] = useState(false);
 
-  // Przy zmianie użytkownika (lub wylogowaniu) przeładowujemy listę
-  useEffect(() => {
-    setFavoriteIds(loadFavorites(userId));
+  const apply = useCallback((ids: string[]) => {
+    setFavoriteIds(ids);
+    saveFavorites(userId, ids);
   }, [userId]);
 
-  const persist = useCallback((ids: string[]) => {
+  /**
+   * Synchronizacja z chmurą:
+   *  1. doklada oczekujące operacje,
+   *  2. pobiera aktualny stan z bazy,
+   *  3. zapisuje go lokalnie.
+   */
+  const sync = useCallback(async () => {
+    if (!userId) return;
+
+    setIsSyncing(true);
     try {
-      localStorage.setItem(storageKey(userId), JSON.stringify(ids));
-    } catch {
-      // brak miejsca w localStorage — lista zostaje tylko w pamięci sesji
+      // 1. Dołóż oczekujące operacje (dodania i usunięcia)
+      const pending = loadPending(userId);
+      if (pending.adds.length || pending.removes.length) {
+        for (const id of pending.adds) {
+          const err = await addFavoriteRemote(userId, id);
+          if (err) break; // offline — zostawiamy w kolejce
+        }
+        for (const id of pending.removes) {
+          const err = await removeFavoriteRemote(userId, id);
+          if (err) break;
+        }
+        savePending(userId, { adds: [], removes: [] });
+      }
+
+      // 2. Pobierz stan z bazy
+      const remote = await fetchFavoriteIds(userId);
+      if (remote !== null) {
+        apply(remote);
+        setSynced(true);
+      }
+    } catch (err) {
+      console.error('[favoritesStore] sync error:', err);
+    } finally {
+      setIsSyncing(false);
     }
-  }, [userId]);
+  }, [userId, apply]);
+
+  // Synchronizacja przy zmianie użytkownika (logowanie / wylogowanie)
+  useEffect(() => {
+    if (!userId) {
+      setFavoriteIds(loadFavorites(undefined));
+      setSynced(false);
+      return;
+    }
+    setFavoriteIds(loadFavorites(userId));
+    sync();
+  }, [userId, sync]);
+
+  // Dodatkowe odświeżenie przy powrocie do aplikacji
+  useEffect(() => {
+    if (!userId) return;
+    const onVisible = () => { if (!document.hidden) sync(); };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onVisible);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onVisible);
+    };
+  }, [userId, sync]);
 
   const toggleFavorite = useCallback((id: string) => {
-    setFavoriteIds(prev => {
-      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
-      persist(next);
-      return next;
-    });
-  }, [persist]);
+    const isNowFavorite = !favoriteIds.includes(id);
+
+    // 1. Natychmiastowa zmiana w UI + localStorage
+    const next = isNowFavorite
+      ? [...favoriteIds, id]
+      : favoriteIds.filter(x => x !== id);
+    apply(next);
+
+    // 2. Operacja trafia do kolejki (przetrwa brak sieci)
+    const pending = loadPending(userId);
+    if (isNowFavorite) {
+      pending.adds = [...new Set([...pending.adds.filter(x => x !== id), id])];
+      pending.removes = pending.removes.filter(x => x !== id);
+    } else {
+      pending.removes = [...new Set([...pending.removes.filter(x => x !== id), id])];
+      pending.adds = pending.adds.filter(x => x !== id);
+    }
+    savePending(userId, pending);
+
+    // 3. Wyślij do chmury
+    if (!userId) return;
+    (async () => {
+      const err = isNowFavorite
+        ? await addFavoriteRemote(userId, id)
+        : await removeFavoriteRemote(userId, id);
+      if (err) return; // zostaje w kolejce do następnego syncowania
+      const p = loadPending(userId);
+      if (isNowFavorite) p.adds = p.adds.filter(x => x !== id);
+      else p.removes = p.removes.filter(x => x !== id);
+      savePending(userId, p);
+    })();
+  }, [favoriteIds, userId, apply]);
 
   const isFavorite = useCallback((id: string) => favoriteIds.includes(id), [favoriteIds]);
 
   const clearFavorites = useCallback(() => {
-    setFavoriteIds([]);
-    persist([]);
-  }, [persist]);
+    apply([]);
+    savePending(userId, { adds: [], removes: [] });
+    if (!userId) return;
+    favoriteIds.forEach(id => { removeFavoriteRemote(userId, id); });
+  }, [favoriteIds, userId, apply]);
 
   return {
     favoriteIds,
@@ -64,5 +199,8 @@ export function useFavoritesStore(userId?: string) {
     toggleFavorite,
     isFavorite,
     clearFavorites,
+    sync,
+    isSyncing,
+    synced,
   };
 }

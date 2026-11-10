@@ -478,6 +478,20 @@ REVOKE ALL ON TABLE public.custom_exercises FROM authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.custom_exercises TO authenticated;
 GRANT ALL ON TABLE public.custom_exercises TO service_role;
 
+-- Ulubione ćwiczenia (tabela tworzona w SUPABASE_SETUP_FAVORITES.sql
+-- lub w sekcji 2 SUPABASE_SETUP.md — jeśli jej tu nie ma, sekcja 8 ją pominie).
+DO $
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables
+             WHERE table_schema = 'public' AND table_name = 'favorite_exercises') THEN
+    EXECUTE 'REVOKE ALL ON TABLE public.favorite_exercises FROM PUBLIC';
+    EXECUTE 'REVOKE ALL ON TABLE public.favorite_exercises FROM anon';
+    EXECUTE 'REVOKE ALL ON TABLE public.favorite_exercises FROM authenticated';
+    EXECUTE 'GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.favorite_exercises TO authenticated';
+    EXECUTE 'GRANT ALL ON TABLE public.favorite_exercises TO service_role';
+  END IF;
+END $;
+
 
 -- ────────────────────────────────────────────────────────────────
 -- 9. Weryfikacja (opcjonalne zapytania kontrolne)
