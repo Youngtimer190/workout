@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { View, WorkoutDay, SharedWorkout, WorkoutTemplate, Exercise } from './types';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
@@ -240,6 +240,8 @@ function NewPasswordScreen() {
 
 export default function App() {
   const [activeView, setActiveView] = useState<View>('dashboard');
+  /** Komunikat typu toast (np. po dodaniu ćwiczeń do planu). */
+  const [toast, setToast] = useState<{ ok: boolean; text: string } | null>(null);
   const [offlineDismissed, setOfflineDismissed] = useState(false);
   const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
   const topRef = useRef<HTMLDivElement>(null);
@@ -304,6 +306,12 @@ export default function App() {
 
   const handleViewChange = (view: View) => { setActiveView(view); scrollToTop(); };
 
+  /** Pokazuje komunikat typu toast na 3,5 s. */
+  const showToast = useCallback((ok: boolean, text: string) => {
+    setToast({ ok, text });
+    window.setTimeout(() => setToast(null), 3500);
+  }, []);
+
   const handleGoToDay = (dayIndex: number) => {
     setSelectedDayIndex(dayIndex);
     setActiveView('planner');
@@ -323,6 +331,31 @@ export default function App() {
     setSelectedDayIndex(lastWorkout.dayIndex);
     setActiveView('planner');
     scrollToTop();
+  };
+
+  /**
+   * Dodaje ulubione ćwiczenia do wybranego dnia planu.
+   *
+   * Po dodaniu przechodzimy do Planera i podświetlamy wybrany dzień,
+   * żeby od razu widać efekt.
+   */
+  const handleAddFavoritesToPlan = (dayId: string, exerciseIds: string[]) => {
+    const exercises = allExercisesForTemplates.filter(e => exerciseIds.includes(e.id));
+    exercises.forEach(ex => addExercise(dayId, ex));
+
+    const day = days.find(d => d.id === dayId);
+    const dayIndex = days.findIndex(d => d.id === dayId);
+    if (dayIndex >= 0) {
+      setSelectedDayIndex(dayIndex);
+    }
+    setActiveView('planner');
+    scrollToTop();
+
+    const count = exercises.length;
+    showToast(
+      true,
+      `Dodano ${count} ${count === 1 ? 'ćwiczenie' : 'ćwiczeń'} do: ${day?.name ?? 'planu'}.`
+    );
   };
 
   const handleApplyGeneratedPlan = (generatedDays: WorkoutDay[]) => {
@@ -540,7 +573,10 @@ export default function App() {
           <FavoritesView
             favoriteIds={favorites.favoriteIds}
             allExercises={allExercisesForTemplates}
+            days={days}
             onToggleFavorite={favorites.toggleFavorite}
+            onClearFavorites={favorites.clearFavorites}
+            onAddToPlan={handleAddFavoritesToPlan}
             onGoToPlanner={() => handleViewChange('planner')}
           />
         );
@@ -615,6 +651,35 @@ export default function App() {
       <div className="main-content relative">
         {/* Top safe area bar with theme color - prevents frosted glass blur on PWA */}
         <div className="h-safe bg-[#0a0416] sticky top-0 z-10" aria-hidden="true" />
+
+        {/* Toast — komunikat po akcji (np. dodaniu ćwiczeń do planu) */}
+        {toast && (
+          <div
+            role="status"
+            className="fixed left-1/2 z-50 -translate-x-1/2 bottom-[104px] md:bottom-6 w-[calc(100%-2rem)] max-w-sm animate-fade-up"
+          >
+            <div
+              className={`flex items-center gap-2.5 rounded-2xl border px-4 py-3 text-sm font-medium shadow-2xl backdrop-blur-xl ${
+                toast.ok
+                  ? 'border-emerald-400/30 bg-[#0f2a1e]/95 text-emerald-200'
+                  : 'border-red-400/30 bg-[#2a1015]/95 text-red-200'
+              }`}
+            >
+              {toast.ok ? (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 flex-shrink-0">
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 flex-shrink-0">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 8v5" />
+                  <path d="M12 16h.01" />
+                </svg>
+              )}
+              <span>{toast.text}</span>
+            </div>
+          </div>
+        )}
 
         {isDemoMode && <DemoBanner onExit={exitDemoMode} />}
         {!isSupabaseConfigured && !offlineDismissed && <OfflineBanner onDismiss={() => setOfflineDismissed(true)} />}
