@@ -165,10 +165,10 @@ export function useAuthStore() {
   }, []);
 
   /**
-   * Logowanie przez zewnętrznego dostawcę tożsamości (Google / Apple).
+   * Logowanie przez Google (OAuth).
    *
-   * Supabase przekierowuje przeglądarkę na stronę dostawcy, a po zalogowaniu
-   * wraca z tokenem w adresie URL. Dlatego `redirectTo` musi wskazywać na ten
+   * Supabase przekierowuje przeglądarkę do Google, a po powrocie wymienia kod
+   * na sesję (flow PKCE). Dlatego `redirectTo` musi wskazywać na ten
    * sam adres, z którego otwarto aplikację — `window.location.origin` działa
    * zarówno na produkcji (Vercel), jak i na localhost. Adres ten musi być
    * dopisany do listy „Redirect URLs" w ustawieniach projektu Supabase.
@@ -178,9 +178,8 @@ export function useAuthStore() {
    * zostaje zwrócony i pokazany w formularzu.
    */
   const signInWithOAuth = useCallback(async (
-    provider: 'google' | 'apple'
+    provider: 'google'
   ): Promise<{ error: AuthError | null }> => {
-    const label = provider === 'google' ? 'Google' : 'Apple';
     try {
       // Sprawdzamy, czy dostawca w ogóle jest włączony w projekcie.
       // Bez tego kliknięcie w nieskonfigurowany provider kończy się
@@ -189,8 +188,8 @@ export function useAuthStore() {
       if (enabled && enabled[provider] === false) {
         return {
           error: new AuthError(
-            `Logowanie przez ${label} nie jest skonfigurowane w tym projekcie Supabase. ` +
-            `Włącz provider w Authentication → Providers i podaj Client ID / Client Secret.`
+            'Logowanie przez Google nie jest skonfigurowane w tym projekcie Supabase. ' +
+            'Włącz provider w Authentication → Providers i podaj Client ID / Client Secret.'
           ),
         };
       }
@@ -205,7 +204,7 @@ export function useAuthStore() {
       // wyjątku zwracamy błąd, który ekran logowania pokaże użytkownikowi.
       const message = err instanceof Error
         ? err.message
-        : `Logowanie przez ${label} nie powiodło się.`;
+        : 'Logowanie przez Google nie powiodło się.';
       return { error: new AuthError(message) };
     }
   }, []);
