@@ -177,6 +177,33 @@ if (!sessionRehydrated && typeof window !== 'undefined') {
 
 export const isSupabaseConfigured = !!supabaseUrl && !!supabaseAnonKey;
 
+/**
+ * Lista włączonych dostawców logowania OAuth (np. `google`, `apple`).
+ *
+ * Endpoint `/auth/v1/settings` jest publiczny i zwraca status każdego
+ * providera. Dzięki temu aplikacja nie pokazuje przycisku dla dostawcy,
+ * który nie jest skonfigurowany — kliknięcie w niego kończyłoby się
+ * surową stroną JSON z błędem 400 zamiast powrotem do aplikacji.
+ *
+ * Zwraca `null`, gdy nie uda się pobrać ustawień (np. brak sieci) — wtedy
+ * caller powinien działać optymistycznie i pokazać wszystkie przyciski.
+ */
+export async function getEnabledOAuthProviders(): Promise<Record<string, boolean> | null> {
+  if (!isSupabaseConfigured) return null;
+  try {
+    const res = await fetch(`${supabaseUrl}/auth/v1/settings`, {
+      headers: { apikey: supabaseAnonKey },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const external = data?.external;
+    if (!external || typeof external !== 'object') return null;
+    return external as Record<string, boolean>;
+  } catch {
+    return null;
+  }
+}
+
 // ─── Auto-refresh sesji ──────────────────────────────────────────────────────────
 /**
  * Automatyczne odświeżanie sesji przy przejściu do zakładki/powrocie do aplikacji.
