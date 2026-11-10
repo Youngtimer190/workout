@@ -103,15 +103,26 @@ export function useFavoritesStore(userId?: string) {
       // 1. Dołóż oczekujące operacje (dodania i usunięcia)
       const pending = loadPending(userId);
       if (pending.adds.length || pending.removes.length) {
+        const doneAdds: string[] = [];
+        const doneRemoves: string[] = [];
+
         for (const id of pending.adds) {
           const err = await addFavoriteRemote(userId, id);
-          if (err) break; // offline — zostawiamy w kolejce
+          if (err) break; // brak sieci — reszta zostaje w kolejce
+          doneAdds.push(id);
         }
         for (const id of pending.removes) {
           const err = await removeFavoriteRemote(userId, id);
           if (err) break;
+          doneRemoves.push(id);
         }
-        savePending(userId, { adds: [], removes: [] });
+
+        // Z kolejki usuwamy TYLKO potwierdzone operacje — nieudane muszą
+        // zostać, żeby trafić do chmury przy następnym połączeniu.
+        savePending(userId, {
+          adds: pending.adds.filter(id => !doneAdds.includes(id)),
+          removes: pending.removes.filter(id => !doneRemoves.includes(id)),
+        });
       }
 
       // 2. Pobierz stan z bazy
@@ -176,7 +187,11 @@ export function useFavoritesStore(userId?: string) {
       const err = isNowFavorite
         ? await addFavoriteRemote(userId, id)
         : await removeFavoriteRemote(userId, id);
-      if (err) return; // zostaje w kolejce do następnego syncowania
+      if (err) {
+        // Operacja zostaje w kolejce i wyjdzie przy najbliższym syncowaniu.
+        console.warn('[favoritesStore] Nie udało się zapisać w chmurze:', err.message);
+        return;
+      }
       const p = loadPending(userId);
       if (isNowFavorite) p.adds = p.adds.filter(x => x !== id);
       else p.removes = p.removes.filter(x => x !== id);
@@ -187,10 +202,25 @@ export function useFavoritesStore(userId?: string) {
   const isFavorite = useCallback((id: string) => favoriteIds.includes(id), [favoriteIds]);
 
   const clearFavorites = useCallback(() => {
+    const ids = favoriteIds;
     apply([]);
-    savePending(userId, { adds: [], removes: [] });
     if (!userId) return;
-    favoriteIds.forEach(id => { removeFavoriteRemote(userId, id); });
+
+    // Usunięcia też trafiają do kolejki — jeśli zapis się nie uda,
+    // powtórzymy go przy następnym syncowaniu.
+    const pending = loadPending(userId);
+    pending.removes = [...new Set([...pending.removes, ...ids])];
+    pending.adds = pending.adds.filter(id => !ids.includes(id));
+    savePending(userId, pending);
+
+    ids.forEach(id => {
+      removeFavoriteRemote(userId, id).then(err => {
+        if (err) return;
+        const p = loadPending(userId);
+        p.removes = p.removes.filter(x => x !== id);
+        savePending(userId, p);
+      });
+    });
   }, [favoriteIds, userId, apply]);
 
   return {
