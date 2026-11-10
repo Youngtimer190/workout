@@ -1,0 +1,238 @@
+import { useEffect, useRef, useState } from 'react';
+import { View } from '../types';
+import {
+  ArrowRightIcon,
+  CalendarIcon,
+  ChartIcon,
+  ChevronRightIcon,
+  CircleHelpIcon,
+  ClockIcon,
+  DumbbellIcon,
+  LogOutIcon,
+  SettingsIcon,
+  StarIcon,
+  SunIcon,
+  TrophyIcon,
+  XIcon,
+} from './icons';
+
+interface MobileMoreSheetProps {
+  open: boolean;
+  onClose: () => void;
+  onViewChange: (view: View) => void;
+  /** Zalogowany użytkownik (przekazywany z `App`). */
+  user?: { email?: string; user_metadata?: { full_name?: string } } | null;
+  onSignOut?: () => void;
+  /** Ostatnio zarejestrowany trening — dla skrótu „Ostatni trening”. */
+  lastWorkout?: { weekKey: string; dayIndex: number; dayName: string } | null;
+  onGoToLastWorkout?: () => void;
+  /** Procent ukończonych serii w bieżącym tygodniu. */
+  progress?: number;
+}
+
+/**
+ * Arkusz „Więcej" na telefonie.
+ *
+ * Jest mobilną wersją desktopowego paska bocznego — ta sama kolejność
+ * (konto → planowanie → szybki dostęp → postęp) i ten sam język wizualny,
+ * dzięki czemu nawigacja jest spójna na obu platformach.
+ */
+export default function MobileMoreSheet({
+  open,
+  onClose,
+  onViewChange,
+  user,
+  onSignOut,
+  lastWorkout,
+  onGoToLastWorkout,
+  progress = 0,
+}: MobileMoreSheetProps) {
+  const [dragY, setDragY] = useState(0);
+  const dragStart = useRef<number | null>(null);
+
+  // Zamknij przyciskiem Escape + blokada przewijania tła
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Użytkownik';
+  const email = user?.email || '';
+  const initials = displayName
+    .split(' ')
+    .map((n: string) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
+  const go = (view: View) => { onViewChange(view); onClose(); };
+
+  const rowClass =
+    'flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-slate-200 transition-colors hover:bg-white/[0.07] active:bg-white/[0.1]';
+
+  const sectionLabel =
+    'px-1 pt-5 pb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500';
+
+  const onTouchStart = (e: React.TouchEvent) => { dragStart.current = e.touches[0].clientY; };
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (dragStart.current === null) return;
+    setDragY(Math.max(0, e.touches[0].clientY - dragStart.current));
+  };
+  const onTouchEnd = () => {
+    if (dragY > 90) onClose();
+    setDragY(0);
+    dragStart.current = null;
+  };
+
+  return (
+    <div className="fixed inset-0 z-40 md:hidden" role="dialog" aria-modal="true" aria-label="Więcej opcji">
+      {/* Tło */}
+      <div className="absolute inset-0 animate-fade-in bg-black/65 backdrop-blur-sm" onClick={onClose} />
+
+      {/* Arkusz */}
+      <div
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        style={{
+          transform: `translateY(${dragY}px)`,
+          transition: dragStart.current === null ? 'transform 0.32s cubic-bezier(0.22,1,0.36,1)' : 'none',
+        }}
+        className="animate-sheet-up absolute bottom-0 left-0 right-0 max-h-[88dvh] overflow-y-auto overscroll-contain rounded-t-3xl border-t border-violet-400/20 bg-[#150a2e]/97 shadow-[0_-24px_60px_-20px_rgba(0,0,0,0.9)] backdrop-blur-2xl"
+      >
+        {/* Uchwyt + przycisk zamknięcia */}
+        <div className="sticky top-0 z-10 flex items-center justify-between bg-[#150a2e]/95 px-5 pt-3 pb-1 backdrop-blur-xl">
+          <div className="mx-auto h-1 w-11 rounded-full bg-white/20" />
+          <button
+            onClick={onClose}
+            aria-label="Zamknij"
+            className="absolute right-4 top-3 flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.06] text-slate-300 transition-colors active:bg-white/10"
+          >
+            <XIcon className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Konto */}
+        {user && (
+          <div className="mx-4 mt-2 flex items-center gap-3 rounded-2xl border border-violet-400/15 bg-white/[0.04] p-4">
+            <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-sm font-bold text-white shadow-[0_8px_20px_-10px_rgba(139,92,246,1)]">
+              {initials}
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-white">{displayName}</p>
+              <p className="truncate text-[11px] text-slate-400">{email}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Planowanie */}
+        <p className={sectionLabel}>Planowanie</p>
+        <div className="space-y-1 px-4">
+          <button onClick={() => go('templates')} className={rowClass}>
+            <DumbbellIcon className="h-[18px] w-[18px] flex-shrink-0 text-violet-300" />
+            <span className="flex-1">Moje treningi</span>
+            <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />
+          </button>
+          <button onClick={() => go('stats')} className={rowClass}>
+            <ChartIcon className="h-[18px] w-[18px] flex-shrink-0 text-violet-300" />
+            <span className="flex-1">Statystyki</span>
+            <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />
+          </button>
+          <button onClick={() => go('shares')} className={rowClass}>
+            <CalendarIcon className="h-[18px] w-[18px] flex-shrink-0 text-violet-300" />
+            <span className="flex-1">Udostępnienia</span>
+            <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />
+          </button>
+        </div>
+
+        {/* Szybki dostęp */}
+        <p className={sectionLabel}>Szybki dostęp</p>
+        <div className="space-y-1 px-4">
+          <button onClick={() => go('favorites')} className={rowClass}>
+            <StarIcon className="h-[18px] w-[18px] flex-shrink-0 text-amber-300" />
+            <span className="flex-1">Ulubione ćwiczenia</span>
+            <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />
+          </button>
+          <button
+            onClick={() => { onClose(); onGoToLastWorkout?.(); }}
+            disabled={!lastWorkout}
+            className={`${rowClass} ${lastWorkout ? '' : 'opacity-50'}`}
+          >
+            <ClockIcon className="h-[18px] w-[18px] flex-shrink-0 text-slate-300" />
+            <span className="flex-1">
+              Ostatni trening
+              {lastWorkout && (
+                <span className="block text-[11px] leading-tight text-slate-500">{lastWorkout.dayName}</span>
+              )}
+            </span>
+            {lastWorkout && <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />}
+          </button>
+        </div>
+
+        {/* Postęp */}
+        <div className="relative mt-5 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.04] p-4">
+          <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-violet-500/20 blur-2xl" />
+          <div className="relative flex items-center gap-3">
+            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-amber-400/25 bg-amber-400/15 text-amber-300">
+              <TrophyIcon className="h-5 w-5" />
+            </span>
+            <p className="text-[13px] font-semibold leading-tight text-white">
+              Twoja forma
+              <br />
+              na wyższym poziomie!
+            </p>
+          </div>
+          <div className="relative mt-3 flex items-center gap-3">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-400 transition-all duration-700"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <span className="w-9 text-right text-xs font-bold text-slate-300">{progress}%</span>
+          </div>
+          <p className="relative mt-2 text-[10px] leading-snug text-slate-500">Ukończone serie w tym tygodniu</p>
+        </div>
+
+        {/* Konto */}
+        <p className={sectionLabel}>Konto</p>
+        <div className="space-y-1 px-4">
+          <button onClick={() => go('settings')} className={rowClass}>
+            <SettingsIcon className="h-[18px] w-[18px] flex-shrink-0 text-slate-400" />
+            <span className="flex-1">Ustawienia</span>
+            <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />
+          </button>
+          <button onClick={() => go('appearance')} className={rowClass}>
+            <SunIcon className="h-[18px] w-[18px] flex-shrink-0 text-slate-400" />
+            <span className="flex-1">Wygląd</span>
+            <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />
+          </button>
+          <button onClick={() => go('help')} className={rowClass}>
+            <CircleHelpIcon className="h-[18px] w-[18px] flex-shrink-0 text-slate-400" />
+            <span className="flex-1">Pomoc i wsparcie</span>
+          </button>
+          <button
+            onClick={() => { onClose(); onSignOut?.(); }}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-red-300 transition-colors hover:bg-red-500/10 active:bg-red-500/15"
+          >
+            <LogOutIcon className="h-[18px] w-[18px] flex-shrink-0" />
+            <span className="flex-1">Wyloguj się</span>
+            <ArrowRightIcon className="h-4 w-4 flex-shrink-0 text-red-400/70" />
+          </button>
+        </div>
+
+        {/* Odstęp na pasek bezpieczeństwa */}
+        <div className="h-[max(1rem,env(safe-area-inset-bottom))]" />
+      </div>
+    </div>
+  );
+}

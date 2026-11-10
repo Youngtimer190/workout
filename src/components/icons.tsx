@@ -610,6 +610,72 @@ export function HomeIcon(props: IconProps) {
   );
 }
 
+/* ── Ikony sekcji konta i szybkiego dostępu ──────────────────────────────── */
+
+export function StarIcon({ filled = false, ...props }: IconProps & { filled?: boolean }) {
+  return (
+    <svg {...svgProps(props)} fill={filled ? 'currentColor' : 'none'}>
+      <path d="M12 3.5l2.6 5.3 5.9.85-4.25 4.15 1 5.85L12 16.9l-5.25 2.75 1-5.85L3.5 9.65l5.9-.85L12 3.5Z" />
+    </svg>
+  );
+}
+
+export function SunIcon(props: IconProps) {
+  return (
+    <svg {...svgProps(props)}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2" />
+      <path d="M12 20v2" />
+      <path d="m4.93 4.93 1.41 1.41" />
+      <path d="m17.66 17.66 1.41 1.41" />
+      <path d="M2 12h2" />
+      <path d="M20 12h2" />
+      <path d="m6.34 17.66-1.41 1.41" />
+      <path d="m19.07 4.93-1.41 1.41" />
+    </svg>
+  );
+}
+
+export function SettingsIcon(props: IconProps) {
+  return (
+    <svg {...svgProps(props)}>
+      <path d="M12.22 2h-.44a2 2 0 0 0-2 1.72l-.12.9a2 2 0 0 1-1.18 1.52l-.27.12a2 2 0 0 1-1.9-.18l-.73-.53a2 2 0 0 0-2.61.4l-.22.38a2 2 0 0 0 .42 2.62l.6.5a2 2 0 0 1 .72 1.7v.3a2 2 0 0 1-.72 1.7l-.6.5a2 2 0 0 0-.42 2.62l.22.38a2 2 0 0 0 2.61.4l.73-.53a2 2 0 0 1 1.9-.18l.27.12a2 2 0 0 1 1.18 1.52l.12.9a2 2 0 0 0 2 1.72h.44a2 2 0 0 0 2-1.72l.12-.9a2 2 0 0 1 1.18-1.52l.27-.12a2 2 0 0 1 1.9.18l.73.53a2 2 0 0 0 2.61-.4l.22-.38a2 2 0 0 0-.42-2.62l-.6-.5a2 2 0 0 1-.72-1.7v-.3a2 2 0 0 1 .72-1.7l.6-.5a2 2 0 0 0 .42-2.62l-.22-.38a2 2 0 0 0-2.61-.4l-.73.53a2 2 0 0 1-1.9-.18l-.27-.12a2 2 0 0 1-1.18-1.52l-.12-.9a2 2 0 0 0-2-1.72Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+export function LogOutIcon(props: IconProps) {
+  return (
+    <svg {...svgProps(props)}>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <path d="M21 12H9" />
+    </svg>
+  );
+}
+
+export function CircleHelpIcon(props: IconProps) {
+  return (
+    <svg {...svgProps(props)}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.1 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+      <path d="M12 17h.01" />
+    </svg>
+  );
+}
+
+/** Trzy kropki — „Więcej" w mobilnym docku. */
+export function MoreIcon(props: IconProps) {
+  return (
+    <svg {...svgProps(props)}>
+      <circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
+      <circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 /* ── Sposób treningu (generator) ─────────────────────────────────────────── */
 
 export function BicepsIcon(props: IconProps) {

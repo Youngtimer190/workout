@@ -19,6 +19,9 @@ export interface SetLog {
   actualReps: number | null;
   weight: number | null;
   done: boolean;
+  /** Kiedy seria została oznaczona jako wykonana (ms). Używane do
+   *  ustalenia ostatnio zarejestrowanego treningu. */
+  completedAt?: number;
   note?: string;
 }
 
@@ -57,7 +60,18 @@ export interface WeekPlan {
   createdAt: Date;
 }
 
-export type View = 'dashboard' | 'planner' | 'library' | 'stats' | 'generator' | 'shares' | 'templates';
+export type View =
+  | 'dashboard'
+  | 'planner'
+  | 'library'
+  | 'stats'
+  | 'generator'
+  | 'shares'
+  | 'templates'
+  | 'favorites'
+  | 'settings'
+  | 'appearance'
+  | 'help';
 
 export type TrainingGoal = 'muscle_gain' | 'fat_loss' | 'strength' | 'endurance' | 'general_fitness';
 export type FitnessLevel = 'beginner' | 'intermediate' | 'advanced';

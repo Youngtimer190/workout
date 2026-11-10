@@ -159,7 +159,9 @@ export default function SetTracker({
   const getSideLabel = (idx: number): 'Prawa' | 'Lewa' => (idx % 2 === 0 ? 'Prawa' : 'Lewa');
 
   const toggleDone = (idx: number) => {
-    updateLog(idx, { done: !localLogs[idx].done });
+    const willBeDone = !localLogs[idx].done;
+    // Znacznik czasu pozwala ustalić, który trening był zarejestrowany ostatnio
+    updateLog(idx, { done: willBeDone, completedAt: willBeDone ? Date.now() : undefined });
   };
 
   /** Dodaje kolejną serię na końcu listy (poza zaplanowaną liczbą). */

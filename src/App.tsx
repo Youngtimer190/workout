@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { View, WorkoutDay, SharedWorkout, WorkoutTemplate, Exercise } from './types';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
@@ -8,6 +8,10 @@ import Stats from './components/Stats';
 import PlanGenerator from './components/PlanGenerator';
 import SharesView from './components/SharesView';
 import TemplatesView from './components/TemplatesView';
+import FavoritesView from './components/FavoritesView';
+import SettingsView from './components/settings/SettingsView';
+import AppearanceView from './components/settings/AppearanceView';
+import HelpView from './components/settings/HelpView';
 import AuthScreen from './components/auth/AuthScreen';
 import OfflineBanner from './components/auth/OfflineBanner';
 import DemoBanner from './components/auth/DemoBanner';
@@ -16,6 +20,8 @@ import { useWorkoutStore } from './store/workoutStore';
 import { useAuthStore } from './store/authStore';
 import { useShareStore } from './store/shareStore';
 import { useTemplateStore } from './store/templateStore';
+import { useFavoritesStore } from './store/favoritesStore';
+import { useAppearanceStore } from './store/appearanceStore';
 import { buildDaySnapshot, snapshotToExercises } from './lib/shareService';
 import { isSupabaseConfigured } from './lib/supabase';
 import { exerciseLibrary } from './data/exercises';
@@ -238,11 +244,11 @@ export default function App() {
   const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
   const topRef = useRef<HTMLDivElement>(null);
 
-  const { user, initialized, isAuthenticated, isDemoMode, loginAsDemo, exitDemoMode, isPasswordRecovery } = useAuthStore();
+  const { user, initialized, isAuthenticated, isDemoMode, loginAsDemo, exitDemoMode, isPasswordRecovery, signOut } = useAuthStore();
 
   const {
-    days, weekMeta,
-    goToPrevWeek, goToNextWeek, goToCurrentWeek, goToWeekContaining, copyWorkoutToDay,
+    days, weekMeta, weekKey, lastWorkout,
+    goToPrevWeek, goToNextWeek, goToCurrentWeek, goToWeekContaining, goToWeekByKey, copyWorkoutToDay,
     toggleRestDay, addExercise, removeExercise, updateExercise,
     replaceExercise, moveExercise, moveExerciseToDay, moveAllExercisesToDate, resetWeek, loadGeneratedPlan,
     customExercises, addCustomExercise, updateCustomExercise, deleteCustomExercise,
@@ -264,6 +270,24 @@ export default function App() {
     return acc;
   }, [] as (typeof customExercises)[0][]);
 
+  // ── Ulubione ćwiczenia + ustawienia wyglądu ──
+  const favorites = useFavoritesStore(user?.id);
+  const appearance = useAppearanceStore();
+
+  // ── Postęp tygodnia (karta w pasku bocznym) ──
+  const weekProgress = useMemo(() => {
+    const totalSets = days.reduce(
+      (acc, d) => acc + d.exercises.reduce((s, e) => s + (e.sets || 0), 0),
+      0
+    );
+    const doneSets = days.reduce(
+      (acc, d) => acc + d.exercises.reduce((s, e) => s + (e.setLogs?.filter(l => l.done).length || 0), 0),
+      0
+    );
+    if (totalSets === 0) return 0;
+    return Math.round((doneSets / totalSets) * 100);
+  }, [days]);
+
   useEffect(() => {
     topRef.current?.scrollIntoView({ behavior: 'auto', block: 'start' });
     window.scrollTo(0, 0);
@@ -282,6 +306,21 @@ export default function App() {
 
   const handleGoToDay = (dayIndex: number) => {
     setSelectedDayIndex(dayIndex);
+    setActiveView('planner');
+    scrollToTop();
+  };
+
+  /**
+   * Przenosi do ostatnio zarejestrowanego treningu — skrót „Ostatni trening”
+   * w panelu bocznym. Jeśli trening był w poprzednim tygodniu, najpierw
+   * przełączamy widok na ten tydzień.
+   */
+  const handleGoToLastWorkout = () => {
+    if (!lastWorkout) return;
+    if (lastWorkout.weekKey !== weekKey) {
+      goToWeekByKey(lastWorkout.weekKey);
+    }
+    setSelectedDayIndex(lastWorkout.dayIndex);
     setActiveView('planner');
     scrollToTop();
   };
@@ -486,7 +525,37 @@ export default function App() {
           </>
         );
       case 'library':
-        return <ExerciseLibrary customExercises={customExercises} onAddCustomExercise={addCustomExercise} onUpdateCustomExercise={updateCustomExercise} onDeleteCustomExercise={deleteCustomExercise} />;
+        return (
+          <ExerciseLibrary
+            customExercises={customExercises}
+            onAddCustomExercise={addCustomExercise}
+            onUpdateCustomExercise={updateCustomExercise}
+            onDeleteCustomExercise={deleteCustomExercise}
+            favoriteIds={favorites.favoriteIds}
+            onToggleFavorite={favorites.toggleFavorite}
+          />
+        );
+      case 'favorites':
+        return (
+          <FavoritesView
+            favoriteIds={favorites.favoriteIds}
+            allExercises={allExercisesForTemplates}
+            onToggleFavorite={favorites.toggleFavorite}
+            onGoToPlanner={() => handleViewChange('planner')}
+          />
+        );
+      case 'settings':
+        return <SettingsView onGoToHelp={() => handleViewChange('help')} />;
+      case 'appearance':
+        return (
+          <AppearanceView
+            settings={appearance.settings}
+            onScaleChange={appearance.setScale}
+            onAnimationsChange={appearance.setAnimations}
+          />
+        );
+      case 'help':
+        return <HelpView onGoToSettings={() => handleViewChange('settings')} />;
       case 'stats': return <Stats days={days} />;
       case 'shares':
         return (
@@ -535,6 +604,12 @@ export default function App() {
         activeView={activeView}
         onViewChange={handleViewChange}
         pendingCount={shareStore.pendingCount}
+        progress={weekProgress}
+        favoriteCount={favorites.favoriteCount}
+        user={user}
+        onSignOut={signOut}
+        lastWorkout={lastWorkout}
+        onGoToLastWorkout={handleGoToLastWorkout}
       />
 
       <div className="main-content relative">
@@ -555,7 +630,7 @@ export default function App() {
         )}
 
         <main>
-          <div className="max-w-5xl mx-auto px-3 sm:px-5 lg:px-8 pt-8 pb-4 sm:pt-10 sm:pb-6">
+          <div className="max-w-5xl mx-auto px-3 sm:px-5 lg:px-8 pt-8 pb-nav sm:pt-10">
             {isHydrating ? <SkeletonLoader /> : renderView()}
           </div>
         </main>

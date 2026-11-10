@@ -35,9 +35,9 @@ body {
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
-  --bottom-nav-height: 64px;
+  --bottom-nav-height: 96px;
   --bottom-nav-total: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
-  --sidebar-width: 256px;
+  --sidebar-width: 288px;
 }
 
 /* ── Tap highlight off + manipulation ── */
@@ -255,6 +255,10 @@ input[type="number"] {
 .pb-nav {
   padding-bottom: calc(var(--bottom-nav-total) + 1.5rem);
 }
+/* Na desktopie nie ma docka — wracamy do zwykłego odstępu */
+@media (min-width: 768px) {
+  .pb-nav { padding-bottom: 1.5rem; }
+}
 
 /* ── Desktop: main content z marginesem na sidebar ── */
 @media (min-width: 768px) {
@@ -287,6 +291,25 @@ input[type="number"] {
   background: none;
   border: none;
   outline: none;
+}
+
+/* ── Pływający dock (mobile) ────────────────────────────────────────────────
+   Pięć pozycji na ~390 px = ~78 px na slot (zamiast 48 px przy pełnym pasku).
+   Dock jest zaokrąglony i unosi się nad dolną krawędzią ekranu. */
+.dock-item {
+  min-height: 56px;
+  min-width: 0;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* ── Arkusz „Więcej" (mobile) ─────────────────────────────────────────────── */
+@keyframes sheetUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.animate-sheet-up {
+  animation: sheetUp 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 /* ── Modal backdrop ── */
@@ -344,4 +367,13 @@ input[type="number"] {
 .touch-target {
   min-height: 44px;
   min-width: 44px;
+}
+
+/* ── Animacje wyłączone w ustawieniach wyglądu ──────────────────────────── */
+.no-animations *,
+.no-animations *::before,
+.no-animations *::after {
+  transition: none !important;
+  animation: none !important;
+  scroll-behavior: auto !important;
 }

@@ -11,6 +11,7 @@ import {
   RepeatIcon,
   SearchIcon,
   SparklesIcon,
+  StarIcon,
   TimerIcon,
 } from './icons';
 
@@ -19,6 +20,10 @@ interface ExerciseLibraryProps {
   onAddCustomExercise: (ex: Exercise) => void;
   onUpdateCustomExercise: (ex: Exercise) => void;
   onDeleteCustomExercise: (id: string) => void;
+  /** Identyfikatory ulubionych ćwiczeń (gwiazdka na karcie). */
+  favoriteIds?: string[];
+  /** Dodaje/usuwa ćwiczenie z ulubionych. */
+  onToggleFavorite?: (id: string) => void;
 }
 
 const ALL = 'Wszystkie';
@@ -185,6 +190,8 @@ export default function ExerciseLibrary({
   onAddCustomExercise,
   onUpdateCustomExercise,
   onDeleteCustomExercise,
+  favoriteIds = [],
+  onToggleFavorite,
 }: ExerciseLibraryProps) {
   const [search, setSearch] = useState('');
   const [selectedGroup, setSelectedGroup] = useState(ALL);
@@ -399,35 +406,51 @@ export default function ExerciseLibrary({
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {exercises.map(ex => {
                     const custom = isCustom(ex);
+                    const fav = favoriteIds.includes(ex.id);
                     return (
-                      <button
-                        key={ex.id}
-                        onClick={() => setSelectedExercise(ex)}
-                        className="text-left bg-white rounded-xl border border-slate-100 p-4 hover:border-slate-200 hover:shadow-md transition-all group cursor-pointer relative"
-                      >
-                        {custom && (
-                          <span className="absolute top-3 right-3 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-600 inline-flex items-center gap-1">
-                            <SparklesIcon className="h-3 w-3" />
-                            Własne
-                          </span>
-                        )}
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="text-sm font-semibold text-slate-800 group-hover:text-violet-700 transition-colors leading-tight pr-10">
-                            {ex.name}
-                          </p>
-                        </div>
-                        <p className="text-xs text-slate-400 mt-1.5 line-clamp-2">{ex.description}</p>
-                        <div className="flex items-center gap-2 mt-3 flex-wrap">
-                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${difficultyBg[ex.difficulty]}`}>
-                            {ex.difficulty}
-                          </span>
-                          {ex.muscleGroup !== 'Cardio' ? (
-                            <span className="text-[10px] text-slate-400">{ex.sets} serie · {ex.reps} powt.</span>
-                          ) : (
-                            <span className="text-[10px] text-slate-400">{ex.duration} min</span>
-                          )}
-                        </div>
-                      </button>
+                      <div key={ex.id} className="relative">
+                        <button
+                          onClick={() => setSelectedExercise(ex)}
+                          className="text-left w-full bg-white rounded-xl border border-slate-100 p-4 hover:border-slate-200 hover:shadow-md transition-all group cursor-pointer"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-sm font-semibold text-slate-800 group-hover:text-violet-700 transition-colors leading-tight pr-8">
+                              {ex.name}
+                            </p>
+                          </div>
+                          <p className="text-xs text-slate-400 mt-1.5 line-clamp-2">{ex.description}</p>
+                          <div className="flex items-center gap-2 mt-3 flex-wrap">
+                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${difficultyBg[ex.difficulty]}`}>
+                              {ex.difficulty}
+                            </span>
+                            {custom && (
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-600 inline-flex items-center gap-1">
+                                <SparklesIcon className="h-3 w-3" />
+                                Własne
+                              </span>
+                            )}
+                            {ex.muscleGroup !== 'Cardio' ? (
+                              <span className="text-[10px] text-slate-400">{ex.sets} serie · {ex.reps} powt.</span>
+                            ) : (
+                              <span className="text-[10px] text-slate-400">{ex.duration} min</span>
+                            )}
+                          </div>
+                        </button>
+
+                        {/* Gwiazdka — dodaje ćwiczenie do ulubionych */}
+                        <button
+                          onClick={e => { e.stopPropagation(); onToggleFavorite?.(ex.id); }}
+                          aria-label={fav ? `Usuń ${ex.name} z ulubionych` : `Dodaj ${ex.name} do ulubionych`}
+                          title={fav ? 'Usuń z ulubionych' : 'Dodaj do ulubionych'}
+                          className={`absolute top-3 right-3 rounded-lg p-1 transition-colors cursor-pointer ${
+                            fav
+                              ? 'text-amber-400 hover:bg-amber-400/15'
+                              : 'text-slate-300 hover:text-amber-400 hover:bg-amber-400/10'
+                          }`}
+                        >
+                          <StarIcon filled={fav} className="h-4 w-4" />
+                        </button>
+                      </div>
                     );
                   })}
                 </div>

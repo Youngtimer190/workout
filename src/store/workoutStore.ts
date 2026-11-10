@@ -1,7 +1,8 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { WorkoutDay, Exercise } from '../types';
 import {
   loadWeekDays,
+  loadAllWeeksLocal,
   saveWeekDays,
   createDefaultDays,
   getMondayOf,
@@ -320,6 +321,44 @@ export function useWorkoutStore(userId?: string) {
 
     return { error, weekKey: targetKey, dayIndex: targetIdx };
   }, [userId, weekKey]);
+
+  // ── Ostatnio zarejestrowany trening ──
+  /**
+   * Najnowszy zarejestrowany trening w całej historii (nie tylko bieżący
+   * tydzień) — dzień, w którym oznaczono serię jako wykonaną.
+   *
+   * Szukamy po znaczniku czasu `completedAt` zapisanym przy zaznaczeniu serii.
+   * Dla danych sprzed dodania znacznika (bez `completedAt`) bierzemy serię
+   * ostatniego dnia z wykonanymi seriami — dzięki temu skrót działa też dla
+   * planów zapisanych przed tą zmianą.
+   */
+  const lastWorkout = useMemo(() => {
+    type Candidate = { weekKey: string; dayIndex: number; dayName: string; at: number };
+    let best: Candidate | null = null;
+
+    const consider = (key: string, weekDays: WorkoutDay[], fallbackAt: number) => {
+      weekDays.forEach((d, i) => {
+        let dayBest = 0;
+        d.exercises.forEach(e => e.setLogs?.forEach(l => {
+          if (!l.done) return;
+          const at = l.completedAt ?? fallbackAt;
+          if (at > dayBest) dayBest = at;
+        }));
+        if (dayBest > 0 && (!best || dayBest > best.at)) {
+          best = { weekKey: key, dayIndex: i, dayName: d.name, at: dayBest };
+        }
+      });
+    };
+
+    const weeks = loadAllWeeksLocal();
+    for (const [key, weekDays] of Object.entries(weeks)) {
+      consider(key, weekDays, 0);
+    }
+    // Bieżący tydzień — zawsze na świeżo (w pamięci może być nowszy niż w localStorage)
+    consider(weekKey, days, Date.now());
+
+    return best as Candidate | null;
+  }, [days, weekKey]);
 
   const updateDaysForCurrentWeek = useCallback((newDays: WorkoutDay[]) => {
     setDays(newDays);
@@ -650,6 +689,7 @@ export function useWorkoutStore(userId?: string) {
     copyWorkoutToDay,
     // Days
     days,
+    lastWorkout,
     toggleRestDay,
     addExercise,
     removeExercise,
