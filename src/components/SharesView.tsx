@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { SharedWorkout, ShareStatus } from '../types';
 import { mondayOfWeekKey, DAY_NAMES } from '../store/weekStore';
 import AcceptShareModal from './AcceptShareModal';
+import { InboxIcon } from './icons';
 
 interface SharesViewProps {
   incoming: SharedWorkout[];
@@ -101,7 +102,7 @@ export default function SharesView({
 
   const renderEmpty = (text: string, sub: string) => (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <span className="text-4xl mb-2">📭</span>
+      <span className="mb-2 flex h-14 w-14 items-center justify-center rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/30 to-fuchsia-500/10 text-violet-200"><InboxIcon className="h-7 w-7" /></span>
       <p className="text-slate-500 font-semibold text-sm sm:text-base">{text}</p>
       <p className="text-slate-400 text-xs mt-1 max-w-xs">{sub}</p>
     </div>
@@ -226,7 +227,7 @@ export default function SharesView({
           <div>
             <p className="text-sm font-bold text-amber-700">Udostępnianie niedostępne</p>
             <p className="text-xs text-amber-600 mt-0.5">
-              Funkcja wymaga zalogowania (tryb demo jej nie obsługuje).
+              Funkcja wymaga skonfigurowanego Supabase i zalogowanego konta (tryb demo jej nie obsługuje).
             </p>
           </div>
         </div>

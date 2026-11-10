@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Exercise } from '../types';
 import { exerciseLibrary, muscleGroupBgColors } from '../data/exercises';
 import { requiresDumbbells } from '../lib/weightUtils';
+import { ArrowLeftIcon, ArrowRightIcon, SparklesIcon } from './icons';
 
 interface AddExerciseModalProps {
   dayName: string;
@@ -177,7 +178,7 @@ export default function AddExerciseModal({
                               <div className="flex items-start justify-between gap-2">
                                 <p className="text-sm font-semibold text-slate-800 leading-tight truncate">{ex.name}</p>
                                 <div className="flex gap-1 flex-shrink-0">
-                                  {isCustom && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-600">✨</span>}
+                                  {isCustom && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-600 inline-flex items-center"><SparklesIcon className="h-3 w-3" /></span>}
                                   <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${difficultyColor(ex.difficulty)}`}>
                                     {ex.difficulty === 'Początkujący' ? 'P' : ex.difficulty === 'Średniozaawansowany' ? 'Ś' : 'Z'}
                                   </span>
@@ -185,7 +186,7 @@ export default function AddExerciseModal({
                               </div>
                               <div className="flex items-center justify-between mt-1.5">
                                 <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${muscleGroupBgColors[ex.muscleGroup] || 'bg-slate-100 text-slate-500'}`}>{ex.muscleGroup}</span>
-                                <span className="text-[10px] text-slate-400 font-medium">Konfiguruj →</span>
+                                <span className="text-[10px] text-slate-400 font-medium inline-flex items-center gap-1">Konfiguruj <ArrowRightIcon className="h-3 w-3" /></span>
                               </div>
                             </button>
                             {isCustom && onDeleteCustom && (
@@ -316,7 +317,7 @@ export default function AddExerciseModal({
                             <div className="flex items-start justify-between gap-2">
                               <p className="text-sm font-semibold text-slate-800 leading-tight truncate">{ex.name}</p>
                               <div className="flex gap-1 flex-shrink-0">
-                                {isCustom && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-600">✨</span>}
+                                {isCustom && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-600 inline-flex items-center"><SparklesIcon className="h-3 w-3" /></span>}
                                 <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${difficultyColor(ex.difficulty)}`}>
                                   {ex.difficulty === 'Początkujący' ? 'P' : ex.difficulty === 'Średniozaawansowany' ? 'Ś' : 'Z'}
                                 </span>
@@ -405,7 +406,7 @@ export default function AddExerciseModal({
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-center p-8">
-                  <div className="text-4xl mb-3">👈</div>
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/30 to-fuchsia-500/10 text-violet-200"><ArrowLeftIcon className="h-6 w-6" /></div>
                   <p className="text-slate-400 text-sm">Wybierz ćwiczenie z listy, aby skonfigurować szczegóły</p>
                 </div>
               )}

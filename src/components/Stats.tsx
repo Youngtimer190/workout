@@ -4,6 +4,25 @@ import { muscleGroupBgColors, muscleGroupColors } from '../data/exercises';
 import { useAuthStore } from '../store/authStore';
 import { isSupabaseConfigured } from '../lib/supabase';
 import DeleteAccountModal from './auth/DeleteAccountModal';
+import {
+  CalendarIcon,
+  ChartIcon,
+  CheckIcon,
+  ClipboardIcon,
+  DumbbellIcon,
+  FlameIcon,
+  HeartPulseIcon,
+  LockIcon,
+  MinusIcon,
+  RepeatIcon,
+  RocketIcon,
+  SlidersIcon,
+  SparklesIcon,
+  SproutIcon,
+  UserIcon,
+  WarningIcon,
+  ZapIcon,
+} from './icons';
 
 interface StatsProps {
   days: WorkoutDay[];
@@ -44,11 +63,11 @@ export default function Stats({ days }: StatsProps) {
   const workloadScore = totalSets * 10 + allExercises.length * 5 + totalCardioMin * 2;
 
   const getWorkloadLabel = (score: number) => {
-    if (score === 0) return { label: 'Brak planu', color: 'text-slate-400', emoji: '—' };
-    if (score < 100) return { label: 'Lekki', color: 'text-emerald-600', emoji: '😌' };
-    if (score < 250) return { label: 'Umiarkowany', color: 'text-amber-600', emoji: '💪' };
-    if (score < 450) return { label: 'Intensywny', color: 'text-orange-600', emoji: '🔥' };
-    return { label: 'Ekstremalny', color: 'text-red-600', emoji: '⚡' };
+    if (score === 0) return { label: 'Brak planu', color: 'text-slate-400', icon: <MinusIcon className="h-10 w-10" /> };
+    if (score < 100) return { label: 'Lekki', color: 'text-emerald-600', icon: <SparklesIcon className="h-10 w-10" /> };
+    if (score < 250) return { label: 'Umiarkowany', color: 'text-amber-600', icon: <DumbbellIcon className="h-10 w-10" /> };
+    if (score < 450) return { label: 'Intensywny', color: 'text-orange-600', icon: <FlameIcon className="h-10 w-10" /> };
+    return { label: 'Ekstremalny', color: 'text-red-600', icon: <ZapIcon className="h-10 w-10" /> };
   };
 
   const workload = getWorkloadLabel(workloadScore);
@@ -85,13 +104,13 @@ export default function Stats({ days }: StatsProps) {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: 'Dni treningowe', value: trainingDays.length, sub: `z 7 dni`, emoji: '🏋️', color: 'text-violet-600', bg: 'bg-violet-50' },
-          { label: 'Ćwiczenia', value: allExercises.length, sub: `~${avgExercisesPerDay} / dzień`, emoji: '💪', color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { label: 'Serie łącznie', value: totalSets, sub: 'w całym tygodniu', emoji: '🔁', color: 'text-indigo-600', bg: 'bg-indigo-50' },
-          { label: 'Cardio', value: `${totalCardioMin}`, sub: 'minut w tygodniu', emoji: '🏃', color: 'text-sky-600', bg: 'bg-sky-50' },
+          { label: 'Dni treningowe', value: trainingDays.length, sub: `z 7 dni`, icon: <DumbbellIcon className="h-5 w-5" />, color: 'text-violet-600', bg: 'bg-violet-50' },
+          { label: 'Ćwiczenia', value: allExercises.length, sub: `~${avgExercisesPerDay} / dzień`, icon: <ChartIcon className="h-5 w-5" />, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { label: 'Serie łącznie', value: totalSets, sub: 'w całym tygodniu', icon: <RepeatIcon className="h-5 w-5" />, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+          { label: 'Cardio', value: `${totalCardioMin}`, sub: 'minut w tygodniu', icon: <HeartPulseIcon className="h-5 w-5" />, color: 'text-sky-600', bg: 'bg-sky-50' },
         ].map(s => (
           <div key={s.label} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-5">
-            <div className={`w-9 h-9 ${s.bg} rounded-xl flex items-center justify-center text-lg mb-2.5`}>{s.emoji}</div>
+            <div className={`w-9 h-9 ${s.bg} rounded-xl flex items-center justify-center mb-2.5`}>{s.icon}</div>
             <p className={`text-2xl sm:text-3xl font-bold ${s.color}`}>{s.value}</p>
             <p className="text-xs sm:text-sm font-semibold text-slate-700 mt-1">{s.label}</p>
             <p className="text-xs text-slate-400 mt-0.5 hidden sm:block">{s.sub}</p>
@@ -104,7 +123,7 @@ export default function Stats({ days }: StatsProps) {
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-5">
           <h2 className="text-base font-bold text-slate-800 mb-4">Poziom obciążenia</h2>
           <div className="flex items-center gap-4">
-            <div className="text-5xl">{workload.emoji}</div>
+            <div className="text-slate-400">{workload.icon}</div>
             <div>
               <p className={`text-2xl font-bold ${workload.color}`}>{workload.label}</p>
               <p className="text-sm text-slate-500 mt-1">Wynik: {workloadScore} pkt</p>
@@ -156,11 +175,13 @@ export default function Stats({ days }: StatsProps) {
             </div>
           </div>
           <p className="text-xs text-slate-400 mt-4">
-            {trainingDays.length >= 5
-              ? '⚠️ Rozważ więcej dni odpoczynku dla lepszej regeneracji.'
-              : trainingDays.length === 0
-              ? '📅 Dodaj treningi do swojego planu.'
-              : '✅ Dobry balans treningów i odpoczynku!'}
+            {trainingDays.length >= 5 ? (
+              <span className="inline-flex items-center gap-1.5"><WarningIcon className="h-3.5 w-3.5 flex-shrink-0" />Rozważ więcej dni odpoczynku dla lepszej regeneracji.</span>
+            ) : trainingDays.length === 0 ? (
+              <span className="inline-flex items-center gap-1.5"><CalendarIcon className="h-3.5 w-3.5 flex-shrink-0" />Dodaj treningi do swojego planu.</span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5"><CheckIcon className="h-3.5 w-3.5 flex-shrink-0" />Dobry balans treningów i odpoczynku!</span>
+            )}
           </p>
         </div>
       </div>
@@ -197,17 +218,17 @@ export default function Stats({ days }: StatsProps) {
           <h2 className="text-base font-bold text-slate-800 mb-4">Poziom trudności ćwiczeń</h2>
           <div className="flex flex-col gap-3">
             {[
-              { label: 'Początkujący', emoji: '🌱', bar: 'bg-emerald-400', bg: 'bg-emerald-50', text: 'text-emerald-700' },
-              { label: 'Średniozaawansowany', emoji: '⚙️', bar: 'bg-amber-400', bg: 'bg-amber-50', text: 'text-amber-700' },
-              { label: 'Zaawansowany', emoji: '🚀', bar: 'bg-red-400', bg: 'bg-red-50', text: 'text-red-700' },
-            ].map(({ label, emoji, bar, bg, text }) => {
+              { label: 'Początkujący', icon: <SproutIcon className="h-4 w-4" />, bar: 'bg-emerald-400', bg: 'bg-emerald-50', text: 'text-emerald-700' },
+              { label: 'Średniozaawansowany', icon: <SlidersIcon className="h-4 w-4" />, bar: 'bg-amber-400', bg: 'bg-amber-50', text: 'text-amber-700' },
+              { label: 'Zaawansowany', icon: <RocketIcon className="h-4 w-4" />, bar: 'bg-red-400', bg: 'bg-red-50', text: 'text-red-700' },
+            ].map(({ label, icon, bar, bg, text }) => {
               const cnt = difficultyCount[label] || 0;
               const pct = allExercises.length ? Math.round((cnt / allExercises.length) * 100) : 0;
               return (
                 <div key={label} className={`rounded-xl p-3 ${bg}`}>
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-base flex-shrink-0">{emoji}</span>
+                      <span className="flex-shrink-0">{icon}</span>
                       <span className={`text-sm font-semibold ${text} truncate`}>{label}</span>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0 ml-2">
@@ -215,7 +236,7 @@ export default function Stats({ days }: StatsProps) {
                       <span className="text-xs text-slate-400">({pct}%)</span>
                     </div>
                   </div>
-                  <div className="w-full bg-white rounded-full h-2">
+                  <div className="w-full bg-white/[0.07] rounded-full h-2">
                     <div
                       className={`${bar} h-2 rounded-full transition-all duration-500`}
                       style={{ width: `${pct}%` }}
@@ -230,7 +251,7 @@ export default function Stats({ days }: StatsProps) {
 
       {allExercises.length === 0 && (
         <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-10 text-center">
-          <div className="text-5xl mb-4">📊</div>
+          <div className="mb-4 flex h-16 w-16 mx-auto items-center justify-center rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/30 to-fuchsia-500/10 text-violet-200"><ChartIcon className="h-8 w-8" /></div>
           <h3 className="text-xl font-bold text-slate-700 mb-2">Brak danych</h3>
           <p className="text-slate-400">Dodaj ćwiczenia do swojego planu, aby zobaczyć statystyki.</p>
         </div>
@@ -239,7 +260,7 @@ export default function Stats({ days }: StatsProps) {
       {/* ── SEKCJA KONTA ── na dole ── */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="bg-gradient-to-r from-violet-500 to-indigo-600 px-4 py-3 sm:px-5">
-          <h2 className="text-white font-bold text-base">👤 Twoje konto</h2>
+          <h2 className="text-white font-bold text-base inline-flex items-center gap-2"><UserIcon className="h-4 w-4" />Twoje konto</h2>
         </div>
         <div className="p-4 sm:p-5">
           {isSupabaseConfigured && user ? (
@@ -302,7 +323,7 @@ export default function Stats({ days }: StatsProps) {
             </>
           ) : isSupabaseConfigured && !user ? (
             <div className="text-center py-4">
-              <div className="text-4xl mb-3">🔒</div>
+              <div className="mb-3 flex h-12 w-12 mx-auto items-center justify-center rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/30 to-fuchsia-500/10 text-violet-200"><LockIcon className="h-6 w-6" /></div>
               <p className="text-slate-600 font-semibold mb-1">Nie jesteś zalogowany</p>
               <p className="text-slate-400 text-sm">Zaloguj się, aby synchronizować dane między urządzeniami.</p>
             </div>
@@ -318,7 +339,7 @@ export default function Stats({ days }: StatsProps) {
                 <p className="text-sm text-slate-500 mt-0.5">Dane zapisywane lokalnie na urządzeniu.</p>
                 <div className="mt-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
                   <p className="text-xs text-amber-700 font-medium">
-                    📋 Skonfiguruj Supabase, aby korzystać z konta na wielu urządzeniach.
+                    <span className="inline-flex items-center gap-1.5"><ClipboardIcon className="h-3.5 w-3.5 flex-shrink-0" />Skonfiguruj Supabase, aby korzystać z konta na wielu urządzeniach.</span>
                     <br />
                     <span className="opacity-70">Zobacz instrukcję w pliku SUPABASE_SETUP.md</span>
                   </p>

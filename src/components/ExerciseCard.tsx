@@ -3,6 +3,7 @@ import { Exercise, SetLog } from '../types';
 import { muscleGroupBgColors } from '../data/exercises';
 import SetTracker from './SetTracker';
 import { formatWeightDisplay, requiresDumbbells } from '../lib/weightUtils';
+import { CheckIcon, CircleIcon, NoteIcon, TimerIcon } from './icons';
 
 interface ExerciseCardProps {
   exercise: Exercise;
@@ -105,14 +106,20 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
           {/* Status indicator */}
           <div className="flex-shrink-0 mt-0.5">
             {!isCardio && setLogs.length > 0 ? (
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold ${
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center ${
                 isFullyDone
                   ? 'bg-emerald-500 text-white'
                   : completedSets > 0
                   ? 'bg-amber-400 text-white'
                   : 'bg-slate-100 text-slate-400'
               }`}>
-                {isFullyDone ? '✓' : completedSets > 0 ? completedSets : '○'}
+                {isFullyDone ? (
+                  <CheckIcon className="h-3.5 w-3.5" strokeWidth={2.6} />
+                ) : completedSets > 0 ? (
+                  <span className="text-[11px] font-bold">{completedSets}</span>
+                ) : (
+                  <CircleIcon className="h-3.5 w-3.5" />
+                )}
               </div>
             ) : (
               <div className="text-slate-200 mt-1 cursor-grab active:cursor-grabbing">
@@ -184,8 +191,9 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
             {/* Stats badges */}
             <div className="flex flex-wrap gap-1 mt-2">
               {isCardio ? (
-                <span className="text-xs bg-sky-50 text-sky-700 px-2 py-0.5 rounded-full font-medium">
-                  ⏱ {exercise.duration} min
+                <span className="text-xs bg-sky-50 text-sky-700 px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1">
+                  <TimerIcon className="h-3 w-3" />
+                  {exercise.duration} min
                 </span>
               ) : (
                 <>
@@ -205,14 +213,21 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
                     </span>
                   )}
                   {setLogs.length > 0 && (
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 ${
                       isFullyDone
                         ? 'bg-emerald-50 text-emerald-700'
                         : completedSets > 0
                         ? 'bg-amber-50 text-amber-700'
                         : 'bg-slate-50 text-slate-500'
                     }`}>
-                      {isFullyDone ? '✓ Ukończone' : `${completedSets}/${totalSets} serii`}
+                      {isFullyDone ? (
+                        <>
+                          <CheckIcon className="h-3 w-3" />
+                          Ukończone
+                        </>
+                      ) : (
+                        `${completedSets}/${totalSets} serii`
+                      )}
                     </span>
                   )}
                 </>
@@ -220,7 +235,10 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
             </div>
 
             {exercise.notes && !editing && (
-              <p className="text-sm text-slate-500 mt-2 italic leading-snug">📝 {exercise.notes}</p>
+              <p className="flex items-start gap-1.5 text-sm text-slate-500 mt-2 italic leading-snug">
+                <NoteIcon className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                <span>{exercise.notes}</span>
+              </p>
             )}
           </div>
         </div>

@@ -2,6 +2,7 @@ import React from 'react';
 import { View } from '../types';
 import UserMenu from './auth/UserMenu';
 import { useAuthStore } from '../store/authStore';
+import logoUrl from '../assets/fitplanner-logo.png';
 
 interface SidebarProps {
   activeView: View;
@@ -105,60 +106,67 @@ export default function Sidebar({ activeView, onViewChange, pendingCount = 0 }: 
     <>
       {/* ── Desktop Sidebar ── */}
       <aside
-        className="hidden md:flex flex-col w-64 bg-white border-r border-slate-100 shadow-sm fixed left-0 top-0 z-20"
+        className="hidden md:flex flex-col w-64 bg-[#12082a]/85 backdrop-blur-xl border-r border-violet-400/15 fixed left-0 top-0 z-20"
         style={{ height: '100dvh' }}
       >
         {/* Logo */}
-        <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100 flex-shrink-0">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200 flex-shrink-0">
-            <span className="text-2xl">🏋️</span>
-          </div>
-          <div>
-            <p className="font-bold text-slate-800 text-base leading-tight">FitPlaner</p>
-            <p className="text-xs text-slate-400">Twój planer treningów</p>
+        <div className="flex items-center gap-3 px-5 py-5 border-b border-violet-400/10 flex-shrink-0">
+          <img
+            src={logoUrl}
+            alt=""
+            aria-hidden="true"
+            className="h-9 w-auto flex-shrink-0 drop-shadow-[0_0_16px_rgba(139,92,246,0.5)]"
+          />
+          <div className="min-w-0">
+            <p className="font-extrabold text-white text-base leading-tight tracking-tight">FitPlanner</p>
+            <p className="text-[11px] text-slate-400 leading-tight">Twój osobisty trener w kieszeni</p>
           </div>
         </div>
 
         {/* Nav */}
         <nav className="flex flex-col gap-1 px-3 py-4 flex-1 overflow-y-auto">
-          {navItems.map(item => (
-            <button
-              key={item.id}
-              onClick={() => onViewChange(item.id)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
-                activeView === item.id
-                  ? 'bg-gradient-to-r from-violet-500 to-indigo-600 text-white shadow-md shadow-indigo-200'
-                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
-              }`}
-            >
-              <span className="relative flex-shrink-0">
-                {item.icon}
-                {item.id === 'shares' && pendingCount > 0 && (
-                  <span className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] px-1 rounded-full bg-violet-500 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white">
-                    {pendingCount > 9 ? '9+' : pendingCount}
-                  </span>
-                )}
-              </span>
-              <span className="flex-1 text-left">{item.label}</span>
-            </button>
-          ))}
+          {navItems.map(item => {
+            const isActive = activeView === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => onViewChange(item.id)}
+                aria-current={isActive ? 'page' : undefined}
+                className={`group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
+                  isActive
+                    ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-[0_10px_28px_-12px_rgba(139,92,246,1)]'
+                    : 'text-slate-400 hover:bg-white/[0.06] hover:text-white'
+                }`}
+              >
+                <span className="relative flex-shrink-0">
+                  {item.icon}
+                  {item.id === 'shares' && pendingCount > 0 && (
+                    <span className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] px-1 rounded-full bg-fuchsia-500 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-[#12082a]">
+                      {pendingCount > 9 ? '9+' : pendingCount}
+                    </span>
+                  )}
+                </span>
+                <span className="flex-1 text-left">{item.label}</span>
+              </button>
+            );
+          })}
         </nav>
 
         {/* User / Footer */}
-        <div className="px-3 py-4 border-t border-slate-100 flex-shrink-0">
+        <div className="px-3 py-4 border-t border-violet-400/10 flex-shrink-0">
           {isConfigured && isAuthenticated ? (
             <UserMenu />
           ) : (
-            <p className="text-xs text-slate-400 text-center">© 2026 FitPlaner</p>
+            <p className="text-xs text-slate-500 text-center">© 2026 FitPlanner</p>
           )}
         </div>
       </aside>
 
       {/* ── Mobile Bottom Nav ── */}
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-slate-100"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-[#12082a]/95 backdrop-blur-xl border-t border-violet-400/15"
         style={{
-          boxShadow: '0 -2px 20px rgba(0,0,0,0.07)',
+          boxShadow: '0 -8px 30px rgba(0,0,0,0.45)',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
       >
@@ -171,25 +179,26 @@ export default function Sidebar({ activeView, onViewChange, pendingCount = 0 }: 
                 onClick={() => onViewChange(item.id)}
                 className="bottom-nav-btn"
                 aria-label={item.label}
+                aria-current={isActive ? 'page' : undefined}
               >
                 {/* Icon */}
                 <span className={`relative transition-all duration-200 ${
-                  isActive ? 'text-violet-600 scale-110' : 'text-slate-400'
+                  isActive ? 'text-violet-300 scale-110' : 'text-slate-500'
                 }`}>
                   {item.icon}
                   {item.id === 'shares' && pendingCount > 0 && (
-                    <span className="absolute -top-0.5 -right-1 w-2 h-2 rounded-full bg-violet-500 ring-2 ring-white" />
+                    <span className="absolute -top-0.5 -right-1 w-2 h-2 rounded-full bg-fuchsia-500 ring-2 ring-[#12082a]" />
                   )}
                 </span>
                 {/* Label */}
                 <span className={`text-[10px] font-semibold leading-none transition-all duration-200 ${
-                  isActive ? 'text-violet-600' : 'text-slate-400'
+                  isActive ? 'text-violet-300' : 'text-slate-500'
                 }`}>
                   {item.shortLabel}
                 </span>
                 {/* Active dot */}
                 {isActive && (
-                  <span className="absolute top-1 w-1 h-1 rounded-full bg-violet-500" />
+                  <span className="absolute top-1 w-1 h-1 rounded-full bg-violet-400" />
                 )}
               </button>
             );

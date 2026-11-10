@@ -163,7 +163,7 @@ export default function AcceptShareModal({ share, onAccept, onDecline, onClose }
             </h3>
             <p className="text-slate-500 text-sm mt-2">{formatDatePL(acceptedTo)}</p>
             <p className="text-slate-400 text-xs mt-3 leading-relaxed">
-              Trening jest już w Twoim planie — stan serii (✓) zaczyna od zera, wagi i powtórzenia zostały zachowane jako referencja.
+              Trening jest już w Twoim planie — stan serii (zaznaczone serie) zaczyna od zera, wagi i powtórzenia zostały zachowane jako referencja.
             </p>
 
             <button

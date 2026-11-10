@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { WorkoutTemplate, Exercise } from '../types';
 import { TEMPLATE_COLORS, TEMPLATE_CATEGORIES } from '../types';
 import { muscleGroupColors } from '../data/exercises';
+import { CheckIcon, ClipboardIcon, DumbbellIcon, MuscleIcon, RepeatIcon, TimerIcon } from './icons';
 
 interface CreateTemplateModalProps {
   onSave: (template: Omit<WorkoutTemplate, 'id' | 'createdAt' | 'updatedAt'>) => void;
@@ -9,12 +10,6 @@ interface CreateTemplateModalProps {
   editTemplate?: WorkoutTemplate | null;
   availableExercises: Exercise[];
 }
-
-const muscleGroupEmoji: Record<string, string> = {
-  'Klatka piersiowa': '💪', 'Plecy': '🔙', 'Nogi': '🦵', 'Barki': '🏋️',
-  'Biceps': '💪', 'Triceps': '💪', 'Brzuch': '🎯', 'Cardio': '🏃',
-  'Ramiona': '💪', 'Całe ciało': '🌟',
-};
 
 function InputField({
   label, value, onChange, placeholder, type = 'text', required, error,
@@ -51,7 +46,7 @@ function ExerciseChip({
     <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 space-y-3">
       {/* Top row: Emoji + Name (full width) */}
       <div className="flex items-center gap-2 pr-14 relative">
-        <span className="text-2xl flex-shrink-0">{muscleGroupEmoji[exercise.muscleGroup]}</span>
+        <MuscleIcon group={exercise.muscleGroup} className="h-6 w-6 flex-shrink-0 text-slate-400" />
         <p className="text-base font-bold text-slate-800 truncate">{exercise.name}</p>
 
         {/* Actions - absolute positioned top-right, stacked vertically */}
@@ -95,11 +90,11 @@ function ExerciseChip({
         </span>
         {!isCardio ? (
           <span className="flex items-center gap-2">
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 whitespace-nowrap">🔁 {exercise.sets}</span>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 whitespace-nowrap">💪 {exercise.reps}</span>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 whitespace-nowrap inline-flex items-center gap-1"><RepeatIcon className="h-3 w-3" />{exercise.sets}</span>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 whitespace-nowrap inline-flex items-center gap-1"><DumbbellIcon className="h-3 w-3" />{exercise.reps}</span>
           </span>
         ) : (
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-sky-100 text-sky-700 whitespace-nowrap">⏱ {exercise.duration} min</span>
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-sky-100 text-sky-700 whitespace-nowrap inline-flex items-center gap-1"><TimerIcon className="h-3 w-3" />{exercise.duration} min</span>
         )}
       </div>
     </div>
@@ -255,7 +250,7 @@ export default function CreateTemplateModal({
 
             {form.exercises.length === 0 ? (
               <div className="bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 p-8 text-center">
-                <div className="text-4xl mb-2">📋</div>
+                <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/30 to-fuchsia-500/10 text-violet-200"><ClipboardIcon className="h-7 w-7" /></div>
                 <p className="text-slate-500 font-medium">Brak ćwiczeń w szablonie</p>
                 <p className="text-slate-400 text-sm mt-1">Kliknij „Dodaj” aby wybrać ćwiczenia z biblioteki</p>
               </div>
@@ -339,7 +334,7 @@ export default function CreateTemplateModal({
           <div className="max-h-64 overflow-y-auto space-y-2">
             {filteredExercises.map(ex => (
               <button key={ex.id} onClick={() => handleAddExercise(ex)} className="w-full text-left bg-white rounded-xl border border-slate-100 p-3 hover:border-slate-200 hover:shadow-md transition-all cursor-pointer flex items-center gap-3">
-                <span className="text-xl">{muscleGroupEmoji[ex.muscleGroup]}</span>
+                <MuscleIcon group={ex.muscleGroup} className="h-5 w-5 text-slate-400" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-slate-800 truncate">{ex.name}</p>
                   <p className="text-xs text-slate-400 flex items-center gap-1">{ex.muscleGroup} · {ex.difficulty}</p>
@@ -406,7 +401,7 @@ export default function CreateTemplateModal({
         <div className="px-6 py-4 border-t border-slate-100 flex gap-3">
           <button onClick={onClose} className="flex-1 py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all cursor-pointer">Anuluj</button>
           <button onClick={handleSave} className={`flex-1 py-3 rounded-xl font-semibold text-sm transition-all ${gradientClass} text-white shadow-md hover:shadow-lg hover:scale-[1.01] cursor-pointer`}>
-            {isEdit ? '✓ Zapisz zmiany' : '✓ Utwórz szablon'}
+            <span className="inline-flex items-center gap-1.5"><CheckIcon className="h-4 w-4" />{isEdit ? 'Zapisz zmiany' : 'Utwórz szablon'}</span>
           </button>
         </div>
       </div>

@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Exercise } from '../types';
 import { exerciseLibrary, muscleGroupBgColors } from '../data/exercises';
 import { requiresDumbbells } from '../lib/weightUtils';
+import { ArrowLeftIcon, SparklesIcon } from './icons';
 
 interface ReplaceExerciseModalProps {
   currentExercise: Exercise;
@@ -223,7 +224,7 @@ export default function ReplaceExerciseModal({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-sm font-semibold text-slate-800 leading-tight">{ex.name}</span>
-                    {isCustom && <span className="text-[10px] bg-violet-100 text-violet-600 px-1.5 py-0.5 rounded-full font-semibold">✨</span>}
+                    {isCustom && <span className="text-[10px] bg-violet-100 text-violet-600 px-1.5 py-0.5 rounded-full font-semibold inline-flex items-center"><SparklesIcon className="h-3 w-3" /></span>}
                   </div>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <span className="text-xs text-slate-500">{ex.muscleGroup}</span>
@@ -294,7 +295,7 @@ export default function ReplaceExerciseModal({
             <div className="w-1/2 flex flex-col overflow-hidden">
               {selectedExercise ? configPanelJsx : (
                 <div className="flex flex-col items-center justify-center h-full text-center p-8">
-                  <div className="text-4xl mb-3">👈</div>
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/30 to-fuchsia-500/10 text-violet-200"><ArrowLeftIcon className="h-6 w-6" /></div>
                   <p className="text-slate-400 text-sm">Wybierz ćwiczenie z listy, aby skonfigurować szczegóły</p>
                 </div>
               )}

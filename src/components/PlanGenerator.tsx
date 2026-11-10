@@ -4,6 +4,7 @@ import { generatePlan } from '../data/generatorEngine';
 import GeneratorStep1 from './generator/GeneratorStep1';
 import GeneratorStep2 from './generator/GeneratorStep2';
 import GeneratorStep3 from './generator/GeneratorStep3';
+import { CalendarIcon, ClipboardIcon, LightbulbIcon, SlidersIcon, SparklesIcon, TargetIcon, TimerIcon } from './icons';
 
 interface Props {
   onApplyPlan: (days: WorkoutDay[]) => void;
@@ -25,9 +26,9 @@ const defaultPrefs: GeneratorPreferences = {
 };
 
 const steps = [
-  { id: 1, label: 'Podstawy', icon: '🎯', desc: 'Cel i poziom' },
-  { id: 2, label: 'Styl', icon: '⚙️', desc: 'Plan i preferencje' },
-  { id: 3, label: 'Wynik', icon: '📋', desc: 'Podgląd planu' },
+  { id: 1, label: 'Podstawy', icon: <TargetIcon className="h-4 w-4" />, desc: 'Cel i poziom' },
+  { id: 2, label: 'Styl', icon: <SlidersIcon className="h-4 w-4" />, desc: 'Plan i preferencje' },
+  { id: 3, label: 'Wynik', icon: <ClipboardIcon className="h-4 w-4" />, desc: 'Podgląd planu' },
 ];
 
 export default function PlanGenerator({ onApplyPlan, onGoToPlanner }: Props) {
@@ -129,7 +130,7 @@ export default function PlanGenerator({ onApplyPlan, onGoToPlanner }: Props) {
           </svg>
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Plan zastosowany! 🎉</h2>
+          <h2 className="text-2xl font-bold text-slate-800 inline-flex items-center gap-2">Plan zastosowany! <SparklesIcon className="h-6 w-6 text-violet-500" /></h2>
           <p className="text-slate-500 mt-2 max-w-sm">
             Twój nowy plan treningowy został załadowany do Planera. Możesz go teraz dostosować do swoich potrzeb.
           </p>
@@ -220,8 +221,8 @@ export default function PlanGenerator({ onApplyPlan, onGoToPlanner }: Props) {
           {step !== 3 && (
             <div className="mb-6">
               <h2 className="text-xl font-bold text-slate-800">
-                {step === 1 && '🎯 Krok 1: Określ swój cel'}
-                {step === 2 && '⚙️ Krok 2: Styl treningowy'}
+                {step === 1 && 'Krok 1: Określ swój cel'}
+                {step === 2 && 'Krok 2: Styl treningowy'}
               </h2>
               <p className="text-sm text-slate-500 mt-1">
                 {step === 1 && 'Powiedz nam o sobie — dobierzemy optymalny plan treningowy'}
@@ -235,7 +236,7 @@ export default function PlanGenerator({ onApplyPlan, onGoToPlanner }: Props) {
             <div className="flex flex-col items-center justify-center py-24 gap-6">
               <div className="relative">
                 <div className="w-20 h-20 rounded-full border-4 border-violet-100 border-t-violet-500 animate-spin" />
-                <div className="absolute inset-0 flex items-center justify-center text-2xl">🧠</div>
+                <div className="absolute inset-0 flex items-center justify-center"><SparklesIcon className="h-8 w-8 text-violet-400 animate-pulse" /></div>
               </div>
               <div className="text-center">
                 <h3 className="text-lg font-bold text-slate-800">Generuję plan...</h3>
@@ -288,9 +289,9 @@ export default function PlanGenerator({ onApplyPlan, onGoToPlanner }: Props) {
 
             {/* Preview chip */}
             <div className="hidden sm:flex items-center gap-4 text-xs text-slate-400">
-              <span>🎯 {prefs.goal === 'muscle_gain' ? 'Masa' : prefs.goal === 'fat_loss' ? 'Redukcja' : prefs.goal === 'strength' ? 'Siła' : prefs.goal === 'endurance' ? 'Wytrzymałość' : 'Sprawność'}</span>
-              <span>📅 {prefs.daysPerWeek} dni/tydz.</span>
-              <span>⏱ {prefs.sessionDuration} min</span>
+              <span className="inline-flex items-center gap-1"><TargetIcon className="h-3.5 w-3.5" />{prefs.goal === 'muscle_gain' ? 'Masa' : prefs.goal === 'fat_loss' ? 'Redukcja' : prefs.goal === 'strength' ? 'Siła' : prefs.goal === 'endurance' ? 'Wytrzymałość' : 'Sprawność'}</span>
+              <span className="inline-flex items-center gap-1"><CalendarIcon className="h-3.5 w-3.5" />{prefs.daysPerWeek} dni/tydz.</span>
+              <span className="inline-flex items-center gap-1"><TimerIcon className="h-3.5 w-3.5" />{prefs.sessionDuration} min</span>
             </div>
 
             <button
@@ -321,8 +322,8 @@ export default function PlanGenerator({ onApplyPlan, onGoToPlanner }: Props) {
       {step < 3 && !isGenerating && (
         <div className="mt-6 bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-100 rounded-2xl p-4">
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center text-sm flex-shrink-0">
-              💡
+            <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center flex-shrink-0">
+              <LightbulbIcon className="h-4 w-4 text-violet-600" />
             </div>
             <div>
               <p className="text-sm font-semibold text-violet-800">

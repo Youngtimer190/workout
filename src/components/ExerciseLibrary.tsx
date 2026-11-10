@@ -2,6 +2,17 @@ import { useState, useMemo } from 'react';
 import { exerciseLibrary, muscleGroupColors } from '../data/exercises';
 import { Exercise } from '../types';
 import CreateExerciseModal from './CreateExerciseModal';
+import {
+  BookIcon,
+  ClipboardIcon,
+  DifficultyDot,
+  DumbbellIcon,
+  PauseIcon,
+  RepeatIcon,
+  SearchIcon,
+  SparklesIcon,
+  TimerIcon,
+} from './icons';
 
 interface ExerciseLibraryProps {
   customExercises: Exercise[];
@@ -13,9 +24,16 @@ interface ExerciseLibraryProps {
 const ALL = 'Wszystkie';
 
 const difficultyLabel: Record<string, string> = {
-  'Początkujący': '🟢 Początkujący',
-  'Średniozaawansowany': '🟡 Średni',
-  'Zaawansowany': '🔴 Zaawansowany',
+  'Początkujący': 'Początkujący',
+  'Średniozaawansowany': 'Średni',
+  'Zaawansowany': 'Zaawansowany',
+};
+
+/** Poziom trudności → kolorowy punkt (zamiast emoji). */
+const difficultyLevel: Record<string, 1 | 2 | 3> = {
+  'Początkujący': 1,
+  'Średniozaawansowany': 2,
+  'Zaawansowany': 3,
 };
 
 const difficultyBg: Record<string, string> = {
@@ -24,10 +42,10 @@ const difficultyBg: Record<string, string> = {
   'Zaawansowany': 'bg-red-100 text-red-700',
 };
 
-function StatBox({ label, value, icon }: { label: string; value: string; icon: string }) {
+function StatBox({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
   return (
     <div className="bg-slate-50 rounded-xl p-3 text-center">
-      <div className="text-xl mb-1">{icon}</div>
+      <div className="mb-1 flex justify-center text-slate-400">{icon}</div>
       <p className="text-base font-bold text-slate-800">{value}</p>
       <p className="text-xs text-slate-400">{label}</p>
     </div>
@@ -79,8 +97,9 @@ function ExerciseDetailModal({
                   {exercise.difficulty}
                 </span>
                 {isCustom && (
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white text-violet-700">
-                    ✨ Własne
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white text-violet-700 inline-flex items-center gap-1">
+                    <SparklesIcon className="h-3 w-3" />
+                    Własne
                   </span>
                 )}
               </div>
@@ -96,13 +115,13 @@ function ExerciseDetailModal({
 
           {exercise.muscleGroup === 'Cardio' ? (
             <div className="grid grid-cols-2 gap-3">
-              <StatBox label="Czas" value={`${exercise.duration} min`} icon="⏱" />
+              <StatBox label="Czas" value={`${exercise.duration} min`} icon={<TimerIcon className="h-5 w-5" />} />
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-3">
-              <StatBox label="Serie" value={String(exercise.sets)} icon="🔁" />
-              <StatBox label="Powtórzenia" value={exercise.reps || '—'} icon="💪" />
-              <StatBox label="Przerwa" value={`${exercise.restTime}s`} icon="⏸" />
+              <StatBox label="Serie" value={String(exercise.sets)} icon={<RepeatIcon className="h-5 w-5" />} />
+              <StatBox label="Powtórzenia" value={exercise.reps || '—'} icon={<DumbbellIcon className="h-5 w-5" />} />
+              <StatBox label="Przerwa" value={`${exercise.restTime}s`} icon={<PauseIcon className="h-5 w-5" />} />
             </div>
           )}
 
@@ -260,7 +279,7 @@ export default function ExerciseLibrary({
                 : 'text-slate-500 hover:text-slate-700'
             }`}
           >
-            📚 Wszystkie ({allExercises.length})
+            <span className="inline-flex items-center gap-1.5"><BookIcon className="h-4 w-4" />Wszystkie ({allExercises.length})</span>
           </button>
           <button
             onClick={() => setActiveTab('custom')}
@@ -270,14 +289,14 @@ export default function ExerciseLibrary({
                 : 'text-slate-500 hover:text-slate-700'
             }`}
           >
-            ✨ Własne ({customExercises.length})
+            <span className="inline-flex items-center gap-1.5"><SparklesIcon className="h-4 w-4" />Własne ({customExercises.length})</span>
           </button>
         </div>
 
         {/* Custom exercises empty state */}
         {activeTab === 'custom' && customExercises.length === 0 && (
           <div className="bg-white rounded-2xl border border-dashed border-violet-200 p-12 text-center">
-            <div className="text-5xl mb-4">💪</div>
+            <div className="mb-4 flex h-16 w-16 mx-auto items-center justify-center rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/30 to-fuchsia-500/10 text-violet-200"><DumbbellIcon className="h-8 w-8" /></div>
             <h3 className="text-lg font-bold text-slate-700 mb-2">Brak własnych ćwiczeń</h3>
             <p className="text-slate-400 text-sm mb-6 max-w-xs mx-auto">
               Stwórz własne ćwiczenie dostosowane do Twoich potrzeb i preferencji treningowych.
@@ -347,7 +366,14 @@ export default function ExerciseLibrary({
                       : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                   }`}
                 >
-                  {d === ALL ? '📋 Wszystkie poziomy' : difficultyLabel[d]}
+                  {d === ALL ? (
+                    <span className="inline-flex items-center gap-1.5"><ClipboardIcon className="h-3.5 w-3.5" />Wszystkie poziomy</span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5">
+                      <DifficultyDot level={difficultyLevel[d]} />
+                      {difficultyLabel[d]}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -357,7 +383,7 @@ export default function ExerciseLibrary({
         {/* Results */}
         {filtered.length === 0 && !(activeTab === 'custom' && customExercises.length === 0) ? (
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-10 text-center">
-            <div className="text-4xl mb-3">🔍</div>
+            <div className="mb-3 flex h-12 w-12 mx-auto items-center justify-center rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/30 to-fuchsia-500/10 text-violet-200"><SearchIcon className="h-6 w-6" /></div>
             <p className="text-slate-500 font-medium">Brak wyników</p>
             <p className="text-slate-400 text-sm mt-1">Spróbuj innych kryteriów wyszukiwania</p>
           </div>
@@ -380,8 +406,9 @@ export default function ExerciseLibrary({
                         className="text-left bg-white rounded-xl border border-slate-100 p-4 hover:border-slate-200 hover:shadow-md transition-all group cursor-pointer relative"
                       >
                         {custom && (
-                          <span className="absolute top-3 right-3 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-600">
-                            ✨ Własne
+                          <span className="absolute top-3 right-3 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-600 inline-flex items-center gap-1">
+                            <SparklesIcon className="h-3 w-3" />
+                            Własne
                           </span>
                         )}
                         <div className="flex items-start justify-between gap-2">

@@ -201,7 +201,7 @@ export default function MoveDayModal({ sourceDay, onMove, onClose }: MoveDayModa
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 flex-shrink-0">
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
-                    Inny tydzień — progres serii (✓ i ciężary) zostanie zachowany
+                    Inny tydzień — progres serii (zaznaczone serie) i ciężary zostaną zachowane
                   </p>
                 ) : isSameDay ? (
                   <p className="text-[11px] text-amber-600 mt-1 flex items-center gap-1">

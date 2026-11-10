@@ -1,6 +1,25 @@
 import { useState } from 'react';
 import { Exercise, MuscleGroup, Difficulty, EquipmentItem } from '../types';
 import { muscleGroupColors } from '../data/exercises';
+import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  BellIcon,
+  CheckIcon,
+  CircleIcon,
+  DifficultyDot,
+  DumbbellIcon,
+  LayersIcon,
+  MuscleIcon,
+  PauseIcon,
+  PencilIcon,
+  RepeatIcon,
+  RotateIcon,
+  SlidersIcon,
+  SparklesIcon,
+  TimerIcon,
+  WarningIcon,
+} from './icons';
 
 interface CreateExerciseModalProps {
   onSave: (exercise: Exercise) => void;
@@ -15,32 +34,19 @@ const MUSCLE_GROUPS: MuscleGroup[] = [
 
 const DIFFICULTIES: Difficulty[] = ['Początkujący', 'Średniozaawansowany', 'Zaawansowany'];
 
-const muscleGroupEmoji: Record<string, string> = {
-  'Klatka piersiowa': '💪',
-  'Plecy': '🔙',
-  'Nogi': '🦵',
-  'Barki': '🏋️',
-  'Biceps': '💪',
-  'Triceps': '💪',
-  'Brzuch': '🎯',
-  'Cardio': '🏃',
-  'Ramiona': '💪',
-  'Całe ciało': '🌟',
-};
-
 const difficultyBg: Record<Difficulty, string> = {
   'Początkujący': 'bg-emerald-100 text-emerald-700 border-emerald-200',
   'Średniozaawansowany': 'bg-amber-100 text-amber-700 border-amber-200',
   'Zaawansowany': 'bg-red-100 text-red-700 border-red-200',
 };
 
-const EQUIPMENT_OPTIONS: { id: EquipmentItem; label: string; emoji: string }[] = [
-  { id: 'dumbbells', label: 'Hantle', emoji: '🏃' },
-  { id: 'barbell', label: 'Sztanga', emoji: '🏋️' },
-  { id: 'kettlebell', label: 'Kettlebell', emoji: '🔔' },
-  { id: 'bench', label: 'Ławka', emoji: '🛋️' },
-  { id: 'cable_machine', label: 'Wyciąg', emoji: '⚙️' },
-  { id: 'resistance_bands', label: 'Gumy', emoji: '🟡' },
+const EQUIPMENT_OPTIONS: { id: EquipmentItem; label: string; icon: React.ReactNode }[] = [
+  { id: 'dumbbells', label: 'Hantle', icon: <DumbbellIcon className="h-4 w-4" /> },
+  { id: 'barbell', label: 'Sztanga', icon: <DumbbellIcon className="h-4 w-4" /> },
+  { id: 'kettlebell', label: 'Kettlebell', icon: <BellIcon className="h-4 w-4" /> },
+  { id: 'bench', label: 'Ławka', icon: <LayersIcon className="h-4 w-4" /> },
+  { id: 'cable_machine', label: 'Wyciąg', icon: <SlidersIcon className="h-4 w-4" /> },
+  { id: 'resistance_bands', label: 'Gumy', icon: <CircleIcon className="h-4 w-4" /> },
 ];
 
 interface FormState {
@@ -187,7 +193,7 @@ export default function CreateExerciseModal({ onSave, onClose, editExercise }: C
                 {form.name || (isEdit ? editExercise.name : 'Nowe ćwiczenie')}
               </h2>
               <div className="flex items-center gap-2 mt-2">
-                <span className="text-white/80 text-sm">{muscleGroupEmoji[form.muscleGroup]} {form.muscleGroup}</span>
+                <span className="text-white/80 text-sm inline-flex items-center gap-1.5"><MuscleIcon group={form.muscleGroup} className="h-4 w-4" />{form.muscleGroup}</span>
                 <span className="text-white/40">·</span>
                 <span className="text-white/80 text-sm">{form.difficulty}</span>
               </div>
@@ -211,7 +217,7 @@ export default function CreateExerciseModal({ onSave, onClose, editExercise }: C
                   className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all cursor-pointer
                     ${step === s ? 'bg-white text-violet-700' : step > s ? 'bg-white/40 text-white' : 'bg-white/20 text-white/60'}`}
                 >
-                  {step > s ? '✓' : s}
+                  {step > s ? <CheckIcon className="h-3.5 w-3.5" strokeWidth={3} /> : s}
                 </button>
                 <span className={`text-xs font-medium ${step >= s ? 'text-white' : 'text-white/50'}`}>
                   {s === 1 ? 'Podstawowe' : 'Parametry'}
@@ -270,7 +276,7 @@ export default function CreateExerciseModal({ onSave, onClose, editExercise }: C
                           : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-white'
                         }`}
                     >
-                      <span className="text-base">{muscleGroupEmoji[g]}</span>
+                      <MuscleIcon group={g} className="h-4 w-4" />
                       <span className="text-xs leading-tight">{g}</span>
                       {form.muscleGroup === g && (
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 text-violet-500 ml-auto">
@@ -299,7 +305,10 @@ export default function CreateExerciseModal({ onSave, onClose, editExercise }: C
                           : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'
                         }`}
                     >
-                      {d === 'Początkujący' ? '🟢 Początkujący' : d === 'Średniozaawansowany' ? '🟡 Średni' : '🔴 Zaawansowany'}
+                      <span className="inline-flex items-center gap-1.5">
+                        <DifficultyDot level={d === 'Początkujący' ? 1 : d === 'Średniozaawansowany' ? 2 : 3} />
+                        {d === 'Początkujący' ? 'Początkujący' : d === 'Średniozaawansowany' ? 'Średni' : 'Zaawansowany'}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -308,8 +317,8 @@ export default function CreateExerciseModal({ onSave, onClose, editExercise }: C
           ) : (
             <>
               <div className="bg-violet-50 rounded-xl p-3 flex items-center gap-3 border border-violet-100">
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradientClass} flex items-center justify-center text-lg flex-shrink-0`}>
-                  {muscleGroupEmoji[form.muscleGroup]}
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradientClass} flex items-center justify-center flex-shrink-0`}>
+                  <MuscleIcon group={form.muscleGroup} className="h-5 w-5 text-white" />
                 </div>
                 <div>
                   <p className="text-sm font-bold text-slate-800">{form.name}</p>
@@ -381,7 +390,7 @@ export default function CreateExerciseModal({ onSave, onClose, editExercise }: C
                             : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 hover:bg-white'
                         }`}
                       >
-                        <span>{opt.emoji}</span>
+                        <span className="flex-shrink-0">{opt.icon}</span>
                         {opt.label}
                       </button>
                     );
@@ -389,7 +398,7 @@ export default function CreateExerciseModal({ onSave, onClose, editExercise }: C
                 </div>
                 {form.requiredEquipment.includes('dumbbells') && (
                   <p className="text-[10px] text-amber-600 mt-1.5 font-medium">
-                    ⚠️ Ćwiczenie z hantlami — ciężar będzie automatycznie podwajany w podsumowaniu (2 x).
+                    <span className="inline-flex items-start gap-1.5"><WarningIcon className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />Ćwiczenie z hantlami — ciężar będzie automatycznie podwajany w podsumowaniu (2 x).</span>
                   </p>
                 )}
 
@@ -424,19 +433,20 @@ export default function CreateExerciseModal({ onSave, onClose, editExercise }: C
                     {form.difficulty}
                   </span>
                   {isCardio
-                    ? <span className="text-[10px] text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full">⏱ {form.duration} min</span>
+                    ? <span className="text-[10px] text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full inline-flex items-center gap-1"><TimerIcon className="h-3 w-3" />{form.duration} min</span>
                     : <>
-                        <span className="text-[10px] text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full">🔁 {form.sets} serie</span>
-                        <span className="text-[10px] text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full">💪 {form.reps} powt.</span>
-                        {form.restTime && <span className="text-[10px] text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full">⏸ {form.restTime}s</span>}
+                        <span className="text-[10px] text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full inline-flex items-center gap-1"><RepeatIcon className="h-3 w-3" />{form.sets} serie</span>
+                        <span className="text-[10px] text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full inline-flex items-center gap-1"><DumbbellIcon className="h-3 w-3" />{form.reps} powt.</span>
+                        {form.restTime && <span className="text-[10px] text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full inline-flex items-center gap-1"><PauseIcon className="h-3 w-3" />{form.restTime}s</span>}
                         {form.isUnilateral && (
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 border border-violet-200">
-                            🔄 Jednostronne
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 border border-violet-200 inline-flex items-center gap-1">
+                            <RotateIcon className="h-3 w-3" />
+                            Jednostronne
                           </span>
                         )}
                       </>
                   }
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700">✨ Własne</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 inline-flex items-center gap-1"><SparklesIcon className="h-3 w-3" />Własne</span>
                 </div>
               </div>
             </>
@@ -450,7 +460,7 @@ export default function CreateExerciseModal({ onSave, onClose, editExercise }: C
               onClick={() => setStep(1)}
               className="flex-1 py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all cursor-pointer"
             >
-              ← Wstecz
+              <span className="inline-flex items-center gap-1.5"><ArrowLeftIcon className="h-4 w-4" />Wstecz</span>
             </button>
           )}
           {step === 1 ? (
@@ -463,14 +473,18 @@ export default function CreateExerciseModal({ onSave, onClose, editExercise }: C
                   : 'bg-slate-200 text-slate-400 cursor-not-allowed'
               }`}
             >
-              {step1Valid ? 'Dalej →' : '✏️ Wypełnij wymagane pola'}
+              {step1Valid ? (
+                <span className="inline-flex items-center gap-1.5">Dalej <ArrowRightIcon className="h-4 w-4" /></span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5"><PencilIcon className="h-4 w-4" />Wypełnij wymagane pola</span>
+              )}
             </button>
           ) : (
             <button
               onClick={handleSave}
               className="flex-1 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 text-white font-semibold text-sm shadow-md shadow-indigo-200 hover:shadow-indigo-300 hover:scale-[1.01] transition-all cursor-pointer"
             >
-              {isEdit ? '✓ Zapisz zmiany' : '✓ Utwórz ćwiczenie'}
+              <span className="inline-flex items-center gap-1.5"><CheckIcon className="h-4 w-4" />{isEdit ? 'Zapisz zmiany' : 'Utwórz ćwiczenie'}</span>
             </button>
           )}
         </div>

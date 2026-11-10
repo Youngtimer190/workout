@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, Fragment } from 'react';
 import { SetLog, Exercise } from '../types';
+import { CheckIcon, TimerIcon } from './icons';
 
 interface SetTrackerProps {
   exercise?: Exercise;
@@ -216,7 +217,10 @@ export default function SetTracker({
   if (isCardio) {
     return (
       <div className="mt-2 rounded-xl border border-sky-100 bg-sky-50/50 px-4 py-3 flex items-center justify-between">
-        <span className="text-xs font-semibold text-sky-700">⏱ Czas trwania</span>
+        <span className="text-xs font-semibold text-sky-700 inline-flex items-center gap-1">
+          <TimerIcon className="h-3.5 w-3.5" />
+          Czas trwania
+        </span>
         <span className="text-sm font-bold text-sky-800">{duration ?? '—'} min</span>
       </div>
     );
@@ -249,12 +253,14 @@ export default function SetTracker({
       </div>
 
       {/* Column headers - mobile */}
-      <div className={`sm:hidden grid gap-x-1 px-2 py-1.5 border-b border-slate-100 bg-white/70 ${
+      <div className={`sm:hidden grid gap-x-1 px-2 py-1.5 border-b border-slate-100 bg-white/[0.04] ${
         isUnilateral
           ? 'grid-cols-[44px_24px_28px_1fr_1fr_1fr]'
           : 'grid-cols-[44px_24px_1fr_1fr_1fr]'
       }`}>
-        <div className="text-[10px] font-bold text-slate-400 text-center">✓</div>
+        <div className="flex justify-center text-[10px] font-bold text-slate-400 text-center">
+          <CheckIcon className="h-3 w-3" strokeWidth={2.6} />
+        </div>
         <div className="text-[10px] font-bold text-slate-400 text-center">#</div>
         {isUnilateral && (
           <div className="text-[9px] font-bold text-slate-400 text-center truncate">Str.</div>
@@ -267,12 +273,14 @@ export default function SetTracker({
       </div>
 
       {/* Column headers - desktop */}
-      <div className={`hidden sm:grid gap-x-1 px-2 py-1.5 border-b border-slate-100 bg-white/70 ${
+      <div className={`hidden sm:grid gap-x-1 px-2 py-1.5 border-b border-slate-100 bg-white/[0.04] ${
         isUnilateral
           ? 'grid-cols-[44px_28px_44px_1fr_1fr_1fr]'
           : 'grid-cols-[44px_28px_1fr_1fr_1fr]'
       }`}>
-        <div className="text-[10px] font-bold text-slate-400 text-center">✓</div>
+        <div className="flex justify-center text-[10px] font-bold text-slate-400 text-center">
+          <CheckIcon className="h-3 w-3" strokeWidth={2.6} />
+        </div>
         <div className="text-[10px] font-bold text-slate-400 text-center">#</div>
         {isUnilateral && (
           <div className="text-[10px] font-bold text-slate-400 text-center truncate">Strona</div>
@@ -297,7 +305,7 @@ export default function SetTracker({
                 isUnilateral
                   ? 'grid-cols-[44px_24px_28px_1fr_1fr_1fr]'
                   : 'grid-cols-[44px_24px_1fr_1fr_1fr]'
-              } ${log.done ? 'bg-emerald-50/70' : 'bg-white/50'}`}
+              } ${log.done ? 'bg-emerald-50/70' : 'bg-white/[0.02]'}`}
               >
                 {/* Checkbox */}
                 <div className="flex justify-center">
@@ -410,7 +418,7 @@ export default function SetTracker({
                 isUnilateral
                   ? 'grid-cols-[44px_28px_44px_1fr_1fr_1fr]'
                   : 'grid-cols-[44px_28px_1fr_1fr_1fr]'
-              } ${log.done ? 'bg-emerald-50/70' : 'bg-white/50'}`}
+              } ${log.done ? 'bg-emerald-50/70' : 'bg-white/[0.02]'}`}
               >
                 {/* Checkbox */}
                 <div className="flex justify-center">
@@ -550,7 +558,7 @@ export default function SetTracker({
 
       {/* Footer summary */}
       {completedSets > 0 && (
-        <div className="px-3 py-2 border-t border-slate-100 bg-white/70">
+        <div className="px-3 py-2 border-t border-slate-100 bg-white/[0.04]">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-3 flex-wrap">
               {avgReps && (
@@ -589,7 +597,7 @@ export default function SetTracker({
           ) : isDumbbell && isUnilateral ? (
             <>Wpisuj wagę <span className="font-semibold">jednego hantla</span> (jednostronnie)</>
           ) : (
-            <>Dotknij <span className="font-semibold">Powt.</span> lub <span className="font-semibold">Kg</span> aby wpisać · ✓ gdy seria gotowa</>
+            <>Dotknij <span className="font-semibold">Powt.</span> lub <span className="font-semibold">Kg</span> aby wpisać · <CheckIcon className="inline h-3 w-3 -mt-0.5" strokeWidth={2.6} /> gdy seria gotowa</>
           )}
         </p>
       </div>

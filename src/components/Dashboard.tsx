@@ -1,5 +1,12 @@
 import { WorkoutDay } from '../types';
 import { muscleGroupBgColors } from '../data/exercises';
+import {
+  ChartIcon,
+  DumbbellIcon,
+  FlameIcon,
+  MoonIcon,
+  SparklesIcon,
+} from './icons';
 
 interface DashboardProps {
   days: WorkoutDay[];
@@ -9,6 +16,8 @@ interface DashboardProps {
 
 const today = new Date().getDay();
 const todayIndex = today === 0 ? 6 : today - 1;
+
+/* ── Ikony (spójne z ekranem logowania) ─────────────────────────────────── */
 
 export default function Dashboard({ days, onGoToPlanner, onGoToDay }: DashboardProps) {
   const totalExercises = days.reduce((acc, d) => acc + d.exercises.length, 0);
@@ -30,10 +39,10 @@ export default function Dashboard({ days, onGoToPlanner, onGoToDay }: DashboardP
     .slice(0, 5);
 
   const stats = [
-    { label: 'Dni treningowe', value: trainingDays, icon: '🏋️', color: 'from-violet-500 to-indigo-600', bg: 'bg-violet-50', textColor: 'text-violet-600' },
-    { label: 'Ćwiczenia', value: totalExercises, icon: '💪', color: 'from-emerald-500 to-teal-600', bg: 'bg-emerald-50', textColor: 'text-emerald-600' },
-    { label: 'Serie', value: totalSets, icon: '🔥', color: 'from-amber-500 to-orange-600', bg: 'bg-amber-50', textColor: 'text-amber-600' },
-    { label: 'Odpoczynek', value: restDays, icon: '😴', color: 'from-sky-500 to-blue-600', bg: 'bg-sky-50', textColor: 'text-sky-600' },
+    { label: 'Dni treningowe', value: trainingDays, icon: <DumbbellIcon /> },
+    { label: 'Ćwiczenia', value: totalExercises, icon: <ChartIcon /> },
+    { label: 'Serie', value: totalSets, icon: <FlameIcon /> },
+    { label: 'Odpoczynek', value: restDays, icon: <MoonIcon /> },
   ];
 
   return (
@@ -41,29 +50,39 @@ export default function Dashboard({ days, onGoToPlanner, onGoToDay }: DashboardP
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Witaj! 👋</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Oto przegląd Twojego planu treningowego</p>
+          <h1 className="flex items-center gap-2 text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            Witaj!
+            <SparklesIcon className="h-6 w-6 text-violet-300" />
+          </h1>
+          <p className="text-slate-400 text-sm mt-1">Oto przegląd Twojego planu treningowego</p>
         </div>
         <button
           onClick={onGoToPlanner}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 text-white text-sm font-semibold shadow-lg shadow-indigo-200 hover:shadow-indigo-300 hover:scale-[1.02] transition-all cursor-pointer self-start sm:self-auto"
+          className="group inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-violet-700 text-white text-sm font-semibold shadow-[0_14px_34px_-14px_rgba(139,92,246,1)] hover:brightness-110 transition-all cursor-pointer self-start sm:self-auto"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
             <path d="M12 5v14M5 12h14" />
           </svg>
           Edytuj plan
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 transition-transform group-hover:translate-x-1">
+            <path d="M5 12h14" />
+            <path d="m13 6 6 6-6 6" />
+          </svg>
         </button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {stats.map(stat => (
-          <div key={stat.label} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-            <div className={`w-9 h-9 ${stat.bg} rounded-xl flex items-center justify-center text-lg mb-2.5`}>
+          <div
+            key={stat.label}
+            className="bg-white rounded-2xl p-4 border border-violet-400/15 hover:border-violet-400/30 transition-colors"
+          >
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-violet-400/25 bg-gradient-to-br from-violet-500/30 to-fuchsia-500/10 text-violet-200 mb-3">
               {stat.icon}
             </div>
-            <p className={`text-2xl sm:text-3xl font-bold ${stat.textColor}`}>{stat.value}</p>
-            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">{stat.label}</p>
+            <p className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{stat.value}</p>
+            <p className="text-xs sm:text-sm text-slate-400 mt-0.5">{stat.label}</p>
           </div>
         ))}
       </div>
@@ -86,8 +105,8 @@ export default function Dashboard({ days, onGoToPlanner, onGoToDay }: DashboardP
       </div>
 
       {/* Week Overview */}
-      <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-100">
-        <h2 className="text-base font-bold text-slate-800 mb-4">Plan tygodnia</h2>
+      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-violet-400/15">
+        <h2 className="text-base font-bold text-white mb-4">Plan tygodnia</h2>
         <div className="grid grid-cols-7 gap-1 sm:gap-2">
           {days.map((day, i) => {
             const isToday = i === todayIndex;
@@ -98,25 +117,31 @@ export default function Dashboard({ days, onGoToPlanner, onGoToDay }: DashboardP
                 className={`flex flex-col items-center gap-1 sm:gap-1.5 ${onGoToDay ? 'cursor-pointer hover:scale-[1.02] transition-transform' : ''}`}
                 title={onGoToDay ? 'Kliknij, aby przejść do planera' : undefined}
               >
-                <span className={`text-[10px] sm:text-xs font-semibold ${isToday ? 'text-violet-600' : 'text-slate-400'}`}>
+                <span className={`text-[10px] sm:text-xs font-semibold ${isToday ? 'text-violet-300' : 'text-slate-500'}`}>
                   {day.name.substring(0, 2)}
                 </span>
                 <div
                   className={`w-full aspect-square rounded-lg sm:rounded-xl flex items-center justify-center text-xs font-bold transition-all ${
                     isToday
-                      ? 'bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md shadow-indigo-200'
+                      ? 'bg-gradient-to-br from-violet-600 to-purple-600 text-white shadow-[0_10px_24px_-12px_rgba(139,92,246,1)]'
                       : day.isRestDay
-                      ? 'bg-slate-100 text-slate-400'
+                      ? 'bg-white/[0.05] text-slate-500'
                       : day.exercises.length > 0
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : 'bg-slate-50 text-slate-300'
-                  }${onGoToDay ? ' hover:shadow-md' : ''}`}
+                      ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-400/25'
+                      : 'bg-white/[0.03] text-slate-600 border border-white/5'
+                  }`}
                 >
                   <span className="text-[10px] sm:text-xs">
-                    {day.isRestDay ? '😴' : day.exercises.length > 0 ? day.exercises.length : '–'}
+                    {day.isRestDay ? (
+                      <MoonIcon className="mx-auto h-4 w-4" />
+                    ) : day.exercises.length > 0 ? (
+                      day.exercises.length
+                    ) : (
+                      '–'
+                    )}
                   </span>
                 </div>
-                <span className="text-[9px] sm:text-[10px] text-slate-400 text-center leading-tight">
+                <span className="text-[9px] sm:text-[10px] text-slate-500 text-center leading-tight">
                   {day.isRestDay ? 'Odp.' : day.exercises.length > 0 ? `${day.exercises.length} ćw.` : 'Pusty'}
                 </span>
               </div>
@@ -127,8 +152,8 @@ export default function Dashboard({ days, onGoToPlanner, onGoToDay }: DashboardP
 
       {/* Muscle Distribution */}
       {topMuscles.length > 0 && (
-        <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-100">
-          <h2 className="text-base font-bold text-slate-800 mb-4">Najczęściej trenowane partie</h2>
+        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-violet-400/15">
+          <h2 className="text-base font-bold text-white mb-4">Najczęściej trenowane partie</h2>
           <div className="space-y-2.5">
             {topMuscles.map(([muscle, count]) => {
               const max = topMuscles[0][1];
@@ -138,13 +163,13 @@ export default function Dashboard({ days, onGoToPlanner, onGoToDay }: DashboardP
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${muscleGroupBgColors[muscle] || 'bg-slate-100 text-slate-600'}`}>
                     {muscle}
                   </span>
-                  <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden min-w-0">
+                  <div className="flex-1 h-2 bg-white/[0.07] rounded-full overflow-hidden min-w-0">
                     <div
-                      className="h-full bg-gradient-to-r from-violet-400 to-indigo-500 rounded-full transition-all duration-700"
+                      className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full transition-all duration-700"
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <span className="text-sm font-bold text-slate-600 w-5 text-right flex-shrink-0">{count}</span>
+                  <span className="text-sm font-bold text-slate-300 w-5 text-right flex-shrink-0">{count}</span>
                 </div>
               );
             })}
@@ -153,13 +178,15 @@ export default function Dashboard({ days, onGoToPlanner, onGoToDay }: DashboardP
       )}
 
       {totalExercises === 0 && (
-        <div className="bg-white rounded-2xl p-8 sm:p-10 shadow-sm border border-dashed border-slate-200 text-center">
-          <div className="text-5xl mb-3">🏋️‍♂️</div>
-          <h3 className="text-lg font-bold text-slate-700 mb-2">Zacznij planować!</h3>
+        <div className="bg-white/[0.03] rounded-2xl p-8 sm:p-10 border border-dashed border-violet-400/30 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/25 to-fuchsia-500/10 text-violet-200 mb-4">
+            <DumbbellIcon className="h-8 w-8" />
+          </div>
+          <h3 className="text-lg font-bold text-white mb-2">Zacznij planować!</h3>
           <p className="text-slate-400 text-sm mb-5">Twój plan treningowy jest pusty. Przejdź do planera i dodaj pierwsze ćwiczenia.</p>
           <button
             onClick={onGoToPlanner}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 text-white font-semibold shadow-lg shadow-indigo-200 hover:scale-[1.02] transition-all cursor-pointer text-sm"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-violet-700 text-white font-semibold shadow-[0_14px_34px_-14px_rgba(139,92,246,1)] hover:brightness-110 transition-all cursor-pointer text-sm"
           >
             Otwórz planer
           </button>
@@ -173,18 +200,23 @@ function DayCard({ day, label, isToday, onClick, clickable }: { day: WorkoutDay;
   return (
     <div
       onClick={onClick}
-      className={`rounded-2xl p-4 sm:p-5 border ${isToday ? 'border-violet-200 bg-violet-50' : 'border-slate-100 bg-white'} shadow-sm ${clickable ? 'cursor-pointer hover:shadow-md hover:scale-[1.01] transition-all' : ''}`}>
+      className={`rounded-2xl p-4 sm:p-5 border backdrop-blur-xl transition-all ${
+        isToday
+          ? 'border-violet-400/40 bg-gradient-to-br from-violet-500/15 to-fuchsia-500/5 shadow-[0_20px_50px_-30px_rgba(139,92,246,0.9)]'
+          : 'border-violet-400/15 bg-white'
+      } ${clickable ? 'cursor-pointer hover:border-violet-400/35 hover:scale-[1.01]' : ''}`}
+    >
       <div className="flex items-center justify-between mb-3">
         <div>
-          <span className={`text-[10px] font-bold uppercase tracking-wider ${isToday ? 'text-violet-500' : 'text-slate-400'}`}>
+          <span className={`text-[10px] font-bold uppercase tracking-wider ${isToday ? 'text-violet-300' : 'text-slate-500'}`}>
             {label}
           </span>
-          <p className="text-base font-bold text-slate-800">{day.name}</p>
+          <p className="text-base font-bold text-white">{day.name}</p>
         </div>
         {day.isRestDay ? (
-          <span className="px-2.5 py-1 bg-slate-100 text-slate-500 text-xs font-semibold rounded-full">Odpoczynek</span>
+          <span className="px-2.5 py-1 bg-white/[0.07] text-slate-400 text-xs font-semibold rounded-full">Odpoczynek</span>
         ) : (
-          <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${isToday ? 'bg-violet-200 text-violet-700' : 'bg-emerald-100 text-emerald-700'}`}>
+          <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${isToday ? 'bg-violet-500/25 text-violet-200 border border-violet-400/30' : 'bg-emerald-500/15 text-emerald-300 border border-emerald-400/25'}`}>
             {day.exercises.length} ćwiczeń
           </span>
         )}
@@ -192,18 +224,21 @@ function DayCard({ day, label, isToday, onClick, clickable }: { day: WorkoutDay;
       {!day.isRestDay && day.exercises.length > 0 ? (
         <ul className="space-y-1.5 mt-2">
           {day.exercises.slice(0, 4).map(ex => (
-            <li key={ex.id} className="flex items-center gap-2 text-sm text-slate-600">
+            <li key={ex.id} className="flex items-center gap-2 text-sm text-slate-300">
               <span className="w-1.5 h-1.5 rounded-full bg-violet-400 flex-shrink-0" />
               <span className="truncate text-xs sm:text-sm">{ex.name}</span>
-              {ex.sets && <span className="ml-auto text-xs text-slate-400 flex-shrink-0">{ex.sets}×{ex.reps}</span>}
+              {ex.sets && <span className="ml-auto text-xs text-slate-500 flex-shrink-0">{ex.sets}×{ex.reps}</span>}
             </li>
           ))}
           {day.exercises.length > 4 && (
-            <li className="text-xs text-slate-400 pl-3.5">+{day.exercises.length - 4} więcej...</li>
+            <li className="text-xs text-slate-500 pl-3.5">+{day.exercises.length - 4} więcej...</li>
           )}
         </ul>
       ) : day.isRestDay ? (
-        <p className="text-sm text-slate-400 mt-2">Czas na regenerację 💤</p>
+        <p className="flex items-center gap-1.5 text-sm text-slate-400 mt-2">
+          <MoonIcon className="h-4 w-4" />
+          Czas na regenerację
+        </p>
       ) : (
         <p className="text-sm text-slate-400 mt-2">Brak zaplanowanych ćwiczeń</p>
       )}

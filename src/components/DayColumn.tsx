@@ -6,6 +6,7 @@ import MoveDayModal from './MoveDayModal';
 import ShareWorkoutModal from './ShareWorkoutModal';
 import ApplyTemplateModal from './ApplyTemplateModal';
 import CreateTemplateModal from './CreateTemplateModal';
+import { CheckIcon, ChevronDownIcon, ChevronUpIcon, DumbbellIcon, MoonIcon } from './icons';
 
 interface DayColumnProps {
   day: WorkoutDay;
@@ -146,7 +147,13 @@ function DayColumn({
               <p className="text-white/70 text-xs mt-0.5">
                 {day.exercises.length} ćw.
                 {totalSets > 0 && ` · ${totalSets} serii`}
-                {completedExercises > 0 && ` · ✓ ${completedExercises}/${day.exercises.length}`}
+                {completedExercises > 0 && (
+                  <span className="inline-flex items-center gap-1">
+                    <span>·</span>
+                    <CheckIcon className="h-3 w-3" />
+                    <span>{completedExercises}/{day.exercises.length}</span>
+                  </span>
+                )}
               </p>
             )}
           </div>
@@ -320,7 +327,9 @@ function DayColumn({
           {day.isRestDay ? (
             <div className="flex items-center justify-between py-2 gap-3">
               <div className="flex items-center gap-3 min-w-0">
-                <span className="text-3xl flex-shrink-0">😴</span>
+                <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl border border-violet-400/25 bg-gradient-to-br from-violet-500/30 to-fuchsia-500/10 text-violet-200">
+                  <MoonIcon className="h-6 w-6" />
+                </span>
                 <div className="min-w-0">
                   <p className="text-slate-600 font-semibold text-sm">Dzień odpoczynku</p>
                   <p className="text-slate-400 text-xs mt-0.5 hidden sm-block">Regeneracja mięśni jest kluczowa dla postępów</p>
@@ -337,15 +346,20 @@ function DayColumn({
             <div className="space-y-2">
               {day.exercises.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <span className="text-4xl mb-2">🏋️</span>
+                  <span className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/30 to-fuchsia-500/10 text-violet-200">
+                    <DumbbellIcon className="h-7 w-7" />
+                  </span>
                   <p className="text-slate-500 font-semibold text-lg">Brak ćwiczeń</p>
                   <p className="text-slate-400 text-sm mt-1">Dodaj pierwsze ćwiczenie do tego dnia</p>
                 </div>
               ) : (
                 <>
                   {day.exercises.length > 1 && (
-                    <p className="text-center text-[11px] text-slate-400 pb-0.5">
-                      Użyj przycisków ▲▼ aby zmienić kolejność ćwiczeń
+                    <p className="text-center text-[11px] text-slate-400 pb-0.5 flex items-center justify-center gap-1">
+                      Użyj przycisków
+                      <ChevronUpIcon className="h-3 w-3" />
+                      <ChevronDownIcon className="h-3 w-3" />
+                      aby zmienić kolejność ćwiczeń
                     </p>
                   )}
                   <div className="space-y-2">

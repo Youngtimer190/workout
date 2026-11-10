@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { WorkoutTemplate, Exercise, WorkoutDay } from '../types';
 import { muscleGroupColors } from '../data/exercises';
+import { ArrowRightIcon, CheckIcon, DumbbellIcon, MuscleIcon, RepeatIcon, RotateIcon, TimerIcon, WarningIcon } from './icons';
 
 interface ApplyTemplateModalProps {
   template: WorkoutTemplate;
@@ -13,12 +14,6 @@ interface ApplyTemplateModalProps {
   onClose: () => void;
 }
 
-const muscleGroupEmoji: Record<string, string> = {
-  'Klatka piersiowa': '💪', 'Plecy': '🔙', 'Nogi': '🦵', 'Barki': '🏋️',
-  'Biceps': '💪', 'Triceps': '💪', 'Brzuch': '🎯', 'Cardio': '🏃',
-  'Ramiona': '💪', 'Całe ciało': '🌟',
-};
-
 const getGradientClass = (color: string) => {
   const colorBase = color.replace('bg-', '').replace('-500', '');
   return `bg-gradient-to-r from-${colorBase}-500 to-${colorBase}-600`;
@@ -28,7 +23,7 @@ function ExerciseRow({ exercise }: { exercise: Exercise }) {
   const isCardio = exercise.muscleGroup === 'Cardio';
   return (
     <div className="flex items-center gap-3 px-3 py-2.5 bg-white rounded-xl border border-slate-100">
-      <span className="text-xl">{muscleGroupEmoji[exercise.muscleGroup]}</span>
+      <MuscleIcon group={exercise.muscleGroup} className="h-5 w-5 flex-shrink-0 text-slate-400" />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-slate-800 truncate">{exercise.name}</p>
         <p className="text-xs text-slate-400 flex items-center gap-1">
@@ -39,15 +34,27 @@ function ExerciseRow({ exercise }: { exercise: Exercise }) {
       <div className="flex items-center gap-2 flex-shrink-0">
         {!isCardio && (
           <>
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">🔁 {exercise.sets}</span>
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">💪 {exercise.reps}</span>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 inline-flex items-center gap-1">
+              <RepeatIcon className="h-3 w-3" />
+              {exercise.sets}
+            </span>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 inline-flex items-center gap-1">
+              <DumbbellIcon className="h-3 w-3" />
+              {exercise.reps}
+            </span>
           </>
         )}
         {isCardio && (
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-sky-100 text-sky-700">⏱ {exercise.duration} min</span>
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-sky-100 text-sky-700 inline-flex items-center gap-1">
+            <TimerIcon className="h-3 w-3" />
+            {exercise.duration} min
+          </span>
         )}
         {exercise.isUnilateral && (
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 border border-violet-200">🔄 Jednostronne</span>
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 border border-violet-200 inline-flex items-center gap-1">
+            <RotateIcon className="h-3 w-3" />
+            Jednostronne
+          </span>
         )}
       </div>
     </div>
@@ -251,7 +258,7 @@ export default function ApplyTemplateModal({ template, templates, days, preselec
               disabled={availableDays.length === 0}
               className={`flex-1 py-3 rounded-xl font-semibold text-sm shadow-md hover:shadow-lg hover:scale-[1.01] transition-all cursor-pointer ${gradientClass} text-white ${availableDays.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              Dalej →
+              <span className="inline-flex items-center gap-1.5">Dalej <ArrowRightIcon className="h-4 w-4" /></span>
             </button>
           </div>
         </div>
@@ -357,7 +364,7 @@ export default function ApplyTemplateModal({ template, templates, days, preselec
             </div>
             {mode === 'replace' && (
               <p className="text-xs text-amber-600 bg-amber-50 rounded-lg p-2 border border-amber-100">
-                ⚠️ To usunie wszystkie obecne ćwiczenia z tego dnia. Operacji nie można cofnąć.
+                <span className="inline-flex items-start gap-1.5"><WarningIcon className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />To usunie wszystkie obecne ćwiczenia z tego dnia. Operacji nie można cofnąć.</span>
               </p>
             )}
           </div>
@@ -370,7 +377,7 @@ export default function ApplyTemplateModal({ template, templates, days, preselec
             onClick={handleConfirmApply}
             className={`flex-1 py-3 rounded-xl font-semibold text-sm shadow-md hover:shadow-lg hover:scale-[1.01] transition-all cursor-pointer ${gradientClass} text-white`}
           >
-            {mode === 'append' ? '✓ Dopisz do dnia' : '✓ Zastąp dzień'}
+            <span className="inline-flex items-center gap-1.5"><CheckIcon className="h-4 w-4" />{mode === 'append' ? 'Dopisz do dnia' : 'Zastąp dzień'}</span>
           </button>
         </div>
       </div>

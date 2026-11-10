@@ -1,4 +1,5 @@
 import { WeekMeta } from '../store/weekStore';
+import { ChartIcon, DumbbellIcon, MoonIcon } from './icons';
 
 interface WeekNavigatorProps {
   weekMeta: WeekMeta;
@@ -116,22 +117,22 @@ export default function WeekNavigator({
 
           {/* Stats */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1">
-              <span className="text-base">🏋️</span>
+            <div className="flex items-center gap-1.5">
+              <DumbbellIcon className="h-4 w-4 text-violet-400" />
               <div>
                 <span className="text-sm font-bold text-slate-800">{trainingDays}</span>
                 <span className="text-[10px] text-slate-400 ml-0.5 hidden sm:inline">treningi</span>
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              <span className="text-base">💪</span>
+            <div className="flex items-center gap-1.5">
+              <ChartIcon className="h-4 w-4 text-emerald-400" />
               <div>
                 <span className="text-sm font-bold text-slate-800">{totalExercises}</span>
                 <span className="text-[10px] text-slate-400 ml-0.5 hidden sm:inline">ćwiczeń</span>
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              <span className="text-base">😴</span>
+            <div className="flex items-center gap-1.5">
+              <MoonIcon className="h-4 w-4 text-sky-400" />
               <div>
                 <span className="text-sm font-bold text-slate-800">{restDays}</span>
                 <span className="text-[10px] text-slate-400 ml-0.5 hidden sm:inline">odpoczynek</span>
