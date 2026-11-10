@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./app-theme.css";
 
 /* ── Font rendering ── */
 *, *::before, *::after {
@@ -23,6 +24,9 @@ body {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   /* Nie blokuj pionowego scrollu — Safari potrzebuje go do schowania paska */
+  /* Ciemne tło bazowe — spójne z ekranem logowania (bez białego „mignięcia”) */
+  background-color: #0a0416;
+  color-scheme: dark;
 }
 
 /* ── Safe area CSS variables ── */
@@ -309,7 +313,7 @@ input[type="number"] {
   z-index: 50;
   display: flex;
   flex-direction: column;
-  background: white;
+  background: #0a0416;
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 

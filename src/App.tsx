@@ -19,11 +19,12 @@ import { useTemplateStore } from './store/templateStore';
 import { buildDaySnapshot, snapshotToExercises } from './lib/shareService';
 import { isSupabaseConfigured } from './lib/supabase';
 import { exerciseLibrary } from './data/exercises';
+import logoUrl from './assets/fitplanner-logo.png';
 
 // ── Skeleton Loader ───────────────────────────────────────────────────────────
 function SkeletonBox({ className }: { className?: string }) {
   return (
-    <div className={`bg-slate-200 rounded-2xl animate-pulse ${className ?? ''}`} />
+    <div className={`bg-white/[0.07] rounded-2xl animate-pulse ${className ?? ''}`} />
   );
 }
 
@@ -109,10 +110,13 @@ function NewPasswordScreen() {
     >
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 shadow-2xl shadow-violet-500/30 mb-4">
-            <span className="text-3xl">🏋️</span>
-          </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">FitPlaner</h1>
+          <img
+            src={logoUrl}
+            alt=""
+            aria-hidden="true"
+            className="w-16 h-16 mx-auto object-contain mb-4 drop-shadow-[0_0_22px_rgba(139,92,246,0.55)]"
+          />
+          <h1 className="text-3xl font-bold text-white tracking-tight">FitPlanner</h1>
         </div>
 
         <div className="bg-slate-800/80 backdrop-blur-xl rounded-2xl border border-slate-700/50 shadow-2xl p-6">
@@ -395,9 +399,12 @@ export default function App() {
     return (
       <div className="bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 flex items-center justify-center" style={{ minHeight: '100dvh' }}>
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 shadow-2xl shadow-violet-500/30 mb-6">
-            <span className="text-3xl">🏋️</span>
-          </div>
+          <img
+            src={logoUrl}
+            alt=""
+            aria-hidden="true"
+            className="w-16 h-16 mx-auto object-contain mb-6 drop-shadow-[0_0_22px_rgba(139,92,246,0.55)]"
+          />
           <div className="flex items-center gap-2 text-slate-400 justify-center">
             <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -514,7 +521,14 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="app-theme relative min-h-screen bg-[#0a0416] text-slate-100">
+      {/* Dekoracyjna poświat — spójna z tłem ekranu logowania.
+          UWAGA: bez `relative` na `.main-content` poświat (positioned, z-index auto)
+          wypchnęłaby treść na spód (kolejność malowania CSS). */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+        <div className="absolute inset-0 bg-[radial-gradient(70%_50%_at_50%_-10%,rgba(124,58,237,0.22),transparent_70%)]" />
+      </div>
+
       <div ref={topRef} style={{ position: 'absolute', top: 0, left: 0, height: 0, width: 0 }} />
 
       <Sidebar
@@ -523,9 +537,9 @@ export default function App() {
         pendingCount={shareStore.pendingCount}
       />
 
-      <div className="main-content">
+      <div className="main-content relative">
         {/* Top safe area bar with theme color - prevents frosted glass blur on PWA */}
-        <div className="h-safe bg-indigo-600 sticky top-0 z-10" aria-hidden="true" />
+        <div className="h-safe bg-[#0a0416] sticky top-0 z-10" aria-hidden="true" />
 
         {isDemoMode && <DemoBanner onExit={exitDemoMode} />}
         {!isSupabaseConfigured && !offlineDismissed && <OfflineBanner onDismiss={() => setOfflineDismissed(true)} />}
