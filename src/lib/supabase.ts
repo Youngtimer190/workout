@@ -178,7 +178,7 @@ if (!sessionRehydrated && typeof window !== 'undefined') {
 export const isSupabaseConfigured = !!supabaseUrl && !!supabaseAnonKey;
 
 /**
- * Lista włączonych dostawców logowania OAuth (np. `google`, `apple`).
+ * Lista włączonych dostawców logowania OAuth (np. `google`).
  *
  * Endpoint `/auth/v1/settings` jest publiczny i zwraca status każdego
  * providera. Dzięki temu aplikacja nie pokazuje przycisku dla dostawcy,
