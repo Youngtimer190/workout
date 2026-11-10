@@ -8,6 +8,24 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 
 /**
+ * Zamienia surowy błąd PostgREST na komunikat z instrukcją.
+ *
+ * Najczęstszy problem: tabela `favorite_exercises` istnieje, ale nie ma na
+ * niej polityk RLS — wtedy każdy zapis kończy się błędem
+ * „new row violates row-level security policy".
+ */
+function toFriendlyError(error: { message?: string } | null): Error {
+  const message = error?.message || '';
+  if (/row-level security|violates/i.test(message)) {
+    return new Error(
+      'Brak polityk RLS dla tabeli favorite_exercises. ' +
+      'W Supabase → SQL Editor wklej skrypt SUPABASE_SETUP_FAVORITES.sql i kliknij Run.'
+    );
+  }
+  return new Error(message || 'Nieznany błąd zapisu ulubionych.');
+}
+
+/**
  * Pobiera identyfikatory ulubionych ćwiczeń.
  *
  * Zwraca `null`, gdy nie da się połączyć z bazą (offline / brak konfiguracji)
@@ -35,7 +53,7 @@ export async function addFavoriteRemote(userId: string, exerciseId: string): Pro
   );
   if (error) {
     console.error('[favoritesService] addFavoriteRemote error:', error);
-    return new Error(error.message);
+    return toFriendlyError(error);
   }
   return null;
 }
@@ -50,7 +68,7 @@ export async function removeFavoriteRemote(userId: string, exerciseId: string): 
     .eq('exercise_id', exerciseId);
   if (error) {
     console.error('[favoritesService] removeFavoriteRemote error:', error);
-    return new Error(error.message);
+    return toFriendlyError(error);
   }
   return null;
 }
