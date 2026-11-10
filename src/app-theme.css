@@ -55,8 +55,13 @@
 .app-theme .border-slate-200,
 .app-theme .border-slate-300 { border-color: var(--app-border); }
 .app-theme .border-slate-400 { border-color: var(--app-border-strong); }
-.app-theme .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
-.app-theme .divide-slate-50 > :not([hidden]) ~ :not([hidden]) {
+/* `divide-*` — Tailwind v4 rysuje separator jako border-BOTTOM każdego dziecka
+   oprócz ostatniego (`> :not(:last-child)`), a kolor pochodzi z osobnej reguły
+   `divide-slate-100` o specyficzności :where(). Nadpisujemy kolor dla WSZYSTKICH
+   dzieci (`> *`), a nie tylko dla tych mających rodzeństwo przed sobą
+   (`> * ~ *`) — inaczej pierwszy wiersz zostawałby z białą obwódką. */
+.app-theme .divide-slate-100 > *,
+.app-theme .divide-slate-50 > * {
   border-color: var(--app-border);
 }
 
