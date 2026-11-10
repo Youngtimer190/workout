@@ -1,0 +1,208 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   MOTYW CIEMNY APLIKACJI
+   ────────────────────────────────────────────────────────────────────────────
+   Aplikacja po zalogowaniu ma wyglądać tak jak ekran logowania (assets/
+   auth-complex.png): ciemno-fioletowa baza, szkło (glassmorphism), akcent violet.
+
+   Zamiast przerabiać klasy w ~30 komponentach, ta warstwa PRZEMAPOWUJE klasy
+   jasnego motywu Tailwinda na ciemne odpowiedniki. Reguły są nielayerowane
+   (poza `@layer`), więc w kaskadzie wygrywają z utilitariów Tailwinda.
+
+   Reguły celowane są w `.app-theme` — kontener aplikacji w App.tsx.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+.app-theme {
+  --app-bg: #0a0416;
+  /* Powierzchnie */
+  --app-surface: rgba(23, 11, 51, 0.72);
+  --app-surface-2: rgba(255, 255, 255, 0.045);
+  --app-surface-3: rgba(255, 255, 255, 0.08);
+  --app-surface-4: rgba(255, 255, 255, 0.13);
+  /* Obramowania */
+  --app-border: rgba(167, 139, 250, 0.16);
+  --app-border-strong: rgba(167, 139, 250, 0.34);
+  /* Tekst */
+  --app-text: #eef2ff;
+  --app-text-soft: #cbd5e1;
+  --app-text-muted: #94a3b8;
+  --app-text-dim: #7f8ba3;
+  /* Poświaty */
+  --app-glow: 0 24px 60px -28px rgba(109, 40, 217, 0.85);
+}
+
+/* ── Neutralne powierzchnie ─────────────────────────────────────────────── */
+.app-theme .bg-white { background-color: var(--app-surface); }
+.app-theme .bg-slate-50 { background-color: var(--app-surface-2); }
+.app-theme .bg-slate-100 { background-color: var(--app-surface-3); }
+.app-theme .bg-slate-200 { background-color: var(--app-surface-4); }
+.app-theme .bg-slate-300 { background-color: rgba(255, 255, 255, 0.18); }
+.app-theme .bg-slate-400 { background-color: rgba(255, 255, 255, 0.24); }
+
+/* ── Tekst ───────────────────────────────────────────────────────────────── */
+.app-theme .text-slate-900,
+.app-theme .text-slate-800 { color: var(--app-text); }
+.app-theme .text-slate-700 { color: var(--app-text-soft); }
+.app-theme .text-slate-600 { color: var(--app-text-soft); }
+.app-theme .text-slate-500 { color: var(--app-text-muted); }
+.app-theme .text-slate-400 { color: var(--app-text-dim); }
+.app-theme .text-slate-300,
+.app-theme .text-slate-200 { color: #64748b; }
+.app-theme .placeholder-slate-400::placeholder { color: #64748b; }
+.app-theme .placeholder-slate-500::placeholder { color: #5b6779; }
+
+/* ── Obramowania ─────────────────────────────────────────────────────────── */
+.app-theme .border-slate-100,
+.app-theme .border-slate-200,
+.app-theme .border-slate-300 { border-color: var(--app-border); }
+.app-theme .border-slate-400 { border-color: var(--app-border-strong); }
+.app-theme .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+.app-theme .divide-slate-50 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--app-border);
+}
+
+/* ── Półtła pastele → przezroczyste akcenty ─────────────────────────────── */
+.app-theme :is(.bg-red-50, .bg-red-100) { background-color: rgb(239 68 68 / 0.13); }
+.app-theme .bg-red-200 { background-color: rgb(239 68 68 / 0.22); }
+.app-theme :is(.bg-amber-50, .bg-amber-100) { background-color: rgb(245 158 11 / 0.13); }
+.app-theme .bg-amber-200 { background-color: rgb(245 158 11 / 0.22); }
+.app-theme :is(.bg-emerald-50, .bg-emerald-100) { background-color: rgb(16 185 129 / 0.13); }
+.app-theme .bg-emerald-200 { background-color: rgb(16 185 129 / 0.22); }
+.app-theme :is(.bg-sky-50, .bg-sky-100) { background-color: rgb(14 165 233 / 0.13); }
+.app-theme .bg-sky-200 { background-color: rgb(14 165 233 / 0.22); }
+.app-theme :is(.bg-indigo-50, .bg-indigo-100) { background-color: rgb(99 102 241 / 0.13); }
+.app-theme :is(.bg-blue-50, .bg-blue-100) { background-color: rgb(59 130 246 / 0.13); }
+.app-theme :is(.bg-green-50, .bg-green-100) { background-color: rgb(34 197 94 / 0.13); }
+.app-theme :is(.bg-orange-50, .bg-orange-100) { background-color: rgb(249 115 22 / 0.13); }
+.app-theme :is(.bg-pink-50, .bg-pink-100) { background-color: rgb(236 72 153 / 0.13); }
+.app-theme :is(.bg-teal-50, .bg-teal-100) { background-color: rgb(20 184 166 / 0.13); }
+.app-theme :is(.bg-yellow-50, .bg-yellow-100) { background-color: rgb(234 179 8 / 0.13); }
+.app-theme :is(.bg-violet-50, .bg-violet-100) { background-color: rgb(139 92 246 / 0.14); }
+.app-theme .bg-violet-200 { background-color: rgb(139 92 246 / 0.24); }
+
+/* Warianty z przezroczystością */
+.app-theme .bg-violet-50\/50 { background-color: rgb(139 92 246 / 0.1); }
+.app-theme .bg-violet-100\/50 { background-color: rgb(139 92 246 / 0.16); }
+.app-theme .bg-emerald-50\/70 { background-color: rgb(16 185 129 / 0.11); }
+.app-theme .bg-emerald-50\/20 { background-color: rgb(16 185 129 / 0.1); }
+.app-theme .bg-slate-50\/50 { background-color: var(--app-surface-2); }
+.app-theme .bg-slate-50\/60 { background-color: var(--app-surface-2); }
+.app-theme .bg-slate-50\/80 { background-color: rgba(255, 255, 255, 0.06); }
+.app-theme .bg-slate-50\/95 { background-color: rgba(255, 255, 255, 0.08); }
+.app-theme .bg-sky-50\/50 { background-color: rgb(14 165 233 / 0.1); }
+.app-theme .bg-orange-50\/50 { background-color: rgb(249 115 22 / 0.1); }
+
+/* ── Teksty akcentów ─────────────────────────────────────────────────────── */
+.app-theme :is(.text-red-600, .text-red-700) { color: rgb(252 165 165); }
+.app-theme .text-red-800 { color: rgb(254 202 202); }
+.app-theme :is(.text-amber-600, .text-amber-700) { color: rgb(252 211 77); }
+.app-theme .text-amber-800 { color: rgb(254 240 138); }
+.app-theme :is(.text-emerald-600, .text-emerald-700) { color: rgb(110 231 183); }
+.app-theme .text-emerald-800 { color: rgb(167 243 208); }
+.app-theme :is(.text-sky-600, .text-sky-700) { color: rgb(125 211 252); }
+.app-theme .text-sky-800 { color: rgb(186 230 253); }
+.app-theme :is(.text-indigo-600, .text-indigo-700) { color: rgb(165 180 252); }
+.app-theme :is(.text-blue-600, .text-blue-700) { color: rgb(147 197 253); }
+.app-theme :is(.text-green-600, .text-green-700) { color: rgb(134 239 172); }
+.app-theme :is(.text-orange-600, .text-orange-700) { color: rgb(253 186 116); }
+.app-theme .text-orange-100 { color: rgb(254 215 170); }
+.app-theme .text-pink-700 { color: rgb(249 168 212); }
+.app-theme .text-teal-700 { color: rgb(94 234 212); }
+.app-theme .text-yellow-700 { color: rgb(253 224 71); }
+.app-theme .text-violet-500 { color: rgb(167 139 250); }
+.app-theme :is(.text-violet-600, .text-violet-700) { color: rgb(196 181 253); }
+.app-theme .text-violet-800 { color: rgb(221 214 254); }
+
+/* ── Obramowania akcentów ────────────────────────────────────────────────── */
+.app-theme :is(.border-red-100, .border-red-200) { border-color: rgb(248 113 113 / 0.32); }
+.app-theme .border-red-300 { border-color: rgb(248 113 113 / 0.45); }
+.app-theme :is(.border-amber-100, .border-amber-200) { border-color: rgb(251 191 36 / 0.32); }
+.app-theme .border-amber-300 { border-color: rgb(251 191 36 / 0.45); }
+.app-theme .border-emerald-200 { border-color: rgb(52 211 153 / 0.32); }
+.app-theme .border-sky-100 { border-color: rgb(56 189 248 / 0.32); }
+.app-theme .border-sky-300 { border-color: rgb(56 189 248 / 0.4); }
+.app-theme .border-blue-200 { border-color: rgb(96 165 250 / 0.32); }
+.app-theme .border-blue-300 { border-color: rgb(96 165 250 / 0.4); }
+.app-theme .border-green-200 { border-color: rgb(74 222 128 / 0.32); }
+.app-theme .border-green-300 { border-color: rgb(74 222 128 / 0.4); }
+.app-theme .border-orange-200 { border-color: rgb(251 146 60 / 0.32); }
+.app-theme .border-pink-200 { border-color: rgb(244 114 182 / 0.32); }
+.app-theme .border-pink-300 { border-color: rgb(244 114 182 / 0.4); }
+.app-theme .border-teal-300 { border-color: rgb(45 212 191 / 0.4); }
+.app-theme .border-yellow-300 { border-color: rgb(250 204 21 / 0.4); }
+.app-theme .border-indigo-100 { border-color: rgb(129 140 248 / 0.32); }
+.app-theme :is(.border-violet-100, .border-violet-200) { border-color: rgb(167 139 250 / 0.3); }
+.app-theme .border-violet-300 { border-color: rgb(167 139 250 / 0.45); }
+
+/* ── Stany hover / active ────────────────────────────────────────────────── */
+.app-theme .hover\:bg-slate-50:hover,
+.app-theme .active\:bg-slate-50 { background-color: var(--app-surface-3); }
+.app-theme .hover\:bg-slate-100:hover,
+.app-theme .active\:bg-slate-100 { background-color: var(--app-surface-4); }
+.app-theme .hover\:bg-slate-200:hover,
+.app-theme .active\:bg-slate-200 { background-color: rgba(255, 255, 255, 0.16); }
+.app-theme .active\:bg-slate-300 { background-color: rgba(255, 255, 255, 0.2); }
+.app-theme .hover\:text-slate-800:hover,
+.app-theme .hover\:text-slate-700:hover { color: #ffffff; }
+.app-theme .hover\:text-slate-300:hover { color: var(--app-text-soft); }
+.app-theme .hover\:border-slate-300:hover,
+.app-theme .hover\:border-slate-200:hover { border-color: var(--app-border-strong); }
+
+.app-theme .hover\:bg-red-50:hover { background-color: rgb(239 68 68 / 0.18); }
+.app-theme .hover\:bg-red-100:hover,
+.app-theme .active\:bg-red-100 { background-color: rgb(239 68 68 / 0.22); }
+.app-theme .active\:bg-red-200 { background-color: rgb(239 68 68 / 0.28); }
+.app-theme .hover\:bg-amber-50:hover { background-color: rgb(245 158 11 / 0.18); }
+.app-theme .active\:bg-amber-100 { background-color: rgb(245 158 11 / 0.24); }
+.app-theme .hover\:bg-emerald-100:hover { background-color: rgb(16 185 129 / 0.2); }
+.app-theme .active\:bg-emerald-200 { background-color: rgb(16 185 129 / 0.26); }
+.app-theme .hover\:bg-violet-50:hover { background-color: rgb(139 92 246 / 0.16); }
+.app-theme .hover\:bg-violet-100:hover { background-color: rgb(139 92 246 / 0.22); }
+.app-theme .active\:bg-violet-50,
+.app-theme .active\:bg-violet-100 { background-color: rgb(139 92 246 / 0.24); }
+.app-theme .active\:bg-violet-100\/50 { background-color: rgb(139 92 246 / 0.2); }
+.app-theme .active\:bg-violet-200 { background-color: rgb(139 92 246 / 0.28); }
+.app-theme .active\:bg-violet-800 { background-color: rgb(76 29 149); }
+
+.app-theme .hover\:text-violet-700:hover,
+.app-theme .hover\:text-violet-800:hover,
+.app-theme .hover\:text-violet-50:hover { color: rgb(221 214 254); }
+.app-theme .hover\:text-amber-50:hover { color: rgb(252 211 77); }
+.app-theme .hover\:text-red-50:hover { color: rgb(252 165 165); }
+.app-theme .hover\:text-red-800:hover { color: rgb(254 202 202); }
+.app-theme .hover\:text-indigo-700:hover { color: rgb(199 210 254); }
+.app-theme .hover\:border-violet-300:hover { border-color: rgb(167 139 250 / 0.45); }
+.app-theme .hover\:border-violet-200:hover { border-color: rgb(167 139 250 / 0.35); }
+.app-theme .hover\:border-red-200:hover { border-color: rgb(248 113 113 / 0.4); }
+.app-theme .hover\:border-amber-300:hover { border-color: rgb(251 191 36 / 0.4); }
+.app-theme .group:hover .group-hover\:text-violet-700 { color: rgb(221 214 254); }
+
+/* ── Pierścienie fokusu ──────────────────────────────────────────────────── */
+.app-theme .focus\:ring-violet-300 { --tw-ring-color: rgb(167 139 250 / 0.55); }
+.app-theme .focus\:ring-violet-50 { --tw-ring-color: rgb(167 139 250 / 0.45); }
+.app-theme .focus\:ring-red-50 { --tw-ring-color: rgb(248 113 113 / 0.45); }
+.app-theme .focus\:ring-green-50 { --tw-ring-color: rgb(74 222 128 / 0.45); }
+.app-theme .focus\:border-violet-50,
+.app-theme .focus\:border-violet-300 { border-color: rgb(167 139 250 / 0.55); }
+.app-theme .focus\:border-red-50 { border-color: rgb(248 113 113 / 0.55); }
+
+/* ── Kolorowe cienie → poświaty ──────────────────────────────────────────── */
+.app-theme :is(.shadow-indigo-200, .shadow-indigo-300, .shadow-violet-100, .shadow-violet-200) {
+  --tw-shadow-color: rgb(139 92 246 / 0.45);
+}
+.app-theme :is(.shadow-emerald-100, .shadow-emerald-200) {
+  --tw-shadow-color: rgb(16 185 129 / 0.4);
+}
+.app-theme .shadow-amber-100 { --tw-shadow-color: rgb(245 158 11 / 0.4); }
+
+/* ── Elementy wspólne ────────────────────────────────────────────────────── */
+
+/* Przełącznik: jasny „knob" na kolorowym torze */
+.app-theme .toggle-knob { background-color: #e2e8f0; }
+
+/* Inputy i selecty w ciemnym motywie */
+.app-theme input:not([type='checkbox']):not([type='radio']),
+.app-theme select,
+.app-theme textarea {
+  color-scheme: dark;
+}
+.app-theme input::placeholder { color: #64748b; }
