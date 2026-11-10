@@ -304,6 +304,16 @@ input[type="number"] {
 }
 
 /* ── Arkusz „Więcej" (mobile) ─────────────────────────────────────────────── */
+/* Uchwyt: gest zamykania — przeglądarka nie może w tym miejscu przewijać */
+.sheet-handle {
+  touch-action: none;
+}
+/* Treść arkusza: swobodne przewijanie, bez łańcuchowania przewijania do strony */
+.sheet-scroll {
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
 @keyframes sheetUp {
   from { transform: translateY(100%); }
   to   { transform: translateY(0); }

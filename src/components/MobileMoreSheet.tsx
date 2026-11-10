@@ -47,8 +47,10 @@ export default function MobileMoreSheet({
   onGoToLastWorkout,
   progress = 0,
 }: MobileMoreSheetProps) {
-  const [dragY, setDragY] = useState(0);
-  const dragStart = useRef<number | null>(null);
+  const [closing, setClosing] = useState(false);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const dragStartY = useRef<number | null>(null);
+  const dragOffset = useRef(0);
 
   // Zamknij przyciskiem Escape + blokada przewijania tła
   useEffect(() => {
@@ -62,6 +64,14 @@ export default function MobileMoreSheet({
       document.body.style.overflow = prevOverflow;
     };
   }, [open, onClose]);
+
+  // Po otwarciu arkusza wyzeruj stan gestu
+  useEffect(() => {
+    if (!open) return;
+    dragStartY.current = null;
+    dragOffset.current = 0;
+    setClosing(false);
+  }, [open]);
 
   if (!open) return null;
 
@@ -82,15 +92,39 @@ export default function MobileMoreSheet({
   const sectionLabel =
     'px-1 pt-5 pb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500';
 
-  const onTouchStart = (e: React.TouchEvent) => { dragStart.current = e.touches[0].clientY; };
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (dragStart.current === null) return;
-    setDragY(Math.max(0, e.touches[0].clientY - dragStart.current));
+  /* ── Gest zamykania: TYLKO uchwyt na górze ──────────────────────────────────
+     Treść arkusza musi swobodnie się przewijać, więc obsługa gestu
+     przeciągania żyje wyłącznie na uchwacie. Dzięki temu przewijanie
+     listy w dół nie przesuwa arkusza i go nie zamyka. */
+  const onHandleTouchStart = (e: React.TouchEvent) => {
+    dragStartY.current = e.touches[0].clientY;
+    dragOffset.current = 0;
   };
-  const onTouchEnd = () => {
-    if (dragY > 90) onClose();
-    setDragY(0);
-    dragStart.current = null;
+
+  const onHandleTouchMove = (e: React.TouchEvent) => {
+    if (dragStartY.current === null) return;
+    const dy = Math.max(0, e.touches[0].clientY - dragStartY.current);
+    dragOffset.current = dy;
+    // Bez setState — bez przerysowywania całego arkusza przy każdym ruchu palca
+    if (sheetRef.current) sheetRef.current.style.transform = `translateY(${dy}px)`;
+  };
+
+  const onHandleTouchEnd = () => {
+    const dy = dragOffset.current;
+    dragStartY.current = null;
+    dragOffset.current = 0;
+
+    if (dy > 90) {
+      setClosing(true);
+      if (sheetRef.current) {
+        sheetRef.current.style.transition = 'transform 0.22s cubic-bezier(0.4,0,1,1)';
+        sheetRef.current.style.transform = 'translateY(100%)';
+      }
+      setTimeout(onClose, 200);
+    } else if (sheetRef.current) {
+      sheetRef.current.style.transition = 'transform 0.24s cubic-bezier(0.22,1,0.36,1)';
+      sheetRef.current.style.transform = 'translateY(0)';
+    }
   };
 
   return (
@@ -98,20 +132,22 @@ export default function MobileMoreSheet({
       {/* Tło */}
       <div className="absolute inset-0 animate-fade-in bg-black/65 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Arkusz */}
+      {/* Arkusz — uchwyt przyklejony u góry, treść przewijana osobno */}
       <div
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-        style={{
-          transform: `translateY(${dragY}px)`,
-          transition: dragStart.current === null ? 'transform 0.32s cubic-bezier(0.22,1,0.36,1)' : 'none',
-        }}
-        className="animate-sheet-up absolute bottom-0 left-0 right-0 max-h-[88dvh] overflow-y-auto overscroll-contain rounded-t-3xl border-t border-violet-400/20 bg-[#150a2e]/97 shadow-[0_-24px_60px_-20px_rgba(0,0,0,0.9)] backdrop-blur-2xl"
+        ref={sheetRef}
+        className={`absolute bottom-0 left-0 right-0 flex max-h-[88dvh] flex-col overflow-hidden rounded-t-3xl border-t border-violet-400/20 bg-[#150a2e]/97 shadow-[0_-24px_60px_-20px_rgba(0,0,0,0.9)] backdrop-blur-2xl ${
+          closing ? '' : 'animate-sheet-up'
+        }`}
       >
-        {/* Uchwyt + przycisk zamknięcia */}
-        <div className="sticky top-0 z-10 flex items-center justify-between bg-[#150a2e]/95 px-5 pt-3 pb-1 backdrop-blur-xl">
-          <div className="mx-auto h-1 w-11 rounded-full bg-white/20" />
+        {/* Uchwyt — jedyny element obsługujący gest zamknięcia */}
+        <div
+          onTouchStart={onHandleTouchStart}
+          onTouchMove={onHandleTouchMove}
+          onTouchEnd={onHandleTouchEnd}
+          onTouchCancel={onHandleTouchEnd}
+          className="sheet-handle relative flex shrink-0 items-center justify-between px-5 pt-3 pb-1"
+        >
+          <div className="mx-auto h-1 w-11 rounded-full bg-white/25" />
           <button
             onClick={onClose}
             aria-label="Zamknij"
@@ -121,117 +157,121 @@ export default function MobileMoreSheet({
           </button>
         </div>
 
-        {/* Konto */}
-        {user && (
-          <div className="mx-4 mt-2 flex items-center gap-3 rounded-2xl border border-violet-400/15 bg-white/[0.04] p-4">
-            <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-sm font-bold text-white shadow-[0_8px_20px_-10px_rgba(139,92,246,1)]">
-              {initials}
-            </span>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-white">{displayName}</p>
-              <p className="truncate text-[11px] text-slate-400">{email}</p>
+        {/* Treść — przewijana niezależnie od gestu zamykania */}
+        <div className="sheet-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain">
+
+          {/* Konto */}
+          {user && (
+            <div className="mx-4 mt-2 flex items-center gap-3 rounded-2xl border border-violet-400/15 bg-white/[0.04] p-4">
+              <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-sm font-bold text-white shadow-[0_8px_20px_-10px_rgba(139,92,246,1)]">
+                {initials}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-white">{displayName}</p>
+                <p className="truncate text-[11px] text-slate-400">{email}</p>
+              </div>
             </div>
+          )}
+
+          {/* Planowanie */}
+          <p className={sectionLabel}>Planowanie</p>
+          <div className="space-y-1 px-4">
+            <button onClick={() => go('templates')} className={rowClass}>
+              <DumbbellIcon className="h-[18px] w-[18px] flex-shrink-0 text-violet-300" />
+              <span className="flex-1">Moje treningi</span>
+              <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />
+            </button>
+            <button onClick={() => go('stats')} className={rowClass}>
+              <ChartIcon className="h-[18px] w-[18px] flex-shrink-0 text-violet-300" />
+              <span className="flex-1">Statystyki</span>
+              <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />
+            </button>
+            <button onClick={() => go('shares')} className={rowClass}>
+              <CalendarIcon className="h-[18px] w-[18px] flex-shrink-0 text-violet-300" />
+              <span className="flex-1">Udostępnienia</span>
+              <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />
+            </button>
           </div>
-        )}
 
-        {/* Planowanie */}
-        <p className={sectionLabel}>Planowanie</p>
-        <div className="space-y-1 px-4">
-          <button onClick={() => go('templates')} className={rowClass}>
-            <DumbbellIcon className="h-[18px] w-[18px] flex-shrink-0 text-violet-300" />
-            <span className="flex-1">Moje treningi</span>
-            <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />
-          </button>
-          <button onClick={() => go('stats')} className={rowClass}>
-            <ChartIcon className="h-[18px] w-[18px] flex-shrink-0 text-violet-300" />
-            <span className="flex-1">Statystyki</span>
-            <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />
-          </button>
-          <button onClick={() => go('shares')} className={rowClass}>
-            <CalendarIcon className="h-[18px] w-[18px] flex-shrink-0 text-violet-300" />
-            <span className="flex-1">Udostępnienia</span>
-            <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />
-          </button>
-        </div>
-
-        {/* Szybki dostęp */}
-        <p className={sectionLabel}>Szybki dostęp</p>
-        <div className="space-y-1 px-4">
-          <button onClick={() => go('favorites')} className={rowClass}>
-            <StarIcon className="h-[18px] w-[18px] flex-shrink-0 text-amber-300" />
-            <span className="flex-1">Ulubione ćwiczenia</span>
-            <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />
-          </button>
-          <button
-            onClick={() => { onClose(); onGoToLastWorkout?.(); }}
-            disabled={!lastWorkout}
-            className={`${rowClass} ${lastWorkout ? '' : 'opacity-50'}`}
-          >
-            <ClockIcon className="h-[18px] w-[18px] flex-shrink-0 text-slate-300" />
-            <span className="flex-1">
-              Ostatni trening
-              {lastWorkout && (
-                <span className="block text-[11px] leading-tight text-slate-500">{lastWorkout.dayName}</span>
-              )}
-            </span>
-            {lastWorkout && <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />}
-          </button>
-        </div>
-
-        {/* Postęp */}
-        <div className="relative mt-5 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.04] p-4">
-          <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-violet-500/20 blur-2xl" />
-          <div className="relative flex items-center gap-3">
-            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-amber-400/25 bg-amber-400/15 text-amber-300">
-              <TrophyIcon className="h-5 w-5" />
-            </span>
-            <p className="text-[13px] font-semibold leading-tight text-white">
-              Twoja forma
-              <br />
-              na wyższym poziomie!
-            </p>
+          {/* Szybki dostęp */}
+          <p className={sectionLabel}>Szybki dostęp</p>
+          <div className="space-y-1 px-4">
+            <button onClick={() => go('favorites')} className={rowClass}>
+              <StarIcon className="h-[18px] w-[18px] flex-shrink-0 text-amber-300" />
+              <span className="flex-1">Ulubione ćwiczenia</span>
+              <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />
+            </button>
+            <button
+              onClick={() => { onClose(); onGoToLastWorkout?.(); }}
+              disabled={!lastWorkout}
+              className={`${rowClass} ${lastWorkout ? '' : 'opacity-50'}`}
+            >
+              <ClockIcon className="h-[18px] w-[18px] flex-shrink-0 text-slate-300" />
+              <span className="flex-1">
+                Ostatni trening
+                {lastWorkout && (
+                  <span className="block text-[11px] leading-tight text-slate-500">{lastWorkout.dayName}</span>
+                )}
+              </span>
+              {lastWorkout && <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />}
+            </button>
           </div>
-          <div className="relative mt-3 flex items-center gap-3">
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-400 transition-all duration-700"
-                style={{ width: `${progress}%` }}
-              />
+
+          {/* Postęp */}
+          <div className="relative mt-5 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.04] p-4">
+            <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-violet-500/20 blur-2xl" />
+            <div className="relative flex items-center gap-3">
+              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-amber-400/25 bg-amber-400/15 text-amber-300">
+                <TrophyIcon className="h-5 w-5" />
+              </span>
+              <p className="text-[13px] font-semibold leading-tight text-white">
+                Twoja forma
+                <br />
+                na wyższym poziomie!
+              </p>
             </div>
-            <span className="w-9 text-right text-xs font-bold text-slate-300">{progress}%</span>
+            <div className="relative mt-3 flex items-center gap-3">
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-400 transition-all duration-700"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <span className="w-9 text-right text-xs font-bold text-slate-300">{progress}%</span>
+            </div>
+            <p className="relative mt-2 text-[10px] leading-snug text-slate-500">Ukończone serie w tym tygodniu</p>
           </div>
-          <p className="relative mt-2 text-[10px] leading-snug text-slate-500">Ukończone serie w tym tygodniu</p>
-        </div>
 
-        {/* Konto */}
-        <p className={sectionLabel}>Konto</p>
-        <div className="space-y-1 px-4">
-          <button onClick={() => go('settings')} className={rowClass}>
-            <SettingsIcon className="h-[18px] w-[18px] flex-shrink-0 text-slate-400" />
-            <span className="flex-1">Ustawienia</span>
-            <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />
-          </button>
-          <button onClick={() => go('appearance')} className={rowClass}>
-            <SunIcon className="h-[18px] w-[18px] flex-shrink-0 text-slate-400" />
-            <span className="flex-1">Wygląd</span>
-            <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />
-          </button>
-          <button onClick={() => go('help')} className={rowClass}>
-            <CircleHelpIcon className="h-[18px] w-[18px] flex-shrink-0 text-slate-400" />
-            <span className="flex-1">Pomoc i wsparcie</span>
-          </button>
-          <button
-            onClick={() => { onClose(); onSignOut?.(); }}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-red-300 transition-colors hover:bg-red-500/10 active:bg-red-500/15"
-          >
-            <LogOutIcon className="h-[18px] w-[18px] flex-shrink-0" />
-            <span className="flex-1">Wyloguj się</span>
-            <ArrowRightIcon className="h-4 w-4 flex-shrink-0 text-red-400/70" />
-          </button>
-        </div>
+          {/* Konto */}
+          <p className={sectionLabel}>Konto</p>
+          <div className="space-y-1 px-4">
+            <button onClick={() => go('settings')} className={rowClass}>
+              <SettingsIcon className="h-[18px] w-[18px] flex-shrink-0 text-slate-400" />
+              <span className="flex-1">Ustawienia</span>
+              <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />
+            </button>
+            <button onClick={() => go('appearance')} className={rowClass}>
+              <SunIcon className="h-[18px] w-[18px] flex-shrink-0 text-slate-400" />
+              <span className="flex-1">Wygląd</span>
+              <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />
+            </button>
+            <button onClick={() => go('help')} className={rowClass}>
+              <CircleHelpIcon className="h-[18px] w-[18px] flex-shrink-0 text-slate-400" />
+              <span className="flex-1">Pomoc i wsparcie</span>
+            </button>
+            <button
+              onClick={() => { onClose(); onSignOut?.(); }}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-red-300 transition-colors hover:bg-red-500/10 active:bg-red-500/15"
+            >
+              <LogOutIcon className="h-[18px] w-[18px] flex-shrink-0" />
+              <span className="flex-1">Wyloguj się</span>
+              <ArrowRightIcon className="h-4 w-4 flex-shrink-0 text-red-400/70" />
+            </button>
+          </div>
 
-        {/* Odstęp na pasek bezpieczeństwa */}
-        <div className="h-[max(1rem,env(safe-area-inset-bottom))]" />
+          {/* Odstęp na pasek bezpieczeństwa */}
+          <div className="h-[max(1rem,env(safe-area-inset-bottom))]" />
+        </div>
       </div>
     </div>
   );
