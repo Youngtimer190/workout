@@ -374,14 +374,15 @@ wersja kasowała tylko wiersze własnych planów, a konto zostawało w `auth.use
 | Logowanie przez Google nie działa | Ekran zgody w Google jest w statusie **Testowanie** | W Google Cloud Console → *OAuth consent screen* kliknij **Publish app** (albo dodaj konta do *Test users*) — w trybie testowym zalogują się tylko konta testowe |
 | Logowanie przez Google kończy się błędem `redirect_uri_mismatch` | Brak adresu callbacku w Google Cloud Console | Dodaj `https://<ref-projektu>.supabase.co/auth/v1/callback` do *Authorized redirect URIs* (patrz sekcja 8) |
 | Logowanie przez Google wraca na adres z błędem | Adres powrotu nie ma w *Redirect URLs* w Supabase | Dodaj `https://<domena-aplikacji>` do *Authentication → URL Configuration → Redirect URLs* |
-| Przycisk „Kontynuuj z Apple” nie pojawia się | Provider Apple nie jest włączony w Supabase | Włącz w *Authentication → Providers → Apple* i uzupełnij Client ID / Secret (Apple wymaga też Service ID i własnej domeny) |
+| Przycisk „Kontynuuj z Google” nie pojawia się | Provider Google nie jest włączony w Supabase | Włącz w *Authentication → Providers → Google* i uzupełnij Client ID / Client Secret |
 
 ---
 
-## 8. Logowanie przez Google / Apple (OAuth)
+## 8. Logowanie przez Google (OAuth)
 
-Aplikacja loguje przez dostawcę OAuth **bez własnej strony pośredniej** — Supabase
+Aplikacja loguje przez Google w OAuth **bez własnej strony pośredniej** — Supabase
 przekierowuje do Google, a po powrocie wymienia kod na sesję (flow **PKCE**).
+Logowanie przez Apple zostało wycofane — w interfejsie jest wyłącznie przycisk Google.
 
 ### 8.1. Google Cloud Console
 
@@ -444,7 +445,7 @@ Get-CimInstance Win32_Process -Filter "Name='node.exe'" |
 ### 8.3. Jak aplikacja to obsługuje
 
 - Przed przekierowaniem sprawdza publiczny endpoint `/auth/v1/settings` —
-  **przyciski pokazywane są tylko dla dostawców włączonych w projekcie**
+  **przycisk Google pojawia się tylko, gdy provider jest włączony w projekcie**
   (kliknięcie w nieskonfigurowany provider kończyłoby się surowym ekranem JSON z błędem 400).
 - Adres powrotu to `window.location.origin` — dzięki temu ten sam kod działa
   na produkcji i na `localhost`.
