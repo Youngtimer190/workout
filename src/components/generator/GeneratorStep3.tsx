@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { GeneratedPlan, WorkoutDay } from '../../types';
 import { muscleGroupBgColors } from '../../data/exercises';
+import { ActivityIcon, CalendarIcon, ChartIcon, ClipboardIcon, DumbbellIcon, FlameIcon, HeartPulseIcon, LightbulbIcon, MoonIcon, TimerIcon, ZapIcon } from '../icons';
 
 interface Props {
   plan: GeneratedPlan;
@@ -8,12 +9,12 @@ interface Props {
   onRegenerate: () => void;
 }
 
-const goalLabels: Record<string, { label: string; color: string; emoji: string }> = {
-  muscle_gain: { label: 'Budowa masy', color: 'from-violet-500 to-purple-600', emoji: '💪' },
-  fat_loss: { label: 'Redukcja', color: 'from-orange-500 to-red-600', emoji: '🔥' },
-  strength: { label: 'Siła', color: 'from-blue-500 to-indigo-600', emoji: '🏋️' },
-  endurance: { label: 'Wytrzymałość', color: 'from-emerald-500 to-teal-600', emoji: '🏃' },
-  general_fitness: { label: 'Ogólna sprawność', color: 'from-amber-500 to-yellow-600', emoji: '⚡' },
+const goalLabels: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
+  muscle_gain: { label: 'Budowa masy', color: 'from-violet-500 to-purple-600', icon: <DumbbellIcon className="h-4 w-4" /> },
+  fat_loss: { label: 'Redukcja', color: 'from-orange-500 to-red-600', icon: <FlameIcon className="h-4 w-4" /> },
+  strength: { label: 'Siła', color: 'from-blue-500 to-indigo-600', icon: <DumbbellIcon className="h-4 w-4" /> },
+  endurance: { label: 'Wytrzymałość', color: 'from-emerald-500 to-teal-600', icon: <ActivityIcon className="h-4 w-4" /> },
+  general_fitness: { label: 'Ogólna sprawność', color: 'from-amber-500 to-yellow-600', icon: <ZapIcon className="h-4 w-4" /> },
 };
 
 const levelColors: Record<string, string> = {
@@ -22,9 +23,9 @@ const levelColors: Record<string, string> = {
   advanced: 'bg-red-400/30 text-white',
 };
 const levelLabels: Record<string, string> = {
-  beginner: '🌱 Początkujący',
-  intermediate: '⚙️ Średniozaawansowany',
-  advanced: '🚀 Zaawansowany',
+  beginner: 'Początkujący',
+  intermediate: 'Średniozaawansowany',
+  advanced: 'Zaawansowany',
 };
 
 // Skraca notatki trenera do pierwszego zdania w podglądzie
@@ -47,7 +48,7 @@ function DayCard({ day }: { day: WorkoutDay }) {
   if (day.isRestDay) {
     return (
       <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-center min-h-[100px] gap-1">
-        <span className="text-2xl">🌙</span>
+        <MoonIcon className="h-7 w-7 text-slate-400" />
         <p className="text-sm font-medium text-slate-400">{day.name}</p>
         <p className="text-xs text-slate-300">Odpoczynek / Regeneracja</p>
       </div>
@@ -84,9 +85,9 @@ function DayCard({ day }: { day: WorkoutDay }) {
         )}
       </div>
       <div className="mt-3 pt-3 border-t border-slate-100 flex items-center gap-3 text-xs text-slate-400">
-        <span>💪 {mainExercises.length} ćw.</span>
-        <span>📊 {day.exercises.reduce((s, e) => s + (e.sets || 0), 0)} serii</span>
-        <span>⏱ ~{Math.round(day.exercises.reduce((s, e) => s + (e.duration || ((e.sets || 3) * 2.5 + ((e.restTime || 60) / 60) * ((e.sets || 3) - 1))), 0))} min</span>
+        <span className="inline-flex items-center gap-1"><DumbbellIcon className="h-3.5 w-3.5" />{mainExercises.length} ćw.</span>
+        <span className="inline-flex items-center gap-1"><ChartIcon className="h-3.5 w-3.5" />{day.exercises.reduce((s, e) => s + (e.sets || 0), 0)} serii</span>
+        <span className="inline-flex items-center gap-1"><TimerIcon className="h-3.5 w-3.5" />~{Math.round(day.exercises.reduce((s, e) => s + (e.duration || ((e.sets || 3) * 2.5 + ((e.restTime || 60) / 60) * ((e.sets || 3) - 1))), 0))} min</span>
       </div>
     </div>
   );
@@ -101,7 +102,7 @@ function ExerciseRow({ ex, idx }: { ex: GeneratedPlan['days'][0]['exercises'][0]
   return (
     <div className={`px-4 py-3 flex items-start gap-3 ${isWarmup ? 'bg-orange-50/50' : ''}`}>
       <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 ${isWarmup ? 'bg-orange-100 text-orange-600' : 'bg-slate-100 text-slate-500'}`}>
-        {isWarmup ? '🔥' : idx + 1}
+        {isWarmup ? <FlameIcon className="h-3.5 w-3.5" /> : idx + 1}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
@@ -133,7 +134,7 @@ function ExerciseRow({ ex, idx }: { ex: GeneratedPlan['days'][0]['exercises'][0]
           <div className="mt-1.5">
             {showFullNote ? (
               <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-2 text-xs text-indigo-700 leading-relaxed">
-                <span className="font-semibold">💡 Wskazówka trenera: </span>{trainerNote}
+                <span className="font-semibold inline-flex items-center gap-1"><LightbulbIcon className="h-3.5 w-3.5" />Wskazówka trenera: </span>{trainerNote}
                 <button onClick={() => setShowFullNote(false)} className="ml-2 text-indigo-400 hover:text-indigo-600 underline cursor-pointer">zwiń</button>
               </div>
             ) : (
@@ -144,7 +145,7 @@ function ExerciseRow({ ex, idx }: { ex: GeneratedPlan['days'][0]['exercises'][0]
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                💡 Wskazówka trenera
+                Wskazówka trenera
               </button>
             )}
           </div>
@@ -191,7 +192,7 @@ export default function GeneratorStep3({ plan, onApply, onRegenerate }: Props) {
 
         <div className="relative z-10">
           <div className="flex items-start gap-3 mb-3">
-            <span className="text-4xl">{goalMeta.emoji}</span>
+            <span className="text-white/90 flex-shrink-0">{goalMeta.icon}</span>
             <div>
               <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${levelColors[plan.fitnessLevel]}`}>
                 {levelLabels[plan.fitnessLevel]}
@@ -218,13 +219,13 @@ export default function GeneratorStep3({ plan, onApply, onRegenerate }: Props) {
           {/* Stats */}
           <div className="grid grid-cols-4 gap-2 mt-4">
             {[
-              { label: 'Dni', value: plan.daysPerWeek, icon: '📅' },
-              { label: 'Ćwiczenia', value: totalExercises, icon: '🏋️' },
-              { label: 'Serie', value: totalSets, icon: '📊' },
-              { label: 'kcal/tydz.', value: `~${plan.estimatedCalories}`, icon: '🔥' },
+              { label: 'Dni', value: plan.daysPerWeek, icon: <CalendarIcon className="h-4 w-4" /> },
+              { label: 'Ćwiczenia', value: totalExercises, icon: <DumbbellIcon className="h-4 w-4" /> },
+              { label: 'Serie', value: totalSets, icon: <ChartIcon className="h-4 w-4" /> },
+              { label: 'kcal/tydz.', value: `~${plan.estimatedCalories}`, icon: <FlameIcon className="h-4 w-4" /> },
             ].map(stat => (
               <div key={stat.label} className="bg-white/20 backdrop-blur-sm rounded-xl p-2 sm:p-3 text-center">
-                <div className="text-base sm:text-lg">{stat.icon}</div>
+                <div className="flex justify-center text-base sm:text-lg text-white/90">{stat.icon}</div>
                 <div className="text-sm sm:text-lg font-bold">{stat.value}</div>
                 <div className="text-xs text-white/70 hidden sm:block">{stat.label}</div>
               </div>
@@ -236,7 +237,7 @@ export default function GeneratorStep3({ plan, onApply, onRegenerate }: Props) {
       {/* Tygodniowy przegląd */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-base font-bold text-slate-800">📅 Plan tygodniowy</h3>
+          <h3 className="text-base font-bold text-slate-800 inline-flex items-center gap-2"><CalendarIcon className="h-4 w-4 text-violet-500" />Plan tygodniowy</h3>
           <span className="text-xs text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
             {trainingDays.length} treningów · {7 - trainingDays.length} odpoczynku
           </span>
@@ -250,7 +251,7 @@ export default function GeneratorStep3({ plan, onApply, onRegenerate }: Props) {
 
       {/* Szczegóły treningów */}
       <div>
-        <h3 className="text-base font-bold text-slate-800 mb-4">📋 Szczegóły treningów</h3>
+        <h3 className="text-base font-bold text-slate-800 mb-4 inline-flex items-center gap-2"><ClipboardIcon className="h-4 w-4 text-violet-500" />Szczegóły treningów</h3>
         <div className="space-y-4">
           {trainingDays.map(day => {
             const label = getDayLabel(day);
@@ -267,8 +268,8 @@ export default function GeneratorStep3({ plan, onApply, onRegenerate }: Props) {
                       {label && <p className="text-white/70 text-xs mt-0.5">{label}</p>}
                     </div>
                     <div className="flex items-center gap-2 text-white/80 text-xs">
-                      <span className="bg-white/20 px-2 py-1 rounded-lg">💪 {day.exercises.filter(e => !e.name.includes('Rozgrzewka')).length} ćw.</span>
-                      <span className="bg-white/20 px-2 py-1 rounded-lg">⏱ ~{sessionTime} min</span>
+                      <span className="bg-white/20 px-2 py-1 rounded-lg inline-flex items-center gap-1"><DumbbellIcon className="h-3.5 w-3.5" />{day.exercises.filter(e => !e.name.includes('Rozgrzewka')).length} ćw.</span>
+                      <span className="bg-white/20 px-2 py-1 rounded-lg inline-flex items-center gap-1"><TimerIcon className="h-3.5 w-3.5" />~{sessionTime} min</span>
                     </div>
                   </div>
 
@@ -295,10 +296,10 @@ export default function GeneratorStep3({ plan, onApply, onRegenerate }: Props) {
 
                 {/* Podsumowanie serii */}
                 <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100 flex items-center gap-4 text-xs text-slate-500">
-                  <span>📊 Łącznie: <strong>{day.exercises.reduce((s, e) => s + (e.sets || 0), 0)} serii</strong></span>
-                  <span>🏋️ <strong>{day.exercises.filter(e => e.muscleGroup !== 'Cardio' && !e.name.includes('Rozgrzewka')).length} ćwiczeń siłowych</strong></span>
+                  <span className="inline-flex items-center gap-1"><ChartIcon className="h-3.5 w-3.5" />Łącznie: <strong>{day.exercises.reduce((s, e) => s + (e.sets || 0), 0)} serii</strong></span>
+                  <span className="inline-flex items-center gap-1"><DumbbellIcon className="h-3.5 w-3.5" /><strong>{day.exercises.filter(e => e.muscleGroup !== 'Cardio' && !e.name.includes('Rozgrzewka')).length} ćwiczeń siłowych</strong></span>
                   {day.exercises.some(e => e.muscleGroup === 'Cardio' && !e.name.includes('Rozgrzewka')) && (
-                    <span>❤️ <strong>Cardio</strong></span>
+                    <span className="inline-flex items-center gap-1"><HeartPulseIcon className="h-3.5 w-3.5" /><strong>Cardio</strong></span>
                   )}
                 </div>
               </div>

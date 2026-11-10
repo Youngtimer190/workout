@@ -1,23 +1,24 @@
 import { GeneratorPreferences, TrainingGoal, FitnessLevel, EquipmentItem } from '../../types';
 import EquipmentPicker from './EquipmentPicker';
+import { ActivityIcon, DumbbellIcon, FlameIcon, MoonIcon, RocketIcon, SlidersIcon, SproutIcon, ZapIcon } from '../icons';
 
 interface Props {
   prefs: GeneratorPreferences;
   onChange: (p: Partial<GeneratorPreferences>) => void;
 }
 
-const goals: { id: TrainingGoal; label: string; emoji: string; desc: string; color: string }[] = [
-  { id: 'muscle_gain',     label: 'Budowa masy',     emoji: '💪', desc: 'Hipertrofia mięśni, 8-12 powtórzeń', color: 'from-violet-500 to-purple-600' },
-  { id: 'fat_loss',        label: 'Redukcja',         emoji: '🔥', desc: 'Spalanie tłuszczu, wysoka objętość', color: 'from-orange-500 to-red-600' },
-  { id: 'strength',        label: 'Siła',             emoji: '🏋️', desc: 'Siła maksymalna, 3-6 powtórzeń',    color: 'from-blue-500 to-indigo-600' },
-  { id: 'endurance',       label: 'Wytrzymałość',     emoji: '🏃', desc: 'Kondycja i wydolność',              color: 'from-emerald-500 to-teal-600' },
-  { id: 'general_fitness', label: 'Ogólna sprawność', emoji: '⚡', desc: 'Balans siły i kondycji',            color: 'from-amber-500 to-yellow-600' },
+const goals: { id: TrainingGoal; label: string; icon: React.ReactNode; desc: string; color: string }[] = [
+  { id: 'muscle_gain',     label: 'Budowa masy',     icon: <DumbbellIcon className="h-5 w-5" />, desc: 'Hipertrofia mięśni, 8-12 powtórzeń', color: 'from-violet-500 to-purple-600' },
+  { id: 'fat_loss',        label: 'Redukcja',         icon: <FlameIcon className="h-5 w-5" />, desc: 'Spalanie tłuszczu, wysoka objętość', color: 'from-orange-500 to-red-600' },
+  { id: 'strength',        label: 'Siła',             icon: <DumbbellIcon className="h-5 w-5" />, desc: 'Siła maksymalna, 3-6 powtórzeń',    color: 'from-blue-500 to-indigo-600' },
+  { id: 'endurance',       label: 'Wytrzymałość',     icon: <ActivityIcon className="h-5 w-5" />, desc: 'Kondycja i wydolność',              color: 'from-emerald-500 to-teal-600' },
+  { id: 'general_fitness', label: 'Ogólna sprawność', icon: <ZapIcon className="h-5 w-5" />, desc: 'Balans siły i kondycji',            color: 'from-amber-500 to-yellow-600' },
 ];
 
-const levels: { id: FitnessLevel; label: string; emoji: string; desc: string }[] = [
-  { id: 'beginner',     label: 'Początkujący',        emoji: '🌱', desc: 'Trenuję krócej niż rok' },
-  { id: 'intermediate', label: 'Średniozaawansowany', emoji: '⚙️', desc: '1–3 lata treningu' },
-  { id: 'advanced',     label: 'Zaawansowany',        emoji: '🚀', desc: 'Ponad 3 lata treningu' },
+const levels: { id: FitnessLevel; label: string; icon: React.ReactNode; desc: string }[] = [
+  { id: 'beginner',     label: 'Początkujący',        icon: <SproutIcon className="h-5 w-5" />, desc: 'Trenuję krócej niż rok' },
+  { id: 'intermediate', label: 'Średniozaawansowany', icon: <SlidersIcon className="h-5 w-5" />, desc: '1–3 lata treningu' },
+  { id: 'advanced',     label: 'Zaawansowany',        icon: <RocketIcon className="h-5 w-5" />, desc: 'Ponad 3 lata treningu' },
 ];
 
 const DAYS = [
@@ -67,7 +68,7 @@ function getConsecutiveWarning(trainingDays: number[]): string | null {
       current = 1;
     }
   }
-  if (maxConsecutive >= 4) return '⚠️ Więcej niż 3 dni z rzędu może utrudniać regenerację';
+  if (maxConsecutive >= 4) return 'Więcej niż 3 dni z rzędu może utrudniać regenerację';
   return null;
 }
 
@@ -104,8 +105,8 @@ export default function GeneratorStep1({ prefs, onChange }: Props) {
               {prefs.goal === g.id && (
                 <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${g.color} opacity-10`} />
               )}
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl mb-3 bg-gradient-to-br ${g.color} shadow-md`}>
-                {g.emoji}
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 bg-gradient-to-br ${g.color} shadow-md`}>
+                <span className="text-white">{g.icon}</span>
               </div>
               <p className="font-semibold text-slate-800 text-sm">{g.label}</p>
               <p className="text-xs text-slate-500 mt-1">{g.desc}</p>
@@ -136,7 +137,7 @@ export default function GeneratorStep1({ prefs, onChange }: Props) {
                   : 'border-slate-200 bg-white hover:border-slate-300'
               }`}
             >
-              <span className="text-2xl">{l.emoji}</span>
+              <span className="text-slate-400">{l.icon}</span>
               <p className={`font-semibold text-sm mt-2 ${prefs.fitnessLevel === l.id ? 'text-violet-700' : 'text-slate-800'}`}>{l.label}</p>
               <p className="text-xs text-slate-500 mt-1">{l.desc}</p>
             </button>
@@ -201,7 +202,7 @@ export default function GeneratorStep1({ prefs, onChange }: Props) {
                 `}
               >
                 <span className={`text-xs font-semibold ${isSelected ? 'text-violet-200' : 'text-slate-400'}`}>
-                  {isWeekend ? '🌙' : ''}
+                  {isWeekend && <MoonIcon className="h-3.5 w-3.5" />}
                 </span>
                 <span className={`text-sm sm:text-base font-bold mt-0.5 ${isSelected ? 'text-white' : ''}`}>
                   {day.short}
@@ -247,7 +248,7 @@ export default function GeneratorStep1({ prefs, onChange }: Props) {
                 key={di}
                 className="inline-flex items-center gap-1 px-2.5 py-1 bg-violet-100 text-violet-700 rounded-lg text-xs font-medium"
               >
-                💪 {DAYS[di].full}
+                <span className="inline-flex items-center gap-1.5"><DumbbellIcon className="h-3.5 w-3.5" />{DAYS[di].full}</span>
               </span>
             ))}
           </div>

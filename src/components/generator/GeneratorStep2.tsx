@@ -1,15 +1,16 @@
 import { GeneratorPreferences, TrainingStyle, MuscleGroup } from '../../types';
+import { ArmIcon, BackIcon, BicepsIcon, ChestIcon, FlameIcon, HeartPulseIcon, LegsIcon, PersonIcon, RotateIcon, ShoulderIcon, SlidersIcon, TargetIcon, ZapIcon } from '../icons';
 
 interface Props {
   prefs: GeneratorPreferences;
   onChange: (p: Partial<GeneratorPreferences>) => void;
 }
 
-const trainingStyles: { id: TrainingStyle; label: string; emoji: string; desc: string; bestFor: string; days: string }[] = [
+const trainingStyles: { id: TrainingStyle; label: string; icon: React.ReactNode; desc: string; bestFor: string; days: string }[] = [
   {
     id: 'full_body',
     label: 'Full Body',
-    emoji: '⚡',
+    icon: <ZapIcon className="h-5 w-5" />,
     desc: 'Całe ciało na każdym treningu',
     bestFor: 'Budowa siły, ogólna sprawność',
     days: '2–4 dni',
@@ -17,7 +18,7 @@ const trainingStyles: { id: TrainingStyle; label: string; emoji: string; desc: s
   {
     id: 'upper_lower',
     label: 'Góra / Dół',
-    emoji: '↕️',
+    icon: <SlidersIcon className="h-5 w-5" />,
     desc: 'Naprzemiennie góra i dół ciała',
     bestFor: 'Balans siły i masy',
     days: '4 dni',
@@ -25,7 +26,7 @@ const trainingStyles: { id: TrainingStyle; label: string; emoji: string; desc: s
   {
     id: 'push_pull_legs',
     label: 'Push / Pull / Legs',
-    emoji: '🔄',
+    icon: <RotateIcon className="h-5 w-5" />,
     desc: 'Podział na ćwiczenia pchające, ciągnące i nogi',
     bestFor: 'Budowa masy i siły',
     days: '3–6 dni',
@@ -33,7 +34,7 @@ const trainingStyles: { id: TrainingStyle; label: string; emoji: string; desc: s
   {
     id: 'fbl',
     label: 'FBL Split',
-    emoji: '🎯',
+    icon: <TargetIcon className="h-5 w-5" />,
     desc: 'Podział anatomiczny z dużą częstotliwością',
     bestFor: 'Średniozaawansowani i zaawansowani',
     days: '4–5 dni',
@@ -41,22 +42,22 @@ const trainingStyles: { id: TrainingStyle; label: string; emoji: string; desc: s
   {
     id: 'bro_split',
     label: 'Bro Split',
-    emoji: '🦾',
+    icon: <BicepsIcon className="h-5 w-5" />,
     desc: '1 partia mięśniowa na trening',
     bestFor: 'Izolacja i detailing mięśni',
     days: '5–6 dni',
   },
 ];
 
-const muscleGroups: { id: MuscleGroup; emoji: string; color: string }[] = [
-  { id: 'Klatka piersiowa', emoji: '🫀', color: 'bg-red-100 border-red-300 text-red-700' },
-  { id: 'Plecy', emoji: '🔙', color: 'bg-blue-100 border-blue-300 text-blue-700' },
-  { id: 'Nogi', emoji: '🦵', color: 'bg-teal-100 border-teal-300 text-teal-700' },
-  { id: 'Barki', emoji: '🏹', color: 'bg-pink-100 border-pink-300 text-pink-700' },
-  { id: 'Biceps', emoji: '💪', color: 'bg-amber-100 border-amber-300 text-amber-700' },
-  { id: 'Triceps', emoji: '🔱', color: 'bg-green-100 border-green-300 text-green-700' },
-  { id: 'Brzuch', emoji: '⚡', color: 'bg-yellow-100 border-yellow-300 text-yellow-700' },
-  { id: 'Całe ciało', emoji: '🌟', color: 'bg-slate-100 border-slate-300 text-slate-700' },
+const muscleGroups: { id: MuscleGroup; icon: React.ReactNode; color: string }[] = [
+  { id: 'Klatka piersiowa', icon: <ChestIcon className="h-4 w-4" />, color: 'bg-red-100 border-red-300 text-red-700' },
+  { id: 'Plecy', icon: <BackIcon className="h-4 w-4" />, color: 'bg-blue-100 border-blue-300 text-blue-700' },
+  { id: 'Nogi', icon: <LegsIcon className="h-4 w-4" />, color: 'bg-teal-100 border-teal-300 text-teal-700' },
+  { id: 'Barki', icon: <ShoulderIcon className="h-4 w-4" />, color: 'bg-pink-100 border-pink-300 text-pink-700' },
+  { id: 'Biceps', icon: <BicepsIcon className="h-4 w-4" />, color: 'bg-amber-100 border-amber-300 text-amber-700' },
+  { id: 'Triceps', icon: <ArmIcon className="h-4 w-4" />, color: 'bg-green-100 border-green-300 text-green-700' },
+  { id: 'Brzuch', icon: <TargetIcon className="h-4 w-4" />, color: 'bg-yellow-100 border-yellow-300 text-yellow-700' },
+  { id: 'Całe ciało', icon: <PersonIcon className="h-4 w-4" />, color: 'bg-slate-100 border-slate-300 text-slate-700' },
 ];
 
 const durations = [30, 45, 60, 75, 90];
@@ -87,10 +88,10 @@ export default function GeneratorStep2({ prefs, onChange }: Props) {
                   : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
               }`}
             >
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 ${
-                prefs.trainingStyle === s.id ? 'bg-violet-100' : 'bg-slate-100'
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                prefs.trainingStyle === s.id ? 'bg-violet-100 text-violet-600' : 'bg-slate-100 text-slate-500'
               }`}>
-                {s.emoji}
+                {s.icon}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
@@ -129,7 +130,7 @@ export default function GeneratorStep2({ prefs, onChange }: Props) {
                   selected ? m.color + ' shadow-md scale-105' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
                 }`}
               >
-                <span>{m.emoji}</span>
+                <span className="flex-shrink-0">{m.icon}</span>
                 {m.id}
                 {selected && (
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -144,7 +145,7 @@ export default function GeneratorStep2({ prefs, onChange }: Props) {
         {prefs.focusMuscles.length > 0 ? (
           <div className="bg-violet-50 border border-violet-200 rounded-xl p-3 space-y-1.5">
             <p className="text-xs font-semibold text-violet-700">
-              🎯 Aktywne priorytety: {prefs.focusMuscles.join(', ')}
+              <span className="inline-flex items-center gap-1.5"><TargetIcon className="h-3.5 w-3.5" />Aktywne priorytety: {prefs.focusMuscles.join(', ')}</span>
             </p>
             <ul className="text-xs text-violet-600 space-y-0.5">
               <li>• Priorytetowa partia zajmuje pierwsze miejsce w każdej sesji</li>
@@ -193,8 +194,8 @@ export default function GeneratorStep2({ prefs, onChange }: Props) {
           onClick={() => onChange({ includeCardio: !prefs.includeCardio })}
         >
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl ${prefs.includeCardio ? 'bg-sky-100' : 'bg-slate-100'}`}>
-              🏃
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${prefs.includeCardio ? 'bg-sky-100 text-sky-600' : 'bg-slate-100 text-slate-500'}`}>
+              <HeartPulseIcon className="h-5 w-5" />
             </div>
             <div>
               <p className="font-medium text-sm text-slate-800">Dodaj cardio na końcu</p>
@@ -202,7 +203,7 @@ export default function GeneratorStep2({ prefs, onChange }: Props) {
             </div>
           </div>
           <div className={`w-12 h-6 rounded-full transition-all duration-300 flex items-center px-1 ${prefs.includeCardio ? 'bg-sky-500 justify-end' : 'bg-slate-200 justify-start'}`}>
-            <div className="w-4 h-4 rounded-full bg-white shadow-sm" />
+            <div className="w-4 h-4 rounded-full toggle-knob shadow-sm" />
           </div>
         </div>
 
@@ -214,8 +215,8 @@ export default function GeneratorStep2({ prefs, onChange }: Props) {
           onClick={() => onChange({ includeWarmup: !prefs.includeWarmup })}
         >
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl ${prefs.includeWarmup ? 'bg-amber-100' : 'bg-slate-100'}`}>
-              🔥
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${prefs.includeWarmup ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500'}`}>
+              <FlameIcon className="h-5 w-5" />
             </div>
             <div>
               <p className="font-medium text-sm text-slate-800">Włącz rozgrzewkę</p>
@@ -223,7 +224,7 @@ export default function GeneratorStep2({ prefs, onChange }: Props) {
             </div>
           </div>
           <div className={`w-12 h-6 rounded-full transition-all duration-300 flex items-center px-1 ${prefs.includeWarmup ? 'bg-amber-500 justify-end' : 'bg-slate-200 justify-start'}`}>
-            <div className="w-4 h-4 rounded-full bg-white shadow-sm" />
+            <div className="w-4 h-4 rounded-full toggle-knob shadow-sm" />
           </div>
         </div>
       </div>
