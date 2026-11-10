@@ -25,17 +25,17 @@ export default function UserMenu({ compact = false }: Props) {
         <div className="relative">
           <button
             onClick={() => setOpen(o => !o)}
-            className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-slate-700 transition-colors"
+            className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-white/[0.07] transition-colors"
           >
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
               {initials}
             </div>
           </button>
           {open && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-              <div className="absolute bottom-full right-0 mb-2 w-52 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl z-50 overflow-hidden">
-                <div className="px-3 py-2.5 border-b border-slate-700">
+              <div className="absolute bottom-full right-0 mb-2 w-52 bg-[#1a0d38]/95 backdrop-blur-xl border border-violet-400/20 rounded-xl shadow-2xl z-50 overflow-hidden">
+                <div className="px-3 py-2.5 border-b border-violet-400/10">
                   <p className="text-white text-sm font-medium truncate">{displayName}</p>
                   <p className="text-slate-400 text-xs truncate">{email}</p>
                 </div>
@@ -67,9 +67,9 @@ export default function UserMenu({ compact = false }: Props) {
         <div className="relative">
           <button
             onClick={() => setOpen(o => !o)}
-            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-slate-700/50 transition-colors ${open ? 'bg-slate-700/50' : ''}`}
+            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-white/[0.06] transition-colors ${open ? 'bg-white/[0.06]' : ''}`}
           >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-lg shadow-violet-500/20">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-[0_8px_20px_-10px_rgba(139,92,246,1)]">
               {initials}
             </div>
             <div className="flex-1 min-w-0 text-left">
@@ -87,7 +87,7 @@ export default function UserMenu({ compact = false }: Props) {
           {open && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-              <div className="absolute bottom-full left-0 right-0 mb-2 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl z-50 overflow-hidden">
+              <div className="absolute bottom-full left-0 right-0 mb-2 bg-[#1a0d38]/95 backdrop-blur-xl border border-violet-400/20 rounded-xl shadow-2xl z-50 overflow-hidden">
                 <button
                   onClick={() => { setOpen(false); signOut(); }}
                   disabled={loading}

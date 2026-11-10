@@ -1,14 +1,181 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
-
+import { getEnabledOAuthProviders } from '../../lib/supabase';
+import authBgUrl from '../../assets/auth-bg.jpg';
+import logoUrl from '../../assets/fitplanner-logo.png';
 type AuthView = 'login' | 'register' | 'reset';
+type OAuthProvider = 'google' | 'apple';
 
 interface AuthScreenProps {
   onDemoLogin?: () => void;
 }
 
+/* ─────────────────────────────  Ikony  ───────────────────────────── */
+
+const stroke = {
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.8,
+  strokeLinecap: 'round' as const,
+  strokeLinejoin: 'round' as const,
+  viewBox: '0 0 24 24',
+};
+
+function MailIcon({ className = 'h-5 w-5' }: { className?: string }) {
+  return (
+    <svg className={className} {...stroke}>
+      <rect x="2.5" y="4.5" width="19" height="15" rx="2.5" />
+      <path d="m3.5 7 7.4 5.2a1.5 1.5 0 0 0 1.7 0L20.5 7" />
+    </svg>
+  );
+}
+
+function LockIcon({ className = 'h-5 w-5' }: { className?: string }) {
+  return (
+    <svg className={className} {...stroke}>
+      <rect x="4" y="10.5" width="16" height="10" rx="2.5" />
+      <path d="M8 10.5V7.8a4 4 0 0 1 8 0v2.7" />
+      <circle cx="12" cy="15.5" r="1.2" />
+    </svg>
+  );
+}
+
+function EyeIcon({ className = 'h-5 w-5' }: { className?: string }) {
+  return (
+    <svg className={className} {...stroke}>
+      <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function EyeOffIcon({ className = 'h-5 w-5' }: { className?: string }) {
+  return (
+    <svg className={className} {...stroke}>
+      <path d="M10.6 6.1A9.8 9.8 0 0 1 12 6c6 0 9.5 6 9.5 6a17 17 0 0 1-3.1 3.6" />
+      <path d="M6.2 7.8A16.8 16.8 0 0 0 2.5 12S6 18 12 18a9.6 9.6 0 0 0 4-.85" />
+      <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+      <path d="m3.5 3.5 17 17" />
+    </svg>
+  );
+}
+
+function UserPlusIcon({ className = 'h-5 w-5' }: { className?: string }) {
+  return (
+    <svg className={className} {...stroke}>
+      <circle cx="9.5" cy="8" r="3.5" />
+      <path d="M3 19.5a6.5 6.5 0 0 1 13 0" />
+      <path d="M18.5 8v6" />
+      <path d="M21.5 11h-6" />
+    </svg>
+  );
+}
+
+function ArrowRightIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg className={className} {...stroke}>
+      <path d="M5 12h14" />
+      <path d="m13 6 6 6-6 6" />
+    </svg>
+  );
+}
+
+function ArrowLeftIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg className={className} {...stroke}>
+      <path d="M19 12H5" />
+      <path d="m11 6-6 6 6 6" />
+    </svg>
+  );
+}
+
+function ShieldIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg className={className} {...stroke}>
+      <path d="M12 3 5 6v5.5c0 4.2 2.9 7.6 7 9.5 4.1-1.9 7-5.3 7-9.5V6l-7-3Z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  );
+}
+
+function SpinnerIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+    </svg>
+  );
+}
+
+/* Ikony kolumny „funkcje” (lewa strona ekranu) */
+
+function ProgressIcon({ className = 'h-6 w-6' }: { className?: string }) {
+  return (
+    <svg className={className} {...stroke}>
+      <path d="M3 21h18" />
+      <path d="M6.5 21v-5" />
+      <path d="M11 21V10" />
+      <path d="M15.5 21v-7" />
+      <path d="m7 9 3.6-3.6L14 8l5-4" />
+      <path d="M19 4h-4" />
+      <path d="M19 4v4" />
+    </svg>
+  );
+}
+
+function DumbbellIcon({ className = 'h-6 w-6' }: { className?: string }) {
+  return (
+    <svg className={className} {...stroke}>
+      <path d="M14.4 14.4 9.6 9.6" />
+      <path d="M18.7 21.5a2 2 0 1 1-2.9-2.9l-1.7 1.8a2 2 0 1 1-2.9-2.8l6.4-6.4a2 2 0 1 1 2.9 2.8l-1.8 1.8a2 2 0 1 1 2.8 2.9z" />
+      <path d="m21.5 21.5-1.4-1.4" />
+      <path d="m3.5 3.5 1.4 1.4" />
+      <path d="m18 3 3 3" />
+      <path d="m3 18 3-3" />
+      <path d="m6.5 6.5 3.5 3.5" />
+      <path d="m14 14 3.5 3.5" />
+    </svg>
+  );
+}
+
+function TrophyIcon({ className = 'h-6 w-6' }: { className?: string }) {
+  return (
+    <svg className={className} {...stroke}>
+      <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+      <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+      <path d="M4 22h16" />
+      <path d="M10 14.7V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+      <path d="M14 14.7V17c0 .55.47.98.97 1.21 1.18.55 2 2.04 2 3.79" />
+      <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+    </svg>
+  );
+}
+
+/* Logo dostawców tożsamości */
+
+function GoogleIcon({ className = 'h-[18px] w-[18px]' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#4285F4" d="M23.5 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47a5.54 5.54 0 0 1-2.4 3.63v3h3.88c2.27-2.09 3.54-5.17 3.54-8.87Z" />
+      <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.01c-1.08.72-2.45 1.16-4.05 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09A12 12 0 0 0 12 24Z" />
+      <path fill="#FBBC05" d="M5.27 14.28a7.2 7.2 0 0 1 0-4.56V6.63H1.29a12 12 0 0 0 0 10.74l3.98-3.09Z" />
+      <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.7 0 3.99 2.47 1.29 6.63l3.98 3.09C6.22 6.86 8.87 4.75 12 4.75Z" />
+    </svg>
+  );
+}
+
+function AppleIcon({ className = 'h-[18px] w-[18px]' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 384 512" fill="currentColor" aria-hidden="true">
+      <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9Zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3Z" />
+    </svg>
+  );
+}
+
+/* ─────────────────────────────  Komponent  ───────────────────────────── */
+
 export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
-  const { signIn, signUp, resetPassword, loading } = useAuthStore();
+  const { signIn, signUp, resetPassword, signInWithOAuth, loading } = useAuthStore();
   const [view, setView] = useState<AuthView>('login');
 
   // Form fields
@@ -21,8 +188,59 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
   // UI state
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [oauthProvider, setOauthProvider] = useState<OAuthProvider | null>(null);
+  // Którzy dostawcy OAuth są włączeni w projekcie Supabase.
+  // Startujemy optymistycznie (oba widoczne), a wyłączamy dopiero po
+  // potwierdzeniu z /auth/v1/settings — dzięki temu przyciski logowania
+  // są dostępne nawet, gdy zapytanie o ustawienia się nie powiedzie.
+  const [oauthProviders, setOauthProviders] = useState<{ google: boolean; apple: boolean }>({ google: true, apple: true });
+
+  /**
+   * Obsługa powrotu z logowania OAuth:
+   *  1. Supabase przekierowuje tu błędy (`?error=...`) — trzeba je pokazać
+   *     użytkownikowi i posprzątać URL, inaczej ekran wraca przyciskiem F5.
+   *  2. Sprawdzamy, którzy dostawcy (Google/Apple) są włączeni, żeby nie
+   *     pokazywać przycisku prowadzącego na surowy błąd 400 z Supabase.
+   */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const oauthError = params.get('error');
+    if (oauthError) {
+      const messages: Record<string, string> = {
+        access_denied: 'Logowanie zostało anulowane.',
+        server_error: 'Dostawca logowania zwrócił błąd. Spróbuj ponownie.',
+        validation_failed: 'Ten dostawca logowania nie jest skonfigurowany.',
+        bad_oauth_callback: 'Nieprawidłowy adres powrotu. Sprawdź konfigurację adresów przekierowania w Supabase.',
+      };
+      setError(messages[oauthError] ?? 'Logowanie nie powiodło się. Spróbuj ponownie.');
+      // czyścimy URL, żeby odświeżenie strony nie pokazywało tego samego błędu
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (window.location.pathname !== '/') {
+      // Aplikacja nie ma routingu URL — każdy inny adres oznacza, że Supabase
+      // cofnął się na adres produkcyjny (brak originu na liście Redirect URLs).
+      setError(
+        'Logowanie nie wróciło do aplikacji. Sprawdź, czy adres tej aplikacji ' +
+        'znajduje się na liście Redirect URLs w Supabase (Authentication → URL Configuration).'
+      );
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+
+    getEnabledOAuthProviders().then(providers => {
+      // Gdy nie uda się pobrać ustawień — zostawiamy oba przyciski (działamy optymistycznie)
+      if (!providers) return;
+      setOauthProviders({
+        google: providers.google !== false,
+        apple: providers.apple !== false,
+      });
+    });
+  }, []);
 
   const clearMessages = () => { setError(null); setSuccessMsg(null); };
+
+  const switchView = (next: AuthView) => {
+    setView(next);
+    clearMessages();
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,327 +283,535 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
     else setSuccessMsg('Link do resetowania hasła został wysłany na podany adres email.');
   };
 
+  const handleOAuth = async (provider: OAuthProvider) => {
+    clearMessages();
+    setOauthProvider(provider);
+    const { error } = await signInWithOAuth(provider);
+    setOauthProvider(null);
+    if (error) {
+      const label = provider === 'google' ? 'Google' : 'Apple';
+      setError(
+        error.message ||
+        `Logowanie przez ${label} nie jest skonfigurowane. Użyj logowania emailem i hasłem.`
+      );
+    }
+  };
+
+  const isLogin = view === 'login';
+  const isRegister = view === 'register';
+
   return (
-    <div
-      className="bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 flex items-start justify-center overflow-y-auto"
-      style={{
-        minHeight: '100dvh',
-        paddingTop: 'max(1rem, env(safe-area-inset-top, 0px))',
-        paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 0px))',
-        paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
-        paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))',
-        WebkitOverflowScrolling: 'touch',
-      } as React.CSSProperties}
-    >
-      {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-violet-500/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl" />
+    <div className="relative isolate min-h-[100dvh] w-full overflow-x-hidden bg-[#0a0416] text-slate-100">
+      {/* ── Tło: siłownia + przyciemnienie ── */}
+      <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
+        <img
+          src={authBgUrl}
+          alt=""
+          className="h-full w-full object-cover object-center"
+          decoding="async"
+        />
+        <div className="absolute inset-0 bg-[#0a0416]/72" />
+        <div className="absolute inset-0 bg-[radial-gradient(65%_55%_at_50%_45%,rgba(124,58,237,0.28),transparent_72%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,4,22,0.75)_0%,rgba(10,4,22,0.2)_30%,rgba(10,4,22,0.9)_100%)]" />
       </div>
 
-      <div className="relative w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 shadow-2xl shadow-violet-500/30 mb-4">
-            <span className="text-3xl">🏋️</span>
-          </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">FitPlaner</h1>
-          <p className="text-slate-400 mt-1 text-sm">Twój personalny planer treningowy</p>
+      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[1500px] flex-col items-center gap-8 px-4 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))] sm:px-6 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)_minmax(0,1fr)] lg:items-center lg:gap-6 lg:py-10">
+        {/* ── Nagłówek marketingowy (mobile: na górze, desktop: prawa kolumna) ── */}
+        <div className="order-1 w-full text-center lg:order-3 lg:w-auto lg:justify-self-end lg:self-start lg:pt-12 lg:text-left">
+          <h2 className="text-[28px] font-extrabold italic leading-[1.15] tracking-tight sm:text-4xl lg:text-[42px]">
+            <span className="block text-white">Planuj treningi.</span>
+            <span className="block bg-gradient-to-r from-fuchsia-400 via-purple-400 to-violet-400 bg-clip-text text-transparent">
+              Śledź postępy.
+            </span>
+            <span className="block text-white">Osiągaj więcej.</span>
+          </h2>
+          <div className="mx-auto mt-4 h-[3px] w-40 rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-transparent lg:mx-0" />
         </div>
 
-        {/* Card */}
-        <div className="bg-slate-800/80 backdrop-blur-xl rounded-2xl border border-slate-700/50 shadow-2xl overflow-hidden">
-          {/* Tabs */}
-          {view !== 'reset' && (
-            <div className="flex border-b border-slate-700/50">
-              <button
-                onClick={() => { setView('login'); clearMessages(); }}
-                className={`flex-1 py-4 text-sm font-semibold transition-all ${
-                  view === 'login'
-                    ? 'text-violet-400 border-b-2 border-violet-500 bg-violet-500/5'
-                    : 'text-slate-400 hover:text-slate-300'
-                }`}
-              >
-                Zaloguj się
-              </button>
-              <button
-                onClick={() => { setView('register'); clearMessages(); }}
-                className={`flex-1 py-4 text-sm font-semibold transition-all ${
-                  view === 'register'
-                    ? 'text-violet-400 border-b-2 border-violet-500 bg-violet-500/5'
-                    : 'text-slate-400 hover:text-slate-300'
-                }`}
-              >
-                Zarejestruj się
-              </button>
+        {/* ── Kolumna środkowa: logo + karta ── */}
+        <div className="order-2 flex w-full flex-col items-center">
+          {/* Logo */}
+          <div className="mb-5 flex items-center justify-center gap-3 sm:mb-6">
+            <img
+              src={logoUrl}
+              alt=""
+              aria-hidden="true"
+              className="h-11 w-auto drop-shadow-[0_0_22px_rgba(139,92,246,0.55)] sm:h-14"
+            />
+            <div className="text-left">
+              <h1 className="text-2xl font-extrabold leading-none tracking-tight text-white sm:text-4xl">
+                FitPlanner
+              </h1>
+              <p className="mt-1.5 text-xs text-slate-300/90 sm:text-sm">
+                Twój osobisty trener w kieszeni
+              </p>
             </div>
+          </div>
+
+          {/* Karta */}
+          <div className="w-full max-w-[470px] rounded-[26px] border border-violet-400/30 bg-[#170b33]/70 p-1.5 shadow-[0_30px_90px_-30px_rgba(109,40,217,0.9)] backdrop-blur-2xl lg:max-w-[520px]">
+            <div className="rounded-[20px] bg-[#0b0419]/50 px-4 pb-5 pt-4 sm:px-6 sm:pb-6">
+              {/* Przełącznik Zaloguj / Zarejestruj */}
+              {view !== 'reset' && (
+                <div role="tablist" aria-label="Logowanie lub rejestracja" className="grid grid-cols-2 gap-1 rounded-2xl bg-black/30 p-1">
+                  <button
+                    role="tab"
+                    type="button"
+                    aria-selected={isLogin}
+                    onClick={() => switchView('login')}
+                    className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all ${
+                      isLogin
+                        ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-[0_10px_24px_-10px_rgba(139,92,246,1)]'
+                        : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                    }`}
+                  >
+                    <MailIcon className="h-[18px] w-[18px]" />
+                    Zaloguj się
+                  </button>
+                  <button
+                    role="tab"
+                    type="button"
+                    aria-selected={isRegister}
+                    onClick={() => switchView('register')}
+                    className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all ${
+                      isRegister
+                        ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-[0_10px_24px_-10px_rgba(139,92,246,1)]'
+                        : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                    }`}
+                  >
+                    <UserPlusIcon className="h-[18px] w-[18px]" />
+                    Zarejestruj się
+                  </button>
+                </div>
+              )}
+
+              {/* Komunikaty */}
+              {error && (
+                <div role="alert" className="mt-4 flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3">
+                  <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-sm text-red-300">{error}</p>
+                </div>
+              )}
+              {successMsg && (
+                <div role="status" className="mt-4 flex items-start gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3">
+                  <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-sm text-emerald-300">{successMsg}</p>
+                </div>
+              )}
+
+              {/* ── LOGOWANIE ── */}
+              {isLogin && (
+                <form onSubmit={handleLogin} className="mt-5 space-y-4">
+                  <div>
+                    <label htmlFor="auth-email" className="mb-1.5 block text-sm font-medium text-slate-200">
+                      Adres email
+                    </label>
+                    <div className="relative">
+                      <MailIcon className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                      <input
+                        id="auth-email"
+                        type="email"
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                        placeholder="twoj@email.com"
+                        autoComplete="email"
+                        className="w-full rounded-xl border border-white/10 bg-white/[0.06] py-3.5 pl-11 pr-4 text-sm text-white placeholder:text-slate-500 transition-all focus:border-violet-400/60 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="auth-password" className="mb-1.5 block text-sm font-medium text-slate-200">
+                      Hasło
+                    </label>
+                    <div className="relative">
+                      <LockIcon className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                      <input
+                        id="auth-password"
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        autoComplete="current-password"
+                        className="w-full rounded-xl border border-white/10 bg-white/[0.06] py-3.5 pl-11 pr-12 text-sm text-white placeholder:text-slate-500 transition-all focus:border-violet-400/60 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(p => !p)}
+                        aria-label={showPassword ? 'Ukryj hasło' : 'Pokaż hasło'}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-slate-400 transition-colors hover:text-white"
+                      >
+                        {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => switchView('reset')}
+                    className="text-sm font-medium text-violet-400 transition-colors hover:text-violet-300"
+                  >
+                    Nie pamiętasz hasła?
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="group flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-violet-700 py-3.5 text-sm font-semibold text-white shadow-[0_14px_34px_-14px_rgba(139,92,246,1)] transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {loading ? (
+                      <>
+                        <SpinnerIcon className="h-4 w-4 animate-spin" />
+                        Logowanie...
+                      </>
+                    ) : (
+                      <>
+                        Zaloguj się
+                        <ArrowRightIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </>
+                    )}
+                  </button>
+                </form>
+              )}
+
+              {/* ── REJESTRACJA ── */}
+              {isRegister && (
+                <form onSubmit={handleRegister} className="mt-5 space-y-4">
+                  <div>
+                    <label htmlFor="auth-name" className="mb-1.5 block text-sm font-medium text-slate-200">
+                      Imię i nazwisko
+                    </label>
+                    <div className="relative">
+                      <UserPlusIcon className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                      <input
+                        id="auth-name"
+                        type="text"
+                        value={fullName}
+                        onChange={e => setFullName(e.target.value)}
+                        placeholder="Jan Kowalski"
+                        autoComplete="name"
+                        className="w-full rounded-xl border border-white/10 bg-white/[0.06] py-3.5 pl-11 pr-4 text-sm text-white placeholder:text-slate-500 transition-all focus:border-violet-400/60 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="auth-email" className="mb-1.5 block text-sm font-medium text-slate-200">
+                      Adres email
+                    </label>
+                    <div className="relative">
+                      <MailIcon className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                      <input
+                        id="auth-email"
+                        type="email"
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                        placeholder="twoj@email.com"
+                        autoComplete="email"
+                        className="w-full rounded-xl border border-white/10 bg-white/[0.06] py-3.5 pl-11 pr-4 text-sm text-white placeholder:text-slate-500 transition-all focus:border-violet-400/60 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="auth-password" className="mb-1.5 block text-sm font-medium text-slate-200">
+                      Hasło
+                    </label>
+                    <div className="relative">
+                      <LockIcon className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                      <input
+                        id="auth-password"
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        placeholder="Minimum 6 znaków"
+                        autoComplete="new-password"
+                        className="w-full rounded-xl border border-white/10 bg-white/[0.06] py-3.5 pl-11 pr-12 text-sm text-white placeholder:text-slate-500 transition-all focus:border-violet-400/60 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(p => !p)}
+                        aria-label={showPassword ? 'Ukryj hasło' : 'Pokaż hasło'}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-slate-400 transition-colors hover:text-white"
+                      >
+                        {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                      </button>
+                    </div>
+
+                    {/* Siła hasła */}
+                    {password.length > 0 && (
+                      <div className="mt-2">
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4].map(i => (
+                            <div
+                              key={i}
+                              className={`h-1 flex-1 rounded-full transition-all ${
+                                password.length >= i * 3
+                                  ? i <= 1 ? 'bg-red-500' : i <= 2 ? 'bg-orange-500' : i <= 3 ? 'bg-yellow-500' : 'bg-emerald-500'
+                                  : 'bg-white/10'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <p className="mt-1 text-xs text-slate-400">
+                          {password.length < 6 ? 'Za krótkie' : password.length < 8 ? 'Słabe' : password.length < 10 ? 'Dobre' : 'Silne'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label htmlFor="auth-confirm" className="mb-1.5 block text-sm font-medium text-slate-200">
+                      Powtórz hasło
+                    </label>
+                    <div className="relative">
+                      <LockIcon className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                      <input
+                        id="auth-confirm"
+                        type={showPassword ? 'text' : 'password'}
+                        value={confirmPassword}
+                        onChange={e => setConfirmPassword(e.target.value)}
+                        placeholder="••••••••"
+                        autoComplete="new-password"
+                        className={`w-full rounded-xl border bg-white/[0.06] py-3.5 pl-11 pr-4 text-sm text-white placeholder:text-slate-500 transition-all focus:outline-none focus:ring-2 ${
+                          confirmPassword && confirmPassword !== password
+                            ? 'border-red-500/50 focus:border-red-500/70 focus:ring-red-500/30'
+                            : 'border-white/10 focus:border-violet-400/60 focus:ring-violet-500/30'
+                        }`}
+                      />
+                    </div>
+                    {confirmPassword && confirmPassword !== password && (
+                      <p className="mt-1 text-xs text-red-400">Hasła nie są zgodne</p>
+                    )}
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="group flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-violet-700 py-3.5 text-sm font-semibold text-white shadow-[0_14px_34px_-14px_rgba(139,92,246,1)] transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {loading ? (
+                      <>
+                        <SpinnerIcon className="h-4 w-4 animate-spin" />
+                        Rejestracja...
+                      </>
+                    ) : (
+                      <>
+                        Utwórz konto
+                        <ArrowRightIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </>
+                    )}
+                  </button>
+                </form>
+              )}
+
+              {/* ── RESET HASŁA ── */}
+              {view === 'reset' && (
+                <form onSubmit={handleReset} className="mt-5 space-y-4">
+                  <div className="text-center">
+                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-violet-400/30 bg-violet-500/10">
+                      <LockIcon className="h-6 w-6 text-violet-300" />
+                    </div>
+                    <h3 className="font-semibold text-white">Reset hasła</h3>
+                    <p className="mt-1 text-xs text-slate-400">
+                      Wyślemy Ci link do zresetowania hasła
+                    </p>
+                  </div>
+
+                  <div>
+                    <label htmlFor="auth-email" className="mb-1.5 block text-sm font-medium text-slate-200">
+                      Adres email
+                    </label>
+                    <div className="relative">
+                      <MailIcon className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                      <input
+                        id="auth-email"
+                        type="email"
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                        placeholder="twoj@email.com"
+                        autoComplete="email"
+                        className="w-full rounded-xl border border-white/10 bg-white/[0.06] py-3.5 pl-11 pr-4 text-sm text-white placeholder:text-slate-500 transition-all focus:border-violet-400/60 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-violet-700 py-3.5 text-sm font-semibold text-white shadow-[0_14px_34px_-14px_rgba(139,92,246,1)] transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {loading ? (
+                      <>
+                        <SpinnerIcon className="h-4 w-4 animate-spin" />
+                        Wysyłanie...
+                      </>
+                    ) : (
+                      'Wyślij link resetujący'
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => switchView('login')}
+                    className="flex w-full items-center justify-center gap-1 py-1 text-sm text-slate-400 transition-colors hover:text-slate-200"
+                  >
+                    <ArrowLeftIcon className="h-4 w-4" />
+                    Wróć do logowania
+                  </button>
+                </form>
+              )}
+
+              {/* ── Logowanie przez dostawców ── */}
+              {/* Pokazujemy tylko tych dostawców, którzy są włączeni w projekcie
+                  Supabase — kliknięcie w nieskonfigurowany provider kończyłoby się
+                  surowym ekranem JSON z błędem 400. */}
+              {view !== 'reset' && oauthProviders && (oauthProviders.google || oauthProviders.apple) && (
+                <>
+                  <div className="my-5 flex items-center gap-3">
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/15" />
+                    <span className="text-xs font-medium uppercase tracking-widest text-slate-400">lub</span>
+                    <div className="h-px flex-1 bg-gradient-to-l from-transparent to-white/15" />
+                  </div>
+
+                  <div className={`grid grid-cols-1 gap-3 ${oauthProviders.google && oauthProviders.apple ? 'sm:grid-cols-2' : ''}`}>
+                    {oauthProviders.google && (
+                      <button
+                        type="button"
+                        onClick={() => handleOAuth('google')}
+                        disabled={oauthProvider !== null}
+                        className="flex items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-3 py-3 text-sm font-medium text-white transition-all hover:border-violet-400/40 hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {oauthProvider === 'google'
+                          ? <SpinnerIcon className="h-4 w-4 animate-spin" />
+                          : <GoogleIcon />}
+                        {oauthProvider === 'google' ? 'Łączenie...' : 'Kontynuuj z Google'}
+                      </button>
+                    )}
+                    {oauthProviders.apple && (
+                      <button
+                        type="button"
+                        onClick={() => handleOAuth('apple')}
+                        disabled={oauthProvider !== null}
+                        className="flex items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-3 py-3 text-sm font-medium text-white transition-all hover:border-violet-400/40 hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {oauthProvider === 'apple'
+                          ? <SpinnerIcon className="h-4 w-4 animate-spin" />
+                          : <AppleIcon />}
+                        {oauthProvider === 'apple' ? 'Łączenie...' : 'Kontynuuj z Apple'}
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* Podpowiedź dla developera — adres dev musi być na liście Redirect URLs */}
+              {view !== 'reset' && import.meta.env.DEV && (
+                <p className="mt-4 text-center text-[11px] leading-relaxed text-slate-500">
+                  Tryb dev: adres <span className="text-slate-400">{window.location.origin}</span> musi być
+                  w Supabase → Authentication → URL Configuration → Redirect URLs,
+                  inaczej logowanie nie wróci tu (<span className="text-slate-400">localhost</span> i{' '}
+                  <span className="text-slate-400">127.0.0.1</span> to dla Supabase dwa różne adresy).
+                </p>
+              )}
+
+              {/* ── Stopka karty ── */}
+              <p className="mt-5 flex items-center justify-center gap-2 text-xs text-slate-400">
+                <ShieldIcon className="h-4 w-4 text-slate-500" />
+                Twoje dane są bezpieczne i szyfrowane
+              </p>
+            </div>
+          </div>
+
+          {/* ── Przełącznik logowanie / rejestracja pod kartą ── */}
+          {view !== 'reset' && (
+            <p className="mt-5 text-center text-sm text-slate-300">
+              {isRegister ? (
+                <>
+                  Masz już konto?{' '}
+                  <button
+                    type="button"
+                    onClick={() => switchView('login')}
+                    className="inline-flex items-center gap-1 font-semibold text-violet-400 transition-colors hover:text-violet-300"
+                  >
+                    Zaloguj się
+                    <ArrowRightIcon className="h-3.5 w-3.5" />
+                  </button>
+                </>
+              ) : (
+                <>
+                  Nie masz konta?{' '}
+                  <button
+                    type="button"
+                    onClick={() => switchView('register')}
+                    className="inline-flex items-center gap-1 font-semibold text-violet-400 transition-colors hover:text-violet-300"
+                  >
+                    Zarejestruj się
+                    <ArrowRightIcon className="h-3.5 w-3.5" />
+                  </button>
+                </>
+              )}
+            </p>
           )}
 
-          <div className="p-6">
-            {/* Messages */}
-            {error && (
-              <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start gap-2">
-                <svg className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-red-400 text-sm">{error}</p>
-              </div>
-            )}
-            {successMsg && (
-              <div className="mb-4 p-3 rounded-xl bg-green-500/10 border border-green-500/30 flex items-start gap-2">
-                <svg className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-green-400 text-sm">{successMsg}</p>
-              </div>
-            )}
-
-            {/* LOGIN FORM */}
-            {view === 'login' && (
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Adres email</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="twoj@email.com"
-                    className="w-full px-4 py-3 rounded-xl bg-slate-700/50 border border-slate-600/50 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50 transition-all"
-                    autoComplete="email"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Hasło</label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full px-4 py-3 pr-12 rounded-xl bg-slate-700/50 border border-slate-600/50 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50 transition-all"
-                      autoComplete="current-password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(p => !p)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
-                    >
-                      {showPassword ? (
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                        </svg>
-                      ) : (
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                      )}
-                    </button>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => { setView('reset'); clearMessages(); }}
-                  className="text-xs text-violet-400 hover:text-violet-300 transition-colors"
-                >
-                  Nie pamiętasz hasła?
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold text-sm hover:from-violet-500 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-violet-500/25 flex items-center justify-center gap-2"
-                >
-                  {loading ? (
-                    <>
-                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                      Logowanie...
-                    </>
-                  ) : 'Zaloguj się'}
-                </button>
-              </form>
-            )}
-
-            {/* REGISTER FORM */}
-            {view === 'register' && (
-              <form onSubmit={handleRegister} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Imię i nazwisko</label>
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={e => setFullName(e.target.value)}
-                    placeholder="Jan Kowalski"
-                    className="w-full px-4 py-3 rounded-xl bg-slate-700/50 border border-slate-600/50 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50 transition-all"
-                    autoComplete="name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Adres email</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="twoj@email.com"
-                    className="w-full px-4 py-3 rounded-xl bg-slate-700/50 border border-slate-600/50 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50 transition-all"
-                    autoComplete="email"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Hasło</label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      placeholder="Minimum 6 znaków"
-                      className="w-full px-4 py-3 pr-12 rounded-xl bg-slate-700/50 border border-slate-600/50 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50 transition-all"
-                      autoComplete="new-password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(p => !p)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
-                    >
-                      {showPassword ? (
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                        </svg>
-                      ) : (
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                      )}
-                    </button>
-                  </div>
-                  {/* Password strength */}
-                  {password.length > 0 && (
-                    <div className="mt-2">
-                      <div className="flex gap-1">
-                        {[1,2,3,4].map(i => (
-                          <div
-                            key={i}
-                            className={`h-1 flex-1 rounded-full transition-all ${
-                              password.length >= i * 3
-                                ? i <= 1 ? 'bg-red-500' : i <= 2 ? 'bg-orange-500' : i <= 3 ? 'bg-yellow-500' : 'bg-green-500'
-                                : 'bg-slate-600'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <p className="text-xs text-slate-500 mt-1">
-                        {password.length < 6 ? 'Za krótkie' : password.length < 8 ? 'Słabe' : password.length < 10 ? 'Dobre' : 'Silne'}
-                      </p>
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Powtórz hasło</label>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={confirmPassword}
-                    onChange={e => setConfirmPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className={`w-full px-4 py-3 rounded-xl bg-slate-700/50 border text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 transition-all ${
-                      confirmPassword && confirmPassword !== password
-                        ? 'border-red-500/50 focus:ring-red-500/50'
-                        : 'border-slate-600/50 focus:ring-violet-500/50 focus:border-violet-500/50'
-                    }`}
-                    autoComplete="new-password"
-                  />
-                  {confirmPassword && confirmPassword !== password && (
-                    <p className="text-xs text-red-400 mt-1">Hasła nie są zgodne</p>
-                  )}
-                </div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold text-sm hover:from-violet-500 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-violet-500/25 flex items-center justify-center gap-2"
-                >
-                  {loading ? (
-                    <>
-                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                      Rejestracja...
-                    </>
-                  ) : 'Utwórz konto'}
-                </button>
-              </form>
-            )}
-
-            {/* RESET PASSWORD FORM */}
-            {view === 'reset' && (
-              <form onSubmit={handleReset} className="space-y-4">
-                <div className="text-center mb-2">
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-violet-500/10 border border-violet-500/20 mb-3">
-                    <svg className="w-6 h-6 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-white font-semibold">Reset hasła</h3>
-                  <p className="text-slate-400 text-xs mt-1">Wyślemy Ci link do zresetowania hasła</p>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Adres email</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="twoj@email.com"
-                    className="w-full px-4 py-3 rounded-xl bg-slate-700/50 border border-slate-600/50 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50 transition-all"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold text-sm hover:from-violet-500 hover:to-indigo-500 disabled:opacity-50 transition-all shadow-lg shadow-violet-500/25 flex items-center justify-center gap-2"
-                >
-                  {loading ? 'Wysyłanie...' : 'Wyślij link resetujący'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setView('login'); clearMessages(); }}
-                  className="w-full py-2 text-sm text-slate-400 hover:text-slate-300 transition-colors flex items-center justify-center gap-1"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  Wróć do logowania
-                </button>
-              </form>
-            )}
-          </div>
-        </div>
-
-        {/* Demo button */}
-        {onDemoLogin && (
-          <div className="mt-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex-1 h-px bg-slate-700" />
-              <span className="text-slate-500 text-xs">lub</span>
-              <div className="flex-1 h-px bg-slate-700" />
-            </div>
+          {/* Tryb demo (bez kona) */}
+          {onDemoLogin && (
             <button
               type="button"
               onClick={onDemoLogin}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-semibold text-sm hover:from-orange-400 hover:to-amber-400 transition-all shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2"
+              className="mt-4 w-full max-w-[470px] rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm text-slate-300 transition-all hover:border-violet-400/30 hover:bg-white/[0.07] hover:text-white lg:max-w-[520px]"
             >
-              <span>🚀</span>
               Wypróbuj bez rejestracji (Demo)
             </button>
-          </div>
-        )}
+          )}
+        </div>
 
-        {/* Footer */}
-        <p className="text-center text-slate-500 text-xs mt-6">
-          Twoje dane są bezpieczne i szyfrowane
-        </p>
+        {/* ── Kolumna funkcji (mobile: pod kartą, desktop: lewa strona) ── */}
+        <div className="order-3 mt-2 flex w-full max-w-[420px] flex-col gap-5 lg:order-1 lg:mt-0 lg:max-w-[320px] lg:justify-self-end lg:-translate-y-24">
+          <Feature
+            icon={<ProgressIcon />}
+            title="Śledź postępy"
+            description="Monitoruj swoje wyniki i zobacz realny progres."
+          />
+          <Feature
+            icon={<DumbbellIcon />}
+            title="Planuj treningi"
+            description="Twórz spersonalizowane plany treningowe."
+          />
+          <Feature
+            icon={<TrophyIcon />}
+            title="Realizuj cele"
+            description="Przekraczaj swoje granice."
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────  Element pomocniczy  ───────────────────────────── */
+
+function Feature({
+  icon,
+  title,
+  description,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex items-start gap-4">
+      <span className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/30 to-fuchsia-500/10 text-violet-200 shadow-lg shadow-violet-950/60">
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <h3 className="text-[15px] font-semibold text-white sm:text-base">{title}</h3>
+        <p className="mt-1 text-sm leading-relaxed text-slate-300/85">{description}</p>
       </div>
     </div>
   );
