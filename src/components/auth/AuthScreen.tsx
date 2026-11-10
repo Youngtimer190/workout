@@ -4,7 +4,7 @@ import { getEnabledOAuthProviders } from '../../lib/supabase';
 import authBgUrl from '../../assets/auth-bg.jpg';
 import logoUrl from '../../assets/fitplanner-logo.png';
 type AuthView = 'login' | 'register' | 'reset';
-type OAuthProvider = 'google' | 'apple';
+type OAuthProvider = 'google';
 
 interface AuthScreenProps {
   onDemoLogin?: () => void;
@@ -164,14 +164,6 @@ function GoogleIcon({ className = 'h-[18px] w-[18px]' }: { className?: string })
   );
 }
 
-function AppleIcon({ className = 'h-[18px] w-[18px]' }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 384 512" fill="currentColor" aria-hidden="true">
-      <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9Zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3Z" />
-    </svg>
-  );
-}
-
 /* ─────────────────────────────  Komponent  ───────────────────────────── */
 
 export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
@@ -189,17 +181,17 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [oauthProvider, setOauthProvider] = useState<OAuthProvider | null>(null);
-  // Którzy dostawcy OAuth są włączeni w projekcie Supabase.
-  // Startujemy optymistycznie (oba widoczne), a wyłączamy dopiero po
-  // potwierdzeniu z /auth/v1/settings — dzięki temu przyciski logowania
-  // są dostępne nawet, gdy zapytanie o ustawienia się nie powiedzie.
-  const [oauthProviders, setOauthProviders] = useState<{ google: boolean; apple: boolean }>({ google: true, apple: true });
+  // Czy logowanie przez Google jest włączone w projekcie Supabase.
+  // Startujemy optymistycznie (przycisk widoczny od razu), a chowamy go dopiero
+  // po potwierdzeniu z /auth/v1/settings — dzięki temu logowanie działa nawet,
+  // gdy zapytanie o ustawienia się nie powiedzie.
+  const [googleEnabled, setGoogleEnabled] = useState(true);
 
   /**
    * Obsługa powrotu z logowania OAuth:
    *  1. Supabase przekierowuje tu błędy (`?error=...`) — trzeba je pokazać
    *     użytkownikowi i posprzątać URL, inaczej ekran wraca przyciskiem F5.
-   *  2. Sprawdzamy, którzy dostawcy (Google/Apple) są włączeni, żeby nie
+   *  2. Sprawdzamy, czy logowanie przez Google jest włączone, żeby nie
    *     pokazywać przycisku prowadzącego na surowy błąd 400 z Supabase.
    */
   useEffect(() => {
@@ -226,12 +218,9 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
     }
 
     getEnabledOAuthProviders().then(providers => {
-      // Gdy nie uda się pobrać ustawień — zostawiamy oba przyciski (działamy optymistycznie)
+      // Gdy nie uda się pobrać ustawień — zostawiamy przycisk (działamy optymistycznie)
       if (!providers) return;
-      setOauthProviders({
-        google: providers.google !== false,
-        apple: providers.apple !== false,
-      });
+      setGoogleEnabled(providers.google !== false);
     });
   }, []);
 
@@ -289,10 +278,9 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
     const { error } = await signInWithOAuth(provider);
     setOauthProvider(null);
     if (error) {
-      const label = provider === 'google' ? 'Google' : 'Apple';
       setError(
         error.message ||
-        `Logowanie przez ${label} nie jest skonfigurowane. Użyj logowania emailem i hasłem.`
+        'Logowanie przez Google nie jest skonfigurowane. Użyj logowania emailem i hasłem.'
       );
     }
   };
@@ -670,7 +658,7 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
               {/* Pokazujemy tylko tych dostawców, którzy są włączeni w projekcie
                   Supabase — kliknięcie w nieskonfigurowany provider kończyłoby się
                   surowym ekranem JSON z błędem 400. */}
-              {view !== 'reset' && oauthProviders && (oauthProviders.google || oauthProviders.apple) && (
+              {view !== 'reset' && googleEnabled && (
                 <>
                   <div className="my-5 flex items-center gap-3">
                     <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/15" />
@@ -678,34 +666,17 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
                     <div className="h-px flex-1 bg-gradient-to-l from-transparent to-white/15" />
                   </div>
 
-                  <div className={`grid grid-cols-1 gap-3 ${oauthProviders.google && oauthProviders.apple ? 'sm:grid-cols-2' : ''}`}>
-                    {oauthProviders.google && (
-                      <button
-                        type="button"
-                        onClick={() => handleOAuth('google')}
-                        disabled={oauthProvider !== null}
-                        className="flex items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-3 py-3 text-sm font-medium text-white transition-all hover:border-violet-400/40 hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {oauthProvider === 'google'
-                          ? <SpinnerIcon className="h-4 w-4 animate-spin" />
-                          : <GoogleIcon />}
-                        {oauthProvider === 'google' ? 'Łączenie...' : 'Kontynuuj z Google'}
-                      </button>
-                    )}
-                    {oauthProviders.apple && (
-                      <button
-                        type="button"
-                        onClick={() => handleOAuth('apple')}
-                        disabled={oauthProvider !== null}
-                        className="flex items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-3 py-3 text-sm font-medium text-white transition-all hover:border-violet-400/40 hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {oauthProvider === 'apple'
-                          ? <SpinnerIcon className="h-4 w-4 animate-spin" />
-                          : <AppleIcon />}
-                        {oauthProvider === 'apple' ? 'Łączenie...' : 'Kontynuuj z Apple'}
-                      </button>
-                    )}
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleOAuth('google')}
+                    disabled={oauthProvider !== null}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-3 py-3 text-sm font-medium text-white transition-all hover:border-violet-400/40 hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {oauthProvider === 'google'
+                      ? <SpinnerIcon className="h-4 w-4 animate-spin" />
+                      : <GoogleIcon />}
+                    {oauthProvider === 'google' ? 'Łączenie...' : 'Kontynuuj z Google'}
+                  </button>
                 </>
               )}
 
