@@ -55,6 +55,15 @@ interface StepperProps {
  */
 const MAX_REPEAT_MS = 4_000;
 
+/**
+ * Ile musi trwać naciśnięcie, żeby zacząć powtarzać krok.
+ *
+ * Celowo wysoki próg: pierwsze dotknięcie po otwarciu edytora bywa
+ * przypadkowo dłuższe (użytkownik celuje w przycisk, który dopiero
+ * się pojawił) i nie może skończyć się skokiem o kilkadziesiąt.
+ */
+const LONG_PRESS_MS = 900;
+
 /** Zaokrąglenie do zadanej liczby miejsc po przecinku (bez błędów float). */
 export function roundTo(value: number, precision: number): number {
   const factor = 10 ** precision;
@@ -124,7 +133,18 @@ export default function Stepper({
   const pressTimer = useRef<number | null>(null);
   const repeatTimer = useRef<number | null>(null);
   const pressStartedAt = useRef(0);
+  /** Punkt, w którym palec nacisnął przycisk (do anulowania przy ruchu). */
+  const pressStart = useRef<{ x: number; y: number } | null>(null);
   const longPress = useRef(false);
+  /**
+   * Kiedy ostatnio zastosowaliśmy krok przyciskiem.
+   *
+   * Po kliknięciu (lub przytrzymaniu) przeglądarka wysyła jeszcze event
+   * „click”. Gdyby zaliczyć go jako kolejny krok, jedno dotknięcie dawałoby
+   * +2. Dlatego klik krótko po obsłużonym dotknięciu ignorujemy — a sam
+   * „click” obsługujemy tylko wtedy, gdy nie było dotknięcia (klawiatura).
+   */
+  const lastPointerStepAt = useRef(0);
   /**
    * Czy właśnie wciśnięto przycisk ±.
    *
@@ -239,12 +259,16 @@ export default function Stepper({
     // zawsze trafią do przycisku, nawet jeśli palec zejdzie z niego
     // (bez tego powtarzanie mogłoby działać w nieskończoność).
     try { event?.currentTarget.setPointerCapture?.(event.pointerId); } catch { /* nieobsługiwane */ }
+    pressStart.current = event ? { x: event.clientX, y: event.clientY } : null;
 
+    // Próg jest wysoki (900 ms), bo pierwsze dotknięcie bywa
+    // przypadkowo dłuższe — użytkownik celuje w dopiero co pokazany
+    // przycisk. Krótkie dotknięcie ZAWSZE daje dokładnie jeden krok.
     pressTimer.current = window.setTimeout(() => {
       longPress.current = true;
       applyStep(direction);
       scheduleRepeat(direction);
-    }, 600);
+    }, LONG_PRESS_MS);
   };
 
   /**
@@ -258,7 +282,10 @@ export default function Stepper({
     const wasLong = longPress.current;
     clearTimers();
     try { event?.currentTarget.releasePointerCapture?.(event.pointerId); } catch { /* nieobsługiwane */ }
-    if (!wasLong) applyStep(direction);
+    if (!wasLong) {
+      applyStep(direction);
+      lastPointerStepAt.current = Date.now();
+    }
     // Flaga „krokujemy” trzymamy jeszcze chwilę — blur pola bywa
     // opóźniony o jedno zdarzenie.
     window.setTimeout(() => { stepping.current = false; }, 300);
@@ -295,6 +322,16 @@ export default function Stepper({
         e.preventDefault();
         endPress(direction, e);
       }}
+      onPointerMove={e => {
+        // Palec się przesunął → użytkownik przewija listę, nie chce
+        // zwiększać wartości. Anulujemy powtarzanie.
+        const start = pressStart.current;
+        if (!start) return;
+        if (Math.abs(e.clientX - start.x) > 10 || Math.abs(e.clientY - start.y) > 10) {
+          clearTimers();
+          longPress.current = true; // traktujemy jak „przerwane”
+        }
+      }}
       onPointerCancel={() => {
         clearTimers();
         stepping.current = false;
@@ -305,12 +342,12 @@ export default function Stepper({
       }}
       onContextMenu={e => e.preventDefault()}
       onMouseDown={e => e.preventDefault()}
-      onClick={e => {
+      onClick={() => {
         // Klawiatura (Enter/Space) wysyła „click” bez pointerdown/pointerup —
-        // wtedy krok jeszcze nie został zastosowany. Dla myszy/touchu
-        // krok zastosowaliśmy już w „pointerup”, więc tego kliku nie
-        // dublujemy (detail === 0 oznacza aktywację klawiaturą).
-        if (e.detail === 0) applyStep(direction);
+        // wtedy krok jeszcze nie został zastosowany i musimy go dorzucić.
+        // Przy dotknięciu krok zastosowaliśmy już w „pointerup”, więc
+        // klik krótko po nim ignorujemy (inaczej jedno dotknięcie dawałoby +2).
+        if (Date.now() - lastPointerStepAt.current > 300) applyStep(direction);
       }}
       style={{
         touchAction: 'manipulation',
