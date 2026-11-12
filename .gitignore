@@ -1,0 +1,29 @@
+# ── Zależności (instalowane przez `npm install`) ───────────────────────────
+node_modules/
+
+# ── KLUCZE API — nigdy nie wgrywaj ich do repo ──────────────────────────
+# .env.local zawiera klucz `service_role` (pełny dostęp do bazy).
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Uwaga: `dist/` celowo NIE jest ignorowany — na GitHubie trzymamy gotowy
+# build, bo to on jest wdrażany na Vercelu. Przed commitem zbuduj projekt:
+#   npm run build
+
+# ── Vercel ───────────────────────────────────────────────────────────────
+.vercel
+
+# ── Katalog roboczy: skrypt zostaje, dane i klucze nie ──────────────────
+BACKUP NODE/.env.local
+BACKUP NODE/*.sql
+
+# ── Logi i śmieci ────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-error.log*
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
