@@ -26,8 +26,12 @@ interface MobileMoreSheetProps {
   /** Ostatnio zarejestrowany trening — dla skrótu „Ostatni trening”. */
   lastWorkout?: { weekKey: string; dayIndex: number; dayName: string } | null;
   onGoToLastWorkout?: () => void;
-  /** Procent ukończonych serii w bieżącym tygodniu. */
+  /** Procent ukończonych serii w przeglądanym tygodniu. */
   progress?: number;
+  /** Podpis pod paskiem postępu. */
+  progressLabel?: string;
+  /** Liczba udostępnień czekających na akceptację — badge przy „Udostępnienia”. */
+  pendingCount?: number;
 }
 
 /**
@@ -46,6 +50,8 @@ export default function MobileMoreSheet({
   lastWorkout,
   onGoToLastWorkout,
   progress = 0,
+  progressLabel = 'Ukończone serie w tym tygodniu',
+  pendingCount = 0,
 }: MobileMoreSheetProps) {
   const [closing, setClosing] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -189,6 +195,11 @@ export default function MobileMoreSheet({
             <button onClick={() => go('shares')} className={rowClass}>
               <CalendarIcon className="h-[18px] w-[18px] flex-shrink-0 text-violet-300" />
               <span className="flex-1">Udostępnienia</span>
+              {pendingCount > 0 && (
+                <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-fuchsia-500 text-white text-[10px] font-bold flex items-center justify-center">
+                  {pendingCount > 9 ? '9+' : pendingCount}
+                </span>
+              )}
               <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />
             </button>
           </div>
@@ -239,7 +250,7 @@ export default function MobileMoreSheet({
               </div>
               <span className="w-9 text-right text-xs font-bold text-slate-300">{progress}%</span>
             </div>
-            <p className="relative mt-2 text-[10px] leading-snug text-slate-500">Ukończone serie w tym tygodniu</p>
+            <p className="relative mt-2 text-[10px] leading-snug text-slate-500">{progressLabel}</p>
           </div>
 
           {/* Konto */}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { WorkoutDay } from '../types';
+import { countPlanSets } from '../lib/sets';
 import { muscleGroupBgColors, muscleGroupColors } from '../data/exercises';
 import { useAuthStore } from '../store/authStore';
 import { isSupabaseConfigured } from '../lib/supabase';
@@ -39,7 +40,9 @@ export default function Stats({ days }: StatsProps) {
   const trainingDays = days.filter(d => !d.isRestDay && d.exercises.length > 0);
   const restDays = days.filter(d => d.isRestDay);
 
-  const totalSets = allExercises.reduce((acc, e) => acc + (e.sets || 0), 0);
+  // Serie liczymy z tablicy serii (dodane/usunięte serie w trackerze),
+  // a cardio osobno — ma własny miernik minut.
+  const totalSets = countPlanSets(allExercises);
   const totalCardioMin = allExercises
     .filter(e => e.muscleGroup === 'Cardio')
     .reduce((acc, e) => acc + (e.duration || 0), 0);

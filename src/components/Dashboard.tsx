@@ -1,4 +1,5 @@
 import { WorkoutDay } from '../types';
+import { formatNumberPL, formatVolumePL, WorkoutStats } from '../lib/stats';
 import { muscleGroupBgColors } from '../data/exercises';
 import {
   ChartIcon,
@@ -6,10 +7,13 @@ import {
   FlameIcon,
   MoonIcon,
   SparklesIcon,
+  TrophyIcon,
 } from './icons';
 
 interface DashboardProps {
   days: WorkoutDay[];
+  /** Statystyki z historii tygodni (treningi w miesiącu, passa, wolumen). */
+  stats?: WorkoutStats;
   onGoToPlanner: () => void;
   onGoToDay?: (dayIndex: number) => void;
 }
@@ -19,14 +23,15 @@ const todayIndex = today === 0 ? 6 : today - 1;
 
 /* ── Ikony (spójne z ekranem logowania) ─────────────────────────────────── */
 
-export default function Dashboard({ days, onGoToPlanner, onGoToDay }: DashboardProps) {
-  const totalExercises = days.reduce((acc, d) => acc + d.exercises.length, 0);
-  const trainingDays = days.filter(d => !d.isRestDay && d.exercises.length > 0).length;
-  const restDays = days.filter(d => d.isRestDay).length;
-  const totalSets = days.reduce((acc, d) => acc + d.exercises.reduce((a, e) => a + (e.sets || 0), 0), 0);
+export default function Dashboard({ days, stats, onGoToPlanner, onGoToDay }: DashboardProps) {
+  const totalExercises = days.reduce((acc, d) => acc + (d.exercises?.length ?? 0), 0);
+  const trainingDays = days.filter(d => !d.isRestDay && (d.exercises?.length ?? 0) > 0).length;
 
-  const todayDay = days[todayIndex];
-  const tomorrowDay = days[(todayIndex + 1) % 7];
+  // Tydzień zawsze ma 7 dni (patrz `normalizeWeekDays`), ale gdyby jednak
+  // któregoś brakowało, nie wywalamy aplikacji — pokazujemy pusty dzień.
+  const emptyDay = { name: '', exercises: [] as WorkoutDay['exercises'] };
+  const todayDay = days[todayIndex] ?? emptyDay;
+  const tomorrowDay = days[(todayIndex + 1) % 7] ?? emptyDay;
 
   const muscleGroupCount: Record<string, number> = {};
   days.forEach(d =>
@@ -38,11 +43,41 @@ export default function Dashboard({ days, onGoToPlanner, onGoToDay }: DashboardP
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
 
-  const stats = [
-    { label: 'Dni treningowe', value: trainingDays, icon: <DumbbellIcon /> },
-    { label: 'Ćwiczenia', value: totalExercises, icon: <ChartIcon /> },
-    { label: 'Serie', value: totalSets, icon: <FlameIcon /> },
-    { label: 'Odpoczynek', value: restDays, icon: <MoonIcon /> },
+  // Górny wiersz: twarde liczby z historii treningów.
+  const monthWorkouts = stats?.monthWorkouts ?? 0;
+  const streakWeeks = stats?.streakWeeks ?? 0;
+  const weekVolume = stats?.weekVolume ?? 0;
+  const totalVolume = stats?.totalVolume ?? 0;
+  const totalCardioMinutes = stats?.totalCardioMinutes ?? 0;
+  const monthLabel = stats?.monthLabel ?? '';
+
+  const statCards = [
+    {
+      label: 'Dni treningowe',
+      value: trainingDays,
+      icon: <DumbbellIcon />,
+      sub: 'w tym tygodniu',
+    },
+    {
+      label: 'Treningi w miesiącu',
+      value: monthWorkouts,
+      icon: <TrophyIcon />,
+      sub: monthLabel ? `w ${monthLabel}` : undefined,
+    },
+    {
+      label: 'Ćwiczysz już',
+      value: streakWeeks,
+      icon: <FlameIcon />,
+      sub: 'tygodni z rzędu',
+    },
+    {
+      label: 'Wolumen - 7 dni (kg)',
+      value: formatNumberPL(weekVolume),
+      icon: <ChartIcon />,
+      sub: totalCardioMinutes > 0
+        ? `Łącznie: ${formatVolumePL(totalVolume)} · ${formatNumberPL(totalCardioMinutes)} min cardio`
+        : `Łącznie: ${formatVolumePL(totalVolume)}`,
+    },
   ];
 
   return (
@@ -73,16 +108,17 @@ export default function Dashboard({ days, onGoToPlanner, onGoToDay }: DashboardP
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {stats.map(stat => (
+        {statCards.map(stat => (
           <div
             key={stat.label}
-            className="bg-white rounded-2xl p-4 border border-violet-400/15 hover:border-violet-400/30 transition-colors"
+            className="bg-white rounded-2xl p-4 border border-violet-400/15 hover:border-violet-400/30 transition-colors flex flex-col"
           >
             <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-violet-400/25 bg-gradient-to-br from-violet-500/30 to-fuchsia-500/10 text-violet-200 mb-3">
               {stat.icon}
             </div>
-            <p className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{stat.value}</p>
-            <p className="text-xs sm:text-sm text-slate-400 mt-0.5">{stat.label}</p>
+            <p className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-none">{stat.value}</p>
+            <p className="text-xs sm:text-sm text-slate-400 mt-1">{stat.label}</p>
+            {stat.sub && <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">{stat.sub}</p>}
           </div>
         ))}
       </div>

@@ -110,7 +110,7 @@ export default function MoveDayModal({ sourceDay, onMove, onClose }: MoveDayModa
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/50"
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center modal-overlay"
       onClick={onClose}
       style={{
         WebkitTapHighlightColor: 'transparent',
@@ -123,7 +123,7 @@ export default function MoveDayModal({ sourceDay, onMove, onClose }: MoveDayModa
       } as CSSProperties}
     >
       <div
-        className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden modal-sheet animate-slide-up"
+        className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden modal-sheet animate-slide-up modal-panel"
         onClick={(e) => e.stopPropagation()}
         style={{ display: 'flex', flexDirection: 'column' }}
       >

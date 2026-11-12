@@ -201,6 +201,10 @@ export interface WorkoutTemplate {
   color?: string;
   /** Opcjonalny tag kategorii np. "Push", "Pull", "Legs", "Full Body" */
   category?: string;
+  /** Czy użytkownik przypiął szablon — przypięte są zawsze na górze listy. */
+  pinned?: boolean;
+  /** ISO — kiedy szablon ostatnio zastosowano. */
+  lastUsedAt?: string | null;
 }
 
 export const TEMPLATE_COLORS = [
@@ -209,6 +213,54 @@ export const TEMPLATE_COLORS = [
   'bg-pink-500', 'bg-fuchsia-500', 'bg-slate-500', 'bg-stone-500',
 ] as const;
 
+/**
+ * Gradienty kart szablonów — MAPA STATYCZNA, nie sklejane w runtime.
+ *
+ * Tailwind skanuje źródła po literalnych nazwach klas. Klasa zbudowana
+ * w runtime (from- + kolor + -500) nigdy nie trafi do CSS, a szablon
+ * dostawał pustą (lub przezroczystą) belkę nagłówka. Dlatego gradienty
+ * są wypisane wprost — wtedy Tailwind na pewno je wygeneruje.
+ */
+export const TEMPLATE_GRADIENTS: Record<string, string> = {
+  'bg-violet-500': 'bg-gradient-to-r from-violet-500 to-violet-600',
+  'bg-indigo-500': 'bg-gradient-to-r from-indigo-500 to-indigo-600',
+  'bg-blue-500': 'bg-gradient-to-r from-blue-500 to-blue-600',
+  'bg-sky-500': 'bg-gradient-to-r from-sky-500 to-sky-600',
+  'bg-emerald-500': 'bg-gradient-to-r from-emerald-500 to-emerald-600',
+  'bg-amber-500': 'bg-gradient-to-r from-amber-500 to-amber-600',
+  'bg-orange-500': 'bg-gradient-to-r from-orange-500 to-orange-600',
+  'bg-red-500': 'bg-gradient-to-r from-red-500 to-red-600',
+  'bg-pink-500': 'bg-gradient-to-r from-pink-500 to-pink-600',
+  'bg-fuchsia-500': 'bg-gradient-to-r from-fuchsia-500 to-fuchsia-600',
+  'bg-slate-500': 'bg-gradient-to-r from-slate-500 to-slate-600',
+  'bg-stone-500': 'bg-gradient-to-r from-stone-500 to-stone-600',
+};
+
+/** Gradient domyślny — gdy szablon nie ma koloru. */
+export const TEMPLATE_GRADIENT_DEFAULT = 'bg-gradient-to-r from-violet-500 to-indigo-600';
+
+/** Gradient dla danego koloru (z bezpiecznym fallbackiem). */
+export function templateGradient(color?: string | null): string {
+  if (!color) return TEMPLATE_GRADIENT_DEFAULT;
+  return TEMPLATE_GRADIENTS[color] ?? TEMPLATE_GRADIENT_DEFAULT;
+}
+
+/** Polskie nazwy kolorów — do opisów dostępnych dla czytników ekranu. */
+export const TEMPLATE_COLOR_LABELS: Record<string, string> = {
+  'bg-violet-500': 'Fiolet',
+  'bg-indigo-500': 'Indygo',
+  'bg-blue-500': 'Niebieski',
+  'bg-sky-500': 'Jasnoniebieski',
+  'bg-emerald-500': 'Szlachetna zieleń',
+  'bg-amber-500': 'Bursztyn',
+  'bg-orange-500': 'Pomarańcz',
+  'bg-red-500': 'Czerwony',
+  'bg-pink-500': 'Róż',
+  'bg-fuchsia-500': 'Fiolet-magenta',
+  'bg-slate-500': 'Szary',
+  'bg-stone-500': 'Kamień',
+};
+
 export const TEMPLATE_CATEGORIES = [
   'Push', 'Pull', 'Nogi', 'Full Body', 'Upper', 'Lower',
   'Klatka', 'Plecy', 'Barki', 'Ramiona', 'Brzuch', 'Cardio',
@@ -216,3 +268,38 @@ export const TEMPLATE_CATEGORIES = [
 ] as const;
 
 export type TemplateCategory = typeof TEMPLATE_CATEGORIES[number];
+
+/**
+ * Kategorie pogrupowane — filtr w widoku nie jest ścianą 13 chipów,
+ * tylko trzema rzędami z sensownymi grupami.
+ */
+export const TEMPLATE_CATEGORY_GROUPS: { label: string; categories: TemplateCategory[] }[] = [
+  {
+    label: 'Podział treningu',
+    categories: ['Push', 'Pull', 'Nogi', 'Full Body', 'Upper', 'Lower'],
+  },
+  {
+    label: 'Partie ciała',
+    categories: ['Klatka', 'Plecy', 'Barki', 'Ramiona', 'Brzuch'],
+  },
+  {
+    label: 'Inne',
+    categories: ['Cardio', 'Własne'],
+  },
+];
+
+/** Domyślna kategoria nowego szablonu — musi istnieć w TEMPLATE_CATEGORIES. */
+export const TEMPLATE_CATEGORY_DEFAULT: TemplateCategory = 'Własne';
+
+/**
+ * Normalizuje kategorię szablonu.
+ *
+ * Starsze szablony mają w bazie kategorię „Custom”, której nie ma na
+ * liście filtrów — przez to znikały pod filtrem „Własne”. Traktujemy ją
+ * jako „Własne”.
+ */
+export function normalizeTemplateCategory(category?: string | null): string {
+  if (!category) return TEMPLATE_CATEGORY_DEFAULT;
+  if (category === 'Custom' || category === 'custom') return TEMPLATE_CATEGORY_DEFAULT;
+  return category;
+}

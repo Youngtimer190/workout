@@ -116,7 +116,12 @@ function saveAllWeeks(data: WeeksData) {
 
 // Public aliases for external use (e.g. workoutStore sync)
 export function loadAllWeeksLocal(): WeeksData {
-  return loadAllWeeks();
+  const all = loadAllWeeks();
+  const out: WeeksData = {};
+  for (const [key, days] of Object.entries(all)) {
+    out[key] = normalizeWeekDays(days, key);
+  }
+  return out;
 }
 
 export function saveAllWeeksLocal(data: WeeksData) {
@@ -134,10 +139,51 @@ export function createDefaultDays(weekKey: string): WorkoutDay[] {
   }));
 }
 
+/**
+ * Uzupełnia brakujące dni tygodnia i porządkuje je.
+ *
+ * Tydzień w pamięci ma ZAWSZE 7 dni (Poniedziałek–Niedziela). Ale dane
+ * mogą przyjść niekompletne: z chmury (przerwane zapisywanie, plan wygenerowany
+ * w innej wersji aplikacji) albo z uszkodzonego localStorage.
+ *
+ * Bez tego pulpit wywalał aplikację (`days[todayIndex].name` na undefined).
+ * Dlatego brakujące dni uzupełniamy domyślnymi, a istniejące zostawiamy
+ * (razem z ich ćwiczeniami).
+ */
+export function normalizeWeekDays(days: WorkoutDay[] | undefined | null, weekKey: string): WorkoutDay[] {
+  const defaults = createDefaultDays(weekKey);
+  if (!Array.isArray(days) || days.length === 0) return defaults;
+
+  // Dzień rozpoznajemy po `dayIndex` — kolejność w tablicy bywa inna.
+  const byIndex = new Map<number, WorkoutDay>();
+  for (const day of days) {
+    if (!day) continue;
+    const idx = typeof day.dayIndex === 'number' && day.dayIndex >= 0 && day.dayIndex <= 6
+      ? day.dayIndex
+      : -1;
+    if (idx >= 0 && !byIndex.has(idx)) {
+      byIndex.set(idx, day);
+    }
+  }
+
+  return defaults.map((fallback, i) => {
+    const saved = byIndex.get(i);
+    if (!saved) return fallback;
+    return {
+      ...fallback,
+      ...saved,
+      id: saved.id ?? fallback.id,
+      name: saved.name ?? fallback.name,
+      exercises: Array.isArray(saved.exercises) ? saved.exercises : [],
+      isRestDay: saved.isRestDay ?? fallback.isRestDay,
+      color: saved.color ?? fallback.color,
+    };
+  });
+}
+
 export function loadWeekDays(weekKey: string): WorkoutDay[] {
   const all = loadAllWeeks();
-  if (all[weekKey]) return all[weekKey];
-  return createDefaultDays(weekKey);
+  return normalizeWeekDays(all[weekKey], weekKey);
 }
 
 export function saveWeekDays(weekKey: string, days: WorkoutDay[]) {

@@ -25,6 +25,8 @@ import {
   syncAllDataFromCloud,
 } from '../lib/syncService';
 import { isSupabaseConfigured } from '../lib/supabase';
+import { logCloudIssue } from '../lib/cloudStatus';
+import { ensureCardioLog } from '../lib/cardio';
 
 /**
  * Łączy tydzień z chmury z tygodniem z localStorage.
@@ -61,7 +63,26 @@ function saveCustomExercisesLocal(exercises: Exercise[]) {
 // Run migration once
 migrateOldData();
 
-export function useWorkoutStore(userId?: string) {
+/**
+ * Identyfikator użytkownika demo — nie istnieje w bazie, więc nie ma sensu
+ * synchronizować z nim planu (dane demo są lokalne).
+ */
+const DEMO_USER_ID = 'demo';
+
+/**
+ * Stan magazynu treningów.
+ *
+ * @param userId  identyfikator zalogowanego użytkownika (undefined = wylogowany)
+ * @param authInitialized  czy wiadomo już, kto jest zalogowany
+ *
+ * `authInitialized` jest KLUCZOWY: dopóki sesja się nie odtworzy, `userId`
+ * wynosi `undefined` — a to wygląda dokładnie tak jak „wylogowany".
+ * Bez tego zastrzeżenia aplikacja kasowała dane lokalne przy każdym
+ * starcie, zanim zdążyła je odtworzyć z chmury. Przy awarii chmury
+ * użytkownik traciłby jedyną kopię planu.
+ */
+export function useWorkoutStore(userId?: string, authInitialized = true) {
+
   // ── Week navigation state ──
   const [currentMonday, setCurrentMonday] = useState<Date>(() => getMondayOf(new Date()));
   const weekKey = getWeekKey(currentMonday);
@@ -92,6 +113,10 @@ export function useWorkoutStore(userId?: string) {
   useEffect(() => {
     if (!isSupabaseConfigured) return;
 
+    // Nie wiemy jeszcze, kto jest zalogowany (trwa odtwarzanie sesji).
+    // Nie wolno w tym momencie kasować danych lokalnych.
+    if (!authInitialized) return;
+
     if (!userId) {
       // Użytkownik wylogował się — wyczyść localStorage żeby kolejny
       // użytkownik nie widział danych poprzedniego
@@ -102,13 +127,40 @@ export function useWorkoutStore(userId?: string) {
       return;
     }
 
+    if (userId === DEMO_USER_ID) {
+      // Tryb demo: dane zostają lokalne (tak komunikuje baner demo),
+      // więc nie synchronizujemy ich z chmurą — to tylko opóźniałoby start.
+      const currentKey = getWeekKey(getMondayOf(new Date()));
+      setDays(loadWeekDays(currentKey));
+      setCustomExercises(loadCustomExercisesLocal());
+      setIsHydrating(false);
+      return;
+    }
+
     const syncFromCloud = async () => {
       setSyncing(true);
+      // Gdy chmura nie odpowiada, nie zostawiamy aplikacji na szkieletcie —
+      // limit czasu jest w warstwie serwisu (syncService), a poniższe
+      // zabezpieczenie jest siatką bezpieczeństwa.
+      const guard = setTimeout(() => {
+        setSyncing(false);
+        setIsHydrating(false);
+      }, 15_000);
       try {
         // Zawsze pobierz dane z chmury dla zalogowanego użytkownika.
         // NIE pushujemy lokalnych danych — lokalne dane to dane anonimowe
         // które nie należą do żadnego konta.
-        const { weeks: cloudWeeks, customExercises: cloudCustom } = await syncAllDataFromCloud(userId);
+        const { weeks: cloudWeeks, customExercises: cloudCustom, ok } = await syncAllDataFromCloud(userId);
+
+        // Chmura nie odpowiedzia — NIE kasujemy danych lokalnych.
+        // Bez tego awaria (albo chwilowy problem z uprawnieniami) skasowałaby
+        // trening zapisany na tym urządzeniu.
+        if (!ok) {
+          const currentKey = getWeekKey(getMondayOf(new Date()));
+          setDays(loadWeekDays(currentKey));
+          setCustomExercises(loadCustomExercisesLocal());
+          return;
+        }
 
         // Wyczyść lokalne dane i zastąp danymi z chmury
         clearLocalData();
@@ -126,14 +178,39 @@ export function useWorkoutStore(userId?: string) {
         setDays(loadWeekDays(currentKey));
         setCustomExercises(cloudCustom);
       } catch (err) {
-        console.error('[WorkoutStore] Sync error:', err);
+        logCloudIssue('workoutStore:syncFromCloud', err);
       } finally {
+        clearTimeout(guard);
         setSyncing(false);
         setIsHydrating(false);
       }
     };
 
     syncFromCloud();
+  }, [userId, authInitialized]);
+
+  /**
+   * Ponowne pobranie planu z chmury (używane przez „Spróbuj ponownie”
+   * oraz przez automatyczne ponawianie po awarii).
+   */
+  const refreshFromCloud = useCallback(async () => {
+    if (!userId || userId === DEMO_USER_ID || !isSupabaseConfigured) return;
+    setSyncing(true);
+    try {
+      const { weeks: cloudWeeks, customExercises: cloudCustom, ok } = await syncAllDataFromCloud(userId);
+      // Nieudany odczyt = nie ruszamy danych lokalnych.
+      if (!ok) return;
+      clearLocalData();
+      if (Object.keys(cloudWeeks).length > 0) saveAllWeeksLocal(cloudWeeks);
+      saveCustomExercisesLocal(cloudCustom);
+      const currentKey = getWeekKey(getMondayOf(new Date()));
+      setDays(loadWeekDays(currentKey));
+      setCustomExercises(cloudCustom);
+    } catch (err) {
+      logCloudIssue('workoutStore:refreshFromCloud', err);
+    } finally {
+      setSyncing(false);
+    }
   }, [userId]);
 
   // ── Week navigation ──
@@ -380,7 +457,13 @@ export function useWorkoutStore(userId?: string) {
     setDays(prev => {
       const next = prev.map(d =>
         d.id === dayId
-          ? { ...d, exercises: [...d.exercises, { ...exercise, id: `${exercise.id}-${Date.now()}` }] }
+          ? {
+              ...d,
+              // Cardio dostaje zapis od razu — inaczej świeżo dodane cardio
+              // nie blokowałoby zaliczenia dnia (a tydzień ma się liczyć
+              // tylko wtedy, gdy wszystko się zrobiło).
+              exercises: [...d.exercises, ensureCardioLog({ ...exercise, id: `${exercise.id}-${Date.now()}` })],
+            }
           : d
       );
       persistDays(next, weekKey);
@@ -622,7 +705,7 @@ export function useWorkoutStore(userId?: string) {
     const rekeyed = generatedDays.map((d, i) => ({
       ...d,
       id: `${weekKey}-day-${i}`,
-      exercises: d.exercises.map(e => ({
+      exercises: d.exercises.map(e => ensureCardioLog({
         ...e,
         id: `${e.id}-${weekKey}-${i}`,
       })),
@@ -716,5 +799,6 @@ export function useWorkoutStore(userId?: string) {
     refreshCustomExercises,
     // Sync state
     syncing,
+    refreshFromCloud,
   };
 }

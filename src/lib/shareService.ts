@@ -10,6 +10,7 @@
  * nie rozwiązuje `email → user_id`, więc aplikacja nie może (i nie musi)
  * ujawniać, czy konto odbiorcy w ogóle istnieje.
  */
+import { logCloudIssue, markCloudFailed, markCloudOk } from './cloudStatus';
 import { supabase, isSupabaseConfigured } from './supabase';
 import {
   SharedWorkout,
@@ -91,9 +92,11 @@ export async function fetchShares(userId: string): Promise<{
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('[shareService] fetchShares error:', error);
+    logCloudIssue('shareService:fetchShares', error);
+    markCloudFailed(error.message);
     return { incoming: [], outgoing: [], error: new Error(error.message) };
   }
+  markCloudOk();
 
   const rows = (data ?? []) as SharedWorkout[];
   return {

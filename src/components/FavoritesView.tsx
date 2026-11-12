@@ -200,7 +200,7 @@ export default function FavoritesView({
           aria-label="Wybierz dzień planu"
         >
           <div
-            className="absolute inset-0 animate-fade-in bg-black/65 backdrop-blur-sm"
+            className="absolute inset-0 modal-overlay animate-fade-in"
             onClick={() => setPickerOpen(false)}
           />
 

@@ -1,113 +1,18 @@
-import { useState, useMemo } from 'react';
-import { WorkoutTemplate, Exercise, WorkoutDay } from '../types';
-import { TEMPLATE_CATEGORIES } from '../types';
-import { muscleGroupColors } from '../data/exercises';
+import { useEffect, useMemo, useState } from 'react';
+import { WorkoutTemplate, Exercise, WorkoutDay, TEMPLATE_CATEGORY_GROUPS, normalizeTemplateCategory } from '../types';
 import CreateTemplateModal from './CreateTemplateModal';
 import ApplyTemplateModal from './ApplyTemplateModal';
-import { ClipboardIcon, MuscleIcon, SearchIcon } from './icons';
+import TemplateCard from './TemplateCard';
+import { ClipboardIcon, SearchIcon, SlidersIcon, XIcon } from './icons';
+import { pluralWorkout } from '../lib/format';
 
-function TemplateCard({
-  template,
-  onEdit,
-  onDelete,
-  onApply,
-}: {
-  template: WorkoutTemplate;
-  onEdit: () => void;
-  onDelete: () => void;
-  onApply: () => void;
-}) {
-  const colorBase = template.color?.replace('bg-', '').replace('-500', '') ?? 'violet';
-  const gradientClass = `bg-gradient-to-r from-${colorBase}-500 to-${colorBase}-600`;
-  const strengthExercises = template.exercises.filter(e => e.muscleGroup !== 'Cardio');
-  const totalSets = strengthExercises.reduce((a, e) => a + (e.sets || 0), 0);
-  const cardioCount = template.exercises.filter(e => e.muscleGroup === 'Cardio').length;
-  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
+type SortMode = 'recent' | 'name' | 'newest';
 
-  return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full">
-      {/* Header with color gradient */}
-      <div className={`p-4 ${gradientClass} flex-shrink-0`}>
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="text-lg font-bold text-white truncate pr-8">{template.name}</h3>
-            {template.description && <p className="text-white/80 text-sm mt-2 line-clamp-2">{template.description}</p>}
-          </div>
-          <div className="flex items-center gap-1.5">
-            <button onClick={onEdit} className="p-2 rounded-xl bg-white/20 text-white hover:bg-white/30 transition-colors cursor-pointer" aria-label="Edytuj szablon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-            </button>
-            <button
-              onClick={() => setShowRemoveConfirm(true)}
-              className="p-2 rounded-xl bg-white/20 text-white hover:bg-red-500 hover:bg-white/30 transition-colors cursor-pointer"
-              aria-label="Usuń szablon"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" /><path d="M10 11v6M14 11v6M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" /></svg>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Remove confirmation - inline banner - shown right after header */}
-      {showRemoveConfirm && (
-        <div className="mx-4 mt-3 rounded-xl bg-red-50 border border-red-200 px-3 py-2.5 flex items-center justify-between gap-3 animate-in">
-          <p className="text-xs text-red-700 font-medium">Usunąć szablon <span className="font-bold">"{template.name}"</span>?</p>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => { onDelete(); setShowRemoveConfirm(false); }}
-              className="px-3 py-1.5 rounded-lg bg-red-500 text-white text-xs font-semibold active:bg-red-600 transition-colors cursor-pointer"
-            >
-              Usuń
-            </button>
-            <button
-              onClick={() => setShowRemoveConfirm(false)}
-              className="px-3 py-1.5 rounded-lg bg-white text-slate-600 text-xs font-semibold border border-slate-200 active:bg-slate-50 transition-colors cursor-pointer"
-            >
-              Anuluj
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="p-4 flex flex-col h-full">
-        {/* Stats & Muscle groups - flexible area */}
-        <div className="space-y-3 flex-1 min-h-0">
-          {/* Stats */}
-          <div className="flex items-center gap-4 text-sm">
-            <span className="flex items-center gap-1 text-slate-600">
-              <span className="font-bold text-violet-600">{template.exercises.length}</span> ćwiczeń
-            </span>
-            <span className="flex items-center gap-1 text-slate-600">
-              <span className="font-bold text-emerald-600">{totalSets}</span> serii
-            </span>
-            {cardioCount > 0 && (
-              <span className="flex items-center gap-1 text-slate-600">
-                <span className="font-bold text-amber-600">{cardioCount}</span> cardio
-              </span>
-            )}
-          </div>
-
-          {/* Muscle groups */}
-          <div className="flex flex-wrap gap-1.5">
-            {Array.from(new Set(template.exercises.map(e => e.muscleGroup))).map(mg => (
-              <span key={mg} className={`text-xs font-semibold px-2 py-0.5 rounded-full ${muscleGroupColors[mg] || 'bg-slate-100 text-slate-600'}`}>
-                <span className="inline-flex items-center gap-1"><MuscleIcon group={mg} className="h-3.5 w-3.5" />{mg}</span>
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Category badge + Apply button - always at bottom */}
-        <div className="pt-2 border-t border-slate-100 flex items-center justify-between mt-auto">
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 capitalize">{template.category?.toLowerCase() ?? 'custom'}</span>
-          <button onClick={onApply} className="py-2 px-4 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:scale-[1.01] transition-all cursor-pointer whitespace-nowrap flex-shrink-0">
-            Zastosuj
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+const SORTS: { id: SortMode; label: string }[] = [
+  { id: 'recent', label: 'Ostatnio używane' },
+  { id: 'newest', label: 'Najnowsze' },
+  { id: 'name', label: 'Nazwa A–Z' },
+];
 
 interface TemplatesViewProps {
   templates: WorkoutTemplate[];
@@ -117,8 +22,14 @@ interface TemplatesViewProps {
   error: string | null;
   onCreateTemplate: (template: Omit<WorkoutTemplate, 'id' | 'createdAt' | 'updatedAt'>) => void;
   onUpdateTemplate: (template: WorkoutTemplate) => void;
-  onDeleteTemplate: (id: string) => void;
+  onDeleteTemplate: (id: string) => void | Promise<WorkoutTemplate | null>;
+  onRestoreTemplate?: (template: WorkoutTemplate) => void;
+  onDuplicateTemplate?: (template: WorkoutTemplate) => void;
   onApplyTemplate: (template: WorkoutTemplate, exercises: Exercise[], mode: 'append' | 'replace', dayId: string) => void;
+  /** Przełącza przypięcie szablonu. */
+  onTogglePin?: (template: WorkoutTemplate) => void;
+  /** Komunikat globalny aplikacji (toast). */
+  onNotify?: (ok: boolean, text: string, actionLabel?: string, onAction?: () => void) => void;
 }
 
 export default function TemplatesView({
@@ -130,113 +41,319 @@ export default function TemplatesView({
   onCreateTemplate,
   onUpdateTemplate,
   onDeleteTemplate,
+  onRestoreTemplate,
+  onDuplicateTemplate,
   onApplyTemplate,
+  onTogglePin,
+  onNotify,
 }: TemplatesViewProps) {
   const [search, setSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('Wszystkie');
+  const [categories, setCategories] = useState<string[]>([]);
+  const [sort, setSort] = useState<SortMode>('recent');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<WorkoutTemplate | null>(null);
   const [applyingTemplate, setApplyingTemplate] = useState<WorkoutTemplate | null>(null);
 
-  const categories = ['Wszystkie', ...TEMPLATE_CATEGORIES];
+  // Nowe dane → zamykamy rozwinięte karty.
+  useEffect(() => {
+    setExpandedId(null);
+  }, [templates.length]);
+
+  const toggleCategory = (cat: string) => {
+    setCategories(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]);
+  };
+
+  const clearFilters = () => {
+    setCategories([]);
+    setSearch('');
+  };
 
   const filteredTemplates = useMemo(() => {
-    return templates.filter(t => {
-      const matchSearch = t.name.toLowerCase().includes(search.toLowerCase()) ||
-        t.description.toLowerCase().includes(search.toLowerCase()) ||
-        t.exercises.some(e => e.name.toLowerCase().includes(search.toLowerCase()));
-      const matchCat = selectedCategory === 'Wszystkie' || t.category === selectedCategory;
+    const q = search.trim().toLowerCase();
+    const list = templates.filter(t => {
+      const name = (t.name ?? '').toLowerCase();
+      const desc = (t.description ?? '').toLowerCase();
+      const exNames = (t.exercises ?? []).some(e => (e.name ?? '').toLowerCase().includes(q));
+      const matchSearch = !q || name.includes(q) || desc.includes(q) || exNames;
+      const matchCat = categories.length === 0 || categories.includes(normalizeTemplateCategory(t.category));
       return matchSearch && matchCat;
     });
-  }, [templates, search, selectedCategory]);
+
+    return list.sort((a, b) => {
+      // Przypięte zawsze na górze.
+      const pinDiff = Number(!!b.pinned) - Number(!!a.pinned);
+      if (pinDiff !== 0) return pinDiff;
+
+      switch (sort) {
+        case 'name':
+          return (a.name ?? '').localeCompare(b.name ?? '', 'pl');
+        case 'newest':
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        case 'recent':
+        default: {
+          const la = a.lastUsedAt;
+          const lb = b.lastUsedAt;
+          if (la && lb) return new Date(lb).getTime() - new Date(la).getTime();
+          if (lb) return 1;
+          if (la) return -1;
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        }
+      }
+    });
+  }, [templates, search, categories, sort]);
 
   const handleSaveTemplate = (data: Omit<WorkoutTemplate, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (editingTemplate) {
       onUpdateTemplate({ ...data, id: editingTemplate.id, createdAt: editingTemplate.createdAt, updatedAt: new Date().toISOString() });
+      onNotify?.(true, `Zapisano zmiany w szablonie „${data.name}”.`);
     } else {
       onCreateTemplate(data);
+      onNotify?.(true, `Utworzono szablon „${data.name}”.`);
     }
     setShowCreateModal(false);
     setEditingTemplate(null);
   };
 
+  const handleDelete = async (template: WorkoutTemplate) => {
+    const removed = await onDeleteTemplate(template.id);
+    setEditingTemplate(null);
+    // Toast pokazujemy zawsze (nazwa z karty), a „Cofnij” tylko wtedy,
+    // gdy udało się odzyskać usunięty szablon.
+    onNotify?.(
+      true,
+      `Usunięto szablon „${template.name}”.`,
+      removed ? 'Cofnij' : undefined,
+      removed ? () => onRestoreTemplate?.(removed) : undefined
+    );
+  };
+
+  const handleDuplicate = (template: WorkoutTemplate) => {
+    onDuplicateTemplate?.(template);
+    onNotify?.(true, `Utworzono kopię szablonu „${template.name}”.`);
+  };
+
+  const filtersActive = categories.length > 0;
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
+    <div className="space-y-4">
+      {/* ── Nagłówek ── */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Moje treningi</h1>
-          <p className="text-slate-500 mt-1">Zapisz szablony treningów i szybko dodawaj je do planu</p>
+          <h1 className="flex items-center gap-2 text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
+            <ClipboardIcon className="h-6 w-6 text-violet-300" />
+            Moje treningi
+          </h1>
+          <p className="mt-1 text-sm text-slate-400">
+            {templates.length > 0
+              ? `${templates.length} ${pluralWorkout(templates.length)} w zapasie — dodaj je do planu jednym kliknięciem`
+              : 'Zapisz gotowe zestawy ćwiczeń i dodawaj je do planu jednym kliknięciem'}
+          </p>
         </div>
         <button
           onClick={() => { setEditingTemplate(null); setShowCreateModal(true); }}
-          className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 text-white text-sm font-semibold shadow-md shadow-indigo-200 hover:shadow-indigo-300 hover:scale-[1.02] transition-all cursor-pointer"
+          className="inline-flex min-h-[44px] flex-shrink-0 items-center gap-2 self-start rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_12px_30px_-14px_rgba(139,92,246,1)] transition-all hover:brightness-110 cursor-pointer"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M12 5v14M5 12h14" /></svg>
-          <span className="hidden sm:inline">Nowy szablon</span>
-          <span className="sm:hidden">Nowy</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          Nowy szablon
         </button>
       </div>
 
-      {/* Search & Filters */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-3">
-        <div className="relative">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
-          <input
-            type="text"
-            placeholder="Szukaj szablonu, opisu lub ćwiczenia..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-transparent"
-          />
-          {search && <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4"><path d="M18 6L6 18M6 6l12 12" /></svg></button>}
+      {/* ── Wyszukiwanie + filtry ── */}
+      <div className="space-y-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3">
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="relative flex-1">
+            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            <input
+              type="search"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Szukaj szablonu, opisu lub ćwiczenia…"
+              aria-label="Szukaj szablonu"
+              className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 pl-9 pr-9 text-sm text-white placeholder:text-slate-500 transition-all focus:border-violet-400/50 focus:outline-none focus:ring-2 focus:ring-violet-500/25"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                aria-label="Wyczyść wyszukiwanie"
+                className="absolute right-2.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+              >
+                <XIcon className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Filtry — zwijane na telefonie */}
+            <button
+              onClick={() => setFiltersOpen(o => !o)}
+              aria-expanded={filtersOpen}
+              className={`inline-flex min-h-[42px] items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition-all cursor-pointer ${
+                filtersActive
+                  ? 'border-violet-400/40 bg-violet-500/15 text-violet-100'
+                  : 'border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.06]'
+              }`}
+            >
+              <SlidersIcon className="h-3.5 w-3.5" />
+              Filtry
+              {filtersActive && (
+                <span className="rounded-full bg-violet-500/25 px-1.5 py-0.5 text-[10px] font-bold text-violet-100">
+                  {categories.length}
+                </span>
+              )}
+            </button>
+
+            <label className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs text-slate-300">
+              <span className="sr-only sm:not-sr-only">Sortuj</span>
+              <select
+                value={sort}
+                onChange={e => setSort(e.target.value as SortMode)}
+                aria-label="Sortowanie szablonów"
+                className="cursor-pointer bg-transparent text-xs font-semibold text-slate-200 outline-none"
+              >
+                {SORTS.map(s => (
+                  <option key={s.id} value={s.id} className="bg-[#1a0d38]">{s.label}</option>
+                ))}
+              </select>
+            </label>
+          </div>
         </div>
 
-        <div className="flex flex-wrap gap-1.5">
-          {categories.map(cat => (
-            <button key={cat} onClick={() => setSelectedCategory(cat)} className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${selectedCategory === cat ? 'bg-violet-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>{cat}</button>
-          ))}
-        </div>
+        {filtersOpen && (
+          <div className="space-y-3 border-t border-white/[0.07] pt-3">
+            {TEMPLATE_CATEGORY_GROUPS.map(group => (
+              <div key={group.label}>
+                <p className="mb-1.5 px-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+                  {group.label}
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {group.categories.map(cat => {
+                    const active = categories.includes(cat);
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => toggleCategory(cat)}
+                        aria-pressed={active}
+                        className={`rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-all cursor-pointer ${
+                          active
+                            ? 'border-violet-400/40 bg-violet-500/20 text-violet-100'
+                            : 'border-white/10 bg-white/[0.03] text-slate-400 hover:bg-white/[0.06] hover:text-slate-200'
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+
+            {filtersActive && (
+              <button
+                onClick={() => setCategories([])}
+                className="text-[11px] font-semibold text-violet-300 underline underline-offset-2 transition-colors hover:text-violet-200 cursor-pointer"
+              >
+                Wyczyść filtry kategorii
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Empty state */}
-      {templates.length === 0 && !loading && (
-        <div className="bg-white rounded-2xl border-2 border-dashed border-violet-200 p-12 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/30 to-fuchsia-500/10 text-violet-200"><ClipboardIcon className="h-8 w-8" /></div>
-          <h3 className="text-lg font-bold text-slate-700 mb-2">Brak zapisanych szablonów</h3>
-          <p className="text-slate-400 text-sm mb-6 max-w-xs mx-auto">Utwórz swój pierwszy szablon treningu, aby szybko dodawać gotowe zestawy ćwiczeń do planu tygodniowego.</p>
-          <button onClick={() => setShowCreateModal(true)} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 text-white text-sm font-semibold shadow-md cursor-pointer hover:scale-[1.02] transition-all"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-4 h-4"><path d="M12 5v14M5 12h14" /></svg>Utwórz pierwszy szablon</button>
+      {/* ── Licznik wyników ── */}
+      {templates.length > 0 && (
+        <p className="px-1 text-xs text-slate-500">
+          {filteredTemplates.length === templates.length
+            ? `Pokazujemy ${templates.length} ${pluralWorkout(templates.length)}`
+            : `Pokazujemy ${filteredTemplates.length} z ${templates.length} ${pluralWorkout(templates.length)}`}
+          {(search || filtersActive) && (
+            <button
+              onClick={clearFilters}
+              className="ml-2 font-semibold text-violet-300 underline underline-offset-2 cursor-pointer"
+            >
+              Wyczyść
+            </button>
+          )}
+        </p>
+      )}
+
+      {/* ── Błąd ── */}
+      {error && (
+        <div className="rounded-2xl border border-red-400/25 bg-red-500/10 p-3 text-xs leading-relaxed text-red-200">
+          {error}
         </div>
       )}
 
-      {/* Templates grid */}
+      {/* ── Pusty stan ── */}
+      {templates.length === 0 && !loading && (
+        <div className="rounded-2xl border-2 border-dashed border-violet-400/25 bg-white/[0.02] px-6 py-12 text-center">
+          <span className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/25 to-fuchsia-500/10 text-violet-200">
+            <ClipboardIcon className="h-8 w-8" />
+          </span>
+          <h2 className="text-lg font-bold text-white">Nie masz jeszcze szablonów</h2>
+          <p className="mx-auto mt-2 max-w-sm text-sm text-slate-400">
+            Szablon to gotowy zestaw ćwiczeń, który dodajesz do dowolnego dnia jednym kliknięciem.
+            Najszybciej: w Planerze wybierz dzień i zapisz go jako szablon.
+          </p>
+          <button
+            onClick={() => { setEditingTemplate(null); setShowCreateModal(true); }}
+            className="mt-5 inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:brightness-110 cursor-pointer"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Utwórz pierwszy szablon
+          </button>
+        </div>
+      )}
+
+      {/* ── Lista ── */}
       {filteredTemplates.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filteredTemplates.map(template => (
             <TemplateCard
               key={template.id}
               template={template}
-              onEdit={() => { setEditingTemplate(template); setShowCreateModal(true); }}
-              onDelete={() => onDeleteTemplate(template.id)}
+              expanded={expandedId === template.id}
+              onToggleExpand={() => setExpandedId(expandedId === template.id ? null : template.id)}
               onApply={() => setApplyingTemplate(template)}
+              onEdit={() => { setEditingTemplate(template); setShowCreateModal(true); }}
+              onDuplicate={() => handleDuplicate(template)}
+              onDelete={() => handleDelete(template)}
+              onTogglePin={() => onTogglePin?.(template)}
             />
           ))}
         </div>
       )}
 
+      {/* ── Brak wyników przy filtrach ── */}
       {filteredTemplates.length === 0 && templates.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-10 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/30 to-fuchsia-500/10 text-violet-200"><SearchIcon className="h-6 w-6" /></div>
-          <p className="text-slate-500 font-medium">Brak pasujących szablonów</p>
-          <p className="text-slate-400 text-sm mt-1">Spróbuj innych kryteriów wyszukiwania</p>
+        <div className="rounded-2xl border border-dashed border-violet-400/20 bg-white/[0.02] px-6 py-10 text-center">
+          <p className="text-sm font-semibold text-slate-300">Nic nie pasuje do filtra</p>
+          <p className="mt-1 text-xs text-slate-500">Zmień wyszukiwanie albo wyczyść filtry kategorii.</p>
+          <button
+            onClick={clearFilters}
+            className="mt-4 text-xs font-semibold text-violet-300 underline underline-offset-2 cursor-pointer"
+          >
+            Wyczyść filtry
+          </button>
         </div>
       )}
 
-      {/* Loading/Error */}
-      {loading && <div className="flex items-center justify-center py-12"><svg className="w-6 h-6 text-violet-500 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg></div>}
-      {error && <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm text-center">{error}</div>}
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <svg className="h-6 w-6 animate-spin text-violet-400" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+        </div>
+      )}
 
-      {/* Create/Edit Modal */}
+      {/* ── Modal tworzenia/edycji ── */}
       {showCreateModal && (
         <CreateTemplateModal
           onSave={handleSaveTemplate}
@@ -246,7 +363,7 @@ export default function TemplatesView({
         />
       )}
 
-      {/* Apply Template Modal */}
+      {/* ── Modal zastosowania ── */}
       {applyingTemplate && (
         <ApplyTemplateModal
           template={applyingTemplate}

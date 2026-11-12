@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, Fragment } from 'react';
 import { SetLog, Exercise } from '../types';
 import { CheckIcon, TimerIcon } from './icons';
+import { buildCardioLog, CARDIO_DEFAULT_MINUTES } from '../lib/cardio';
 
 interface SetTrackerProps {
   exercise?: Exercise;
@@ -217,13 +218,102 @@ export default function SetTracker({
   })();
 
   if (isCardio) {
+    // Cardio nie ma serii — ma JEDEN zapis, którym oznaczamy wykonanie
+    // (w `actualReps` trzymamy zliczone minuty).
+    //
+    // Stan bierzemy z PROPS, a nie z lokalnej kopii `localLogs`: oznaczenie
+    // można zmienić także z badge'a na karcie ćwiczenia, więc lokalna kopia
+    // potrafiła pokazywać stan sprzed kilku kliknięć (panel mówił
+    // „Oznacz jako zrobione", a ćwiczenie było już zaliczone).
+    const cardioLog = setLogs[0];
+    const cardioDone = !!cardioLog?.done;
+    const plannedMinutes = duration ?? CARDIO_DEFAULT_MINUTES;
+    const currentMinutes = cardioLog?.actualReps ?? plannedMinutes;
+
+    // Minuty wpisujemy ręcznie (trening trwał 25 min, a w planie było 20).
+    // Zapisujemy je dopiero po wyjściu z pola — inaczej każde kliknięcie
+    // klawiatza zapisywałoby plan do chmury.
+    const [minutesInput, setMinutesInput] = useState(String(currentMinutes));
+    useEffect(() => {
+      setMinutesInput(String(currentMinutes));
+    }, [currentMinutes]);
+
+    const commitMinutes = (raw: string) => {
+      const parsed = parseInt(raw, 10);
+      const minutes = Number.isFinite(parsed) ? Math.max(0, Math.min(600, parsed)) : plannedMinutes;
+      setMinutesInput(String(minutes));
+      if (minutes === currentMinutes) return;
+      onChange(buildCardioLog(setLogs, plannedMinutes, { minutes }));
+    };
+
+    const toggleCardioDone = () => {
+      const minutes = parseInt(minutesInput, 10);
+      const effective = Number.isFinite(minutes) ? minutes : plannedMinutes;
+      onChange(buildCardioLog(setLogs, plannedMinutes, {
+        done: !cardioDone,
+        minutes: effective,
+      }));
+    };
+
     return (
-      <div className="mt-2 rounded-xl border border-sky-100 bg-sky-50/50 px-4 py-3 flex items-center justify-between">
-        <span className="text-xs font-semibold text-sky-700 inline-flex items-center gap-1">
-          <TimerIcon className="h-3.5 w-3.5" />
-          Czas trwania
-        </span>
-        <span className="text-sm font-bold text-sky-800">{duration ?? '—'} min</span>
+      <div className={`mt-2 rounded-xl border px-3 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${
+        cardioDone
+          ? 'border-emerald-200 bg-emerald-50'
+          : 'border-sky-100 bg-sky-50'
+      }`}>
+        <div className="flex items-center gap-2 min-w-0">
+          <TimerIcon className="h-4 w-4 flex-shrink-0 text-sky-700" />
+          <div className="min-w-0">
+            <p className={`text-xs font-semibold ${cardioDone ? 'text-emerald-700' : 'text-sky-700'}`}>
+              Czas trwania
+            </p>
+            <p className={`text-[11px] ${cardioDone ? 'text-emerald-700/80' : 'text-sky-700/80'}`}>
+              Plan: {plannedMinutes} min
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="flex items-center gap-1.5">
+            <span className={`text-[11px] font-semibold ${cardioDone ? 'text-emerald-700/80' : 'text-sky-700/80'}`}>
+              Wykonano
+            </span>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={600}
+              value={minutesInput}
+              aria-label="Minuty wykonanego cardio"
+              onChange={e => setMinutesInput(e.target.value)}
+              onBlur={e => commitMinutes(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') commitMinutes((e.target as HTMLInputElement).value);
+              }}
+              className="w-16 rounded-lg border border-sky-100 bg-white px-2 py-1.5 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-300"
+            />
+            <span className={`text-xs font-semibold ${cardioDone ? 'text-emerald-700' : 'text-sky-700'}`}>min</span>
+          </label>
+
+          <button
+            onClick={toggleCardioDone}
+            aria-pressed={cardioDone}
+            className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition-colors cursor-pointer ${
+              cardioDone
+                ? 'border-emerald-200 bg-emerald-100 text-emerald-700 hover:bg-emerald-50'
+                : 'border-sky-100 bg-white text-sky-700 hover:bg-sky-50'
+            }`}
+          >
+            {cardioDone ? (
+              <>
+                <CheckIcon className="h-3.5 w-3.5" />
+                Cofnij oznaczenie
+              </>
+            ) : (
+              'Oznacz jako zrobione'
+            )}
+          </button>
+        </div>
       </div>
     );
   }

@@ -159,7 +159,11 @@
 .app-theme .hover\:bg-amber-50:hover { background-color: rgb(245 158 11 / 0.18); }
 .app-theme .active\:bg-amber-100 { background-color: rgb(245 158 11 / 0.24); }
 .app-theme .hover\:bg-emerald-100:hover { background-color: rgb(16 185 129 / 0.2); }
+.app-theme .hover\:bg-emerald-50:hover { background-color: rgb(16 185 129 / 0.18); }
 .app-theme .active\:bg-emerald-200 { background-color: rgb(16 185 129 / 0.26); }
+.app-theme .hover\:bg-sky-100:hover { background-color: rgb(14 165 233 / 0.22); }
+.app-theme .hover\:bg-sky-50:hover { background-color: rgb(14 165 233 / 0.18); }
+.app-theme .active\:bg-sky-100 { background-color: rgb(14 165 233 / 0.26); }
 .app-theme .hover\:bg-violet-50:hover { background-color: rgb(139 92 246 / 0.16); }
 .app-theme .hover\:bg-violet-100:hover { background-color: rgb(139 92 246 / 0.22); }
 .app-theme .active\:bg-violet-50,
@@ -200,6 +204,28 @@
 .app-theme .shadow-amber-100 { --tw-shadow-color: rgb(245 158 11 / 0.4); }
 
 /* ── Elementy wspólne ────────────────────────────────────────────────────── */
+
+/* ── Modale ─────────────────────────────────────────────────────────────────
+   Panele okien modalnych używają klasy `bg-white`, która w motywie ciemnym
+   mapuje się na `--app-surface` (rgba(23, 11, 51, 0.72)). Przy tak niskiej
+   nieprzezroczystości treść listy pod spodem prześwitywała przez panel —
+   powstawał „duplikat” tekstu (np. opis dnia widoczny wewnątrz listy
+   ćwiczeń). Modale dostają więc własne, znacznie mniej przezroczyste tło:
+   nadal delikatnie szklane, ale czytelne. Reguły dotyczą WSZYSTKICH okien
+   (modal-sheet), więc wygląd jest spójny w całej aplikacji. */
+.app-theme .modal-sheet,
+.app-theme .modal-panel {
+  background-color: rgba(16, 6, 36, 0.965);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* Przyciemnienie tła pod modalem — jeden wspólny styl dla wszystkich okien. */
+.app-theme .modal-overlay {
+  background-color: rgba(5, 2, 12, 0.74);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
 
 /* Przełącznik: jasny „knob" na kolorowym torze */
 .app-theme .toggle-knob { background-color: #e2e8f0; }

@@ -3,6 +3,7 @@ import { Exercise, SetLog } from '../types';
 import { muscleGroupBgColors } from '../data/exercises';
 import SetTracker from './SetTracker';
 import { formatWeightDisplay, requiresDumbbells } from '../lib/weightUtils';
+import { buildCardioLog, CARDIO_DEFAULT_MINUTES } from '../lib/cardio';
 import { CheckIcon, CircleIcon, NoteIcon, TimerIcon } from './icons';
 
 interface ExerciseCardProps {
@@ -22,6 +23,8 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
   const [reps, setReps] = useState(exercise.reps || '8-12');
   const [weight, setWeight] = useState(String(exercise.weight ?? ''));
   const [notes, setNotes] = useState(exercise.notes || '');
+  /** Planowany czas cardio (minuty) — edytowalny w formularzu. */
+  const [durationInput, setDurationInput] = useState(String(exercise.duration ?? CARDIO_DEFAULT_MINUTES));
 
   // Track if edit form is open to prevent prop changes from resetting local state
   const editingRef = useRef(editing);
@@ -35,6 +38,7 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
     setReps(exercise.reps || '8-12');
     setWeight(String(exercise.weight ?? ''));
     setNotes(exercise.notes || '');
+    setDurationInput(String(exercise.duration ?? CARDIO_DEFAULT_MINUTES));
     setShowSets(false);
     setEditing(true);
   };
@@ -66,17 +70,22 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
     const newSets = isCardio ? 1 : (parseInt(sets) || 3);
     const newReps = isCardio ? '' : reps;
     const newWeight = weight ? parseFloat(weight) : undefined;
+    // Planowany czas cardio (można go zmienić w formularzu edycji).
+    const newDuration = isCardio ? (parseInt(durationInput, 10) || CARDIO_DEFAULT_MINUTES) : undefined;
     onUpdate({
       sets: newSets,
       reps: newReps,
       weight: newWeight,
       notes: notes || undefined,
-      setLogs: isCardio ? [] : buildSyncedLogs(
-        exercise.setLogs ?? [],
-        newSets,
-        newReps,
-        newWeight ?? null
-      ),
+      ...(isCardio ? { duration: newDuration } : {}),
+      setLogs: isCardio
+        ? buildCardioLog(exercise.setLogs ?? [], newDuration)
+        : buildSyncedLogs(
+            exercise.setLogs ?? [],
+            newSets,
+            newReps,
+            newWeight ?? null
+          ),
     });
     setEditing(false);
   };
@@ -90,6 +99,27 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
   const completedSets = setLogs.filter(s => s.done).length;
   const totalSets = setLogs.length > 0 ? setLogs.length : (exercise.sets || 3);
   const isFullyDone = !isCardio && setLogs.length > 0 && completedSets === setLogs.length;
+  // Cardio: jeden zapis = wykonane minuty.
+  const cardioDone = isCardio && setLogs.some(s => s.done);
+  const cardioLoggedMinutes = isCardio
+    ? (setLogs.find(s => s.done)?.actualReps ?? null)
+    : null;
+  /** Planowany czas cardio (minuty). */
+  const cardioPlannedMinutes = exercise.duration ?? CARDIO_DEFAULT_MINUTES;
+  /** Minuty wpisane przez użytkownika (mogą różnić się od planu). */
+  const cardioEditedMinutes = isCardio
+    ? (setLogs[0]?.actualReps ?? null)
+    : null;
+
+  /** Oznacza / cofa wykonanie ćwiczenia cardio (jedno kliknięcie). */
+  const toggleCardioDone = () => {
+    onUpdate({
+      setLogs: buildCardioLog(exercise.setLogs ?? [], cardioPlannedMinutes, {
+        done: !cardioDone,
+        minutes: cardioEditedMinutes ?? undefined,
+      }),
+    });
+  };
   const hasProgress = setLogs.some(s => s.done || s.actualReps != null || s.weight != null);
 
   return (
@@ -191,10 +221,33 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
             {/* Stats badges */}
             <div className="flex flex-wrap gap-1 mt-2">
               {isCardio ? (
-                <span className="text-xs bg-sky-50 text-sky-700 px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1">
-                  <TimerIcon className="h-3 w-3" />
-                  {exercise.duration} min
-                </span>
+                <button
+                  onClick={toggleCardioDone}
+                  aria-pressed={cardioDone}
+                  aria-label={
+                    cardioDone
+                      ? `Cofnij oznaczenie ćwiczenia ${exercise.name}`
+                      : `Oznacz ćwiczenie ${exercise.name} jako zrobione`
+                  }
+                  title={cardioDone ? 'Kliknij, aby cofnąć oznaczenie' : 'Oznacz jako zrobione'}
+                  className={`text-xs font-semibold px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 transition-colors cursor-pointer border ${
+                    cardioDone
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                      : 'bg-sky-50 text-sky-700 border-sky-100 hover:bg-sky-100'
+                  }`}
+                >
+                  {cardioDone ? (
+                    <>
+                      <CheckIcon className="h-3.5 w-3.5" />
+                      Ukończone · {cardioLoggedMinutes ?? cardioEditedMinutes ?? cardioPlannedMinutes} min
+                    </>
+                  ) : (
+                    <>
+                      <TimerIcon className="h-3.5 w-3.5" />
+                      {cardioEditedMinutes ?? cardioPlannedMinutes} min · zaznacz
+                    </>
+                  )}
+                </button>
               ) : (
                 <>
                   {exercise.sets && (
@@ -265,12 +318,18 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
         )}
 
         {/* ── Set tracker toggle ── */}
-        {!isCardio && !editing && !showRemoveConfirm && (
+        {!editing && !showRemoveConfirm && (
           <div className="px-3 pb-3">
             <button
               onClick={() => setShowSets(prev => !prev)}
+              aria-expanded={showSets}
               className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition-all cursor-pointer w-full sm:w-auto justify-center sm:justify-start ${
-                showSets
+                isCardio
+                  // Cardio: to rozwija panel z czasem — nie oznacza wykonania.
+                  ? (showSets
+                    ? 'bg-slate-100 text-slate-600'
+                    : 'bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-violet-600')
+                  : showSets
                   ? 'bg-violet-600 text-white shadow-sm shadow-violet-200'
                   : hasProgress
                   ? 'bg-violet-50 text-violet-700 hover:bg-violet-100'
@@ -281,8 +340,14 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
                 <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" />
                 <rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
               </svg>
-              {showSets ? 'Ukryj serie' : hasProgress ? 'Pokaż postęp' : 'Śledź serie'}
-              {!showSets && completedSets > 0 && (
+              {showSets
+                ? (isCardio ? 'Ukryj panel' : 'Ukryj serie')
+                : isCardio
+                ? 'Czas i oznaczenie'
+                : hasProgress
+                ? 'Pokaż postęp'
+                : 'Śledź serie'}
+              {!showSets && !isCardio && completedSets > 0 && (
                 <span className="ml-0.5 bg-violet-200 text-violet-800 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                   {completedSets}/{totalSets}
                 </span>
@@ -296,7 +361,7 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
           <div className="px-3 pb-3">
             <SetTracker
               exercise={exercise}
-              sets={exercise.sets || 3}
+              sets={isCardio ? 1 : (exercise.sets || 3)}
               defaultReps={exercise.reps || '8-12'}
               defaultWeight={exercise.weight ?? null}
               setLogs={exercise.setLogs ?? []}
@@ -312,14 +377,19 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
           <div className="px-3 pb-3 border-t border-slate-100 pt-3 space-y-3">
             {isCardio ? (
               <div>
-                <label className="text-xs font-semibold text-slate-500 mb-1.5 block">Czas (min)</label>
+                <label className="text-xs font-semibold text-slate-500 mb-1.5 block">Planowany czas (min)</label>
                 <input
                   type="number"
                   inputMode="numeric"
-                  value={exercise.duration}
+                  min={1}
+                  max={600}
+                  value={durationInput}
+                  onChange={e => setDurationInput(e.target.value)}
                   className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-300"
-                  readOnly
                 />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Faktyczny czas wpiszesz przy oznaczaniu ćwiczenia.
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-2">

@@ -6,7 +6,7 @@ import MoveDayModal from './MoveDayModal';
 import ShareWorkoutModal from './ShareWorkoutModal';
 import ApplyTemplateModal from './ApplyTemplateModal';
 import CreateTemplateModal from './CreateTemplateModal';
-import { CheckIcon, ChevronDownIcon, ChevronUpIcon, DumbbellIcon, MoonIcon } from './icons';
+import { BookIcon, CheckIcon, ChevronDownIcon, ChevronUpIcon, DumbbellIcon, MoonIcon, ShareIcon } from './icons';
 
 interface DayColumnProps {
   day: WorkoutDay;
@@ -24,6 +24,8 @@ interface DayColumnProps {
   canShare?: boolean;
   /** E-mail zalogowanego użytkownika — nie może udostępnić samemu sobie. */
   currentUserEmail?: string | null;
+  /** Ostatni odbiorcy udostępnień — podpowiedzi w oknie wysyłki. */
+  recentRecipients?: string[];
   /** Klucz tygodnia, do którego należy dzień (np. „2025-W03"). */
   weekKey?: string;
   /** Wysyłka udostępnienia — zwraca błąd albo `null` przy sukcesie. */
@@ -38,6 +40,8 @@ interface DayColumnProps {
   onApplyTemplate?: (template: WorkoutTemplate, exercises: Exercise[], mode: 'append' | 'replace', dayId: string) => void;
   /** Callback: utwórz szablon z ćwiczeń tego dnia. */
   onCreateTemplateFromDay?: (day: WorkoutDay, templateData: Omit<WorkoutTemplate, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  /** Biblioteka ćwiczeń — dla okna tworzenia szablonu. */
+  availableExercises?: Exercise[];
 }
 
 const DAY_LABELS = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Nd'];
@@ -56,11 +60,13 @@ function DayColumn({
   onRequestReplace,
   canShare,
   currentUserEmail,
+  recentRecipients,
   weekKey,
   onSendShare,
   templates = [],
   onApplyTemplate,
   onCreateTemplateFromDay,
+  availableExercises,
 }: DayColumnProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [moveExerciseState, setMoveExerciseState] = useState<{ exercise: Exercise; sourceDayId: string } | null>(null);
@@ -101,7 +107,16 @@ function DayColumn({
     return () => window.removeEventListener('keydown', handleEsc);
   }, [restConfirmOpen, moveDayModalOpen, shareModalOpen, moveExerciseState]);
 
-  const totalSets = day.exercises.reduce((acc, e) => acc + (e.sets || 0), 0);
+  // Cardio nie ma serii — liczymy tylko serie ćwiczeń siłowych.
+  const totalSets = day.exercises.reduce(
+    (acc, e) => acc + (e.muscleGroup === 'Cardio' ? 0 : (e.sets || 0)),
+    0
+  );
+  // Minuty cardio — informacja zamiast „serii” w nagłówku dnia.
+  const cardioMinutes = day.exercises.reduce(
+    (acc, e) => acc + (e.muscleGroup === 'Cardio' ? (e.duration || 0) : 0),
+    0
+  );
   const completedExercises = day.exercises.filter(e =>
     e.setLogs && e.setLogs.length > 0 && e.setLogs.every(s => s.done)
   ).length;
@@ -147,6 +162,7 @@ function DayColumn({
               <p className="text-white/70 text-xs mt-0.5">
                 {day.exercises.length} ćw.
                 {totalSets > 0 && ` · ${totalSets} serii`}
+                {cardioMinutes > 0 && ` · ${cardioMinutes} min cardio`}
                 {completedExercises > 0 && (
                   <span className="inline-flex items-center gap-1">
                     <span>·</span>
@@ -437,6 +453,30 @@ function DayColumn({
                 </svg>
                 Dodaj ćwiczenie
               </button>
+
+              {/* Udostępnij — widoczny przycisk z etykietą (ikona w nagłówku
+                  jest mała i łatwo ją przeoczyć, szczególnie na telefonie). */}
+              {canShareDay && (
+                <button
+                  onClick={() => setShareModalOpen(true)}
+                  className="mt-2 w-full min-h-[44px] rounded-xl border border-violet-400/25 bg-violet-500/10 px-3 py-2 text-xs font-semibold text-violet-200 transition-all hover:border-violet-400/45 hover:bg-violet-500/20 active:bg-violet-500/25 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <ShareIcon className="h-4 w-4" />
+                  Udostępnij ten trening
+                </button>
+              )}
+
+              {/* Zapisz jako szablon — widoczny przycisk z etykietą (ikona
+                  w nagłówku dnia jest mała i łatwo ją przeoczyć). */}
+              {onCreateTemplateFromDay && (
+                <button
+                  onClick={() => setCreateTemplateModalOpen(true)}
+                  className="mt-2 w-full min-h-[44px] rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200 transition-all hover:border-violet-400/35 hover:bg-white/[0.07] active:bg-white/[0.1] flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <BookIcon className="h-4 w-4" />
+                  Zapisz jako szablon
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -471,6 +511,7 @@ function DayColumn({
           day={day}
           weekKey={resolvedWeekKey}
           currentUserEmail={currentUserEmail}
+          recentRecipients={recentRecipients}
           onSend={(recipientEmail) => onSendShare!(recipientEmail, day, resolvedWeekKey)}
           onClose={() => setShareModalOpen(false)}
         />
@@ -496,17 +537,8 @@ function DayColumn({
             setCreateTemplateModalOpen(false);
           }}
           onClose={() => setCreateTemplateModalOpen(false)}
-          editTemplate={{
-            id: '',
-            name: '',
-            description: '',
-            exercises: day.exercises,
-            color: 'bg-violet-500',
-            category: 'Custom',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          }}
-          availableExercises={[]}
+          initialExercises={day.exercises}
+          availableExercises={availableExercises ?? []}
         />
       )}
     </div>

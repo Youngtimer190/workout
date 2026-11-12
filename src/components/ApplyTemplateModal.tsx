@@ -1,105 +1,127 @@
-import { useState } from 'react';
-import { WorkoutTemplate, Exercise, WorkoutDay } from '../types';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
+import { WorkoutTemplate, Exercise, WorkoutDay, templateGradient } from '../types';
 import { muscleGroupColors } from '../data/exercises';
-import { ArrowRightIcon, CheckIcon, DumbbellIcon, MuscleIcon, RepeatIcon, RotateIcon, TimerIcon, WarningIcon } from './icons';
+import { CheckIcon, DumbbellIcon, MuscleIcon, RepeatIcon, TimerIcon } from './icons';
+import { equipmentLabels, pluralExercise, pluralSet } from '../lib/format';
 
 interface ApplyTemplateModalProps {
   template: WorkoutTemplate;
-  /** Optional: if provided, shows template picker as first step */
+  /** Opcjonalnie: lista szablonów — pierwszy krok wyboru szablonu. */
   templates?: WorkoutTemplate[];
   days: WorkoutDay[];
-  /** Optional: if provided, skips day picker and uses this day */
+  /** Jeśli podano — dzień jest już wybrany (krok wyboru dnia pomijamy). */
   preselectedDayId?: string;
   onApply: (exercises: Exercise[], mode: 'append' | 'replace', dayId: string, templateId: string) => void;
   onClose: () => void;
 }
 
-const getGradientClass = (color: string) => {
-  const colorBase = color.replace('bg-', '').replace('-500', '');
-  return `bg-gradient-to-r from-${colorBase}-500 to-${colorBase}-600`;
-};
-
 function ExerciseRow({ exercise }: { exercise: Exercise }) {
   const isCardio = exercise.muscleGroup === 'Cardio';
+  const equipment = equipmentLabels(exercise.requiredEquipment);
+
   return (
-    <div className="flex items-center gap-3 px-3 py-2.5 bg-white rounded-xl border border-slate-100">
+    <div className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-2.5">
       <MuscleIcon group={exercise.muscleGroup} className="h-5 w-5 flex-shrink-0 text-slate-400" />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-slate-800 truncate">{exercise.name}</p>
-        <p className="text-xs text-slate-400 flex items-center gap-1">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-white">{exercise.name}</p>
+        <p className="truncate text-[11px] text-slate-400">
           {exercise.muscleGroup}
-          {exercise.requiredEquipment?.length && <span> · {exercise.requiredEquipment.join(', ')}</span>}
+          {equipment ? ` · ${equipment}` : ''}
         </p>
       </div>
-      <div className="flex items-center gap-2 flex-shrink-0">
-        {!isCardio && (
-          <>
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 inline-flex items-center gap-1">
-              <RepeatIcon className="h-3 w-3" />
-              {exercise.sets}
+      <div className="flex flex-shrink-0 items-center gap-1.5">
+        {isCardio ? (
+          exercise.duration ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/15 px-2 py-0.5 text-[10px] font-semibold text-sky-200">
+              <TimerIcon className="h-3 w-3" />{exercise.duration} min
             </span>
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 inline-flex items-center gap-1">
-              <DumbbellIcon className="h-3 w-3" />
-              {exercise.reps}
+          ) : null
+        ) : (
+          <>
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.07] px-2 py-0.5 text-[10px] font-semibold text-slate-300">
+              <RepeatIcon className="h-3 w-3" />{exercise.sets}
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.07] px-2 py-0.5 text-[10px] font-semibold text-slate-300">
+              <DumbbellIcon className="h-3 w-3" />{exercise.reps}
             </span>
           </>
-        )}
-        {isCardio && (
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-sky-100 text-sky-700 inline-flex items-center gap-1">
-            <TimerIcon className="h-3 w-3" />
-            {exercise.duration} min
-          </span>
-        )}
-        {exercise.isUnilateral && (
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 border border-violet-200 inline-flex items-center gap-1">
-            <RotateIcon className="h-3 w-3" />
-            Jednostronne
-          </span>
         )}
       </div>
     </div>
   );
 }
 
-export default function ApplyTemplateModal({ template, templates, days, preselectedDayId, onApply, onClose }: ApplyTemplateModalProps) {
-  const [mode, setMode] = useState<'append' | 'replace'>('append');
-  // If preselectedDayId is provided, skip day picker (go to confirm after template picker or directly to confirm)
-  // If a day is preselected (user clicked template icon on specific day), skip template picker and go directly to confirm
-  const initialStep = preselectedDayId
-    ? 'confirm'
-    : templates && templates.length > 1
-      ? 'pickTemplate'
-      : 'pickDay';
-  const [step, setStep] = useState<'pickTemplate' | 'pickDay' | 'confirm'>(initialStep);
-  const [selectedTemplate, setSelectedTemplate] = useState<WorkoutTemplate>(template);
-  const [selectedDayId, setSelectedDayId] = useState<string>(preselectedDayId ?? '');
-
-  // Use all templates if provided, otherwise just the single template
+/**
+ * Okno „Zastosuj szablon".
+ *
+ * Jeden ekran: wybór dnia + tryb (dopisz / zastąp) + podsumowanie + lista
+ * ćwiczeń. Wcześniej były trzy kroki, co przy jednym szablonie oznaczało
+ * dwa zbędne kliknięcia.
+ */
+export default function ApplyTemplateModal({
+  template,
+  templates,
+  days,
+  preselectedDayId,
+  onApply,
+  onClose,
+}: ApplyTemplateModalProps) {
   const allTemplates = templates && templates.length > 0 ? templates : [template];
 
-  const strengthExercises = selectedTemplate.exercises.filter(e => e.muscleGroup !== 'Cardio');
-  const totalSets = strengthExercises.reduce((a, e) => a + (e.sets || 0), 0);
+  const [selectedTemplate, setSelectedTemplate] = useState<WorkoutTemplate>(template);
+  const [step, setStep] = useState<'pickTemplate' | 'apply'>(
+    preselectedDayId || allTemplates.length <= 1 ? 'apply' : 'pickTemplate'
+  );
+  const [selectedDayId, setSelectedDayId] = useState<string>(preselectedDayId ?? '');
+  const [mode, setMode] = useState<'append' | 'replace'>('append');
 
-  // Filter out rest days by default, but show them if user wants
-  const availableDays = days.filter(d => !d.isRestDay || d.exercises.length > 0);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
-  const handleTemplateSelect = (t: WorkoutTemplate) => {
-    setSelectedTemplate(t);
-    if (preselectedDayId) {
-      setSelectedDayId(preselectedDayId);
-      setStep('confirm');
-    } else {
-      setStep('pickDay');
-    }
-  };
+  // Escape zamyka okno.
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
 
-  const handleDaySelect = (dayId: string) => {
-    setSelectedDayId(dayId);
-    setStep('confirm');
-  };
+  // Blokada przewijania tła + fokus na oknie.
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    const raf = requestAnimationFrame(() => dialogRef.current?.focus());
+    return () => {
+      document.body.style.overflow = '';
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  const exercises = selectedTemplate.exercises ?? [];
+  const strength = exercises.filter(e => e.muscleGroup !== 'Cardio');
+  const totalSets = strength.reduce((a, e) => a + (e.sets || 0), 0);
+  const cardioCount = exercises.length - strength.length;
+  const muscleGroups = Array.from(new Set(exercises.map(e => e.muscleGroup)));
+  const gradientClass = templateGradient(selectedTemplate.color);
+
+  // Dni, do których można dodać szablon (dni odpoczynku tylko z ćwiczeniami).
+  const availableDays = useMemo(
+    () => days.filter(d => !d.isRestDay || d.exercises.length > 0),
+    [days]
+  );
+
+  // Domyślnie pierwszy dzień z ćwiczeniami albo pierwszy wolny.
+  useEffect(() => {
+    if (selectedDayId) return;
+    const withExercises = availableDays.find(d => d.exercises.length > 0);
+    const fallback = withExercises ?? availableDays[0];
+    if (fallback) setSelectedDayId(fallback.id);
+  }, [availableDays, selectedDayId]);
+
+  const selectedDay = days.find(d => d.id === selectedDayId);
+  const willReplace = mode === 'replace' && (selectedDay?.exercises.length ?? 0) > 0;
 
   const handleConfirmApply = () => {
-    const cleanExercises = selectedTemplate.exercises.map(ex => ({
+    if (!selectedDayId) return;
+    const cleanExercises = exercises.map(ex => ({
       ...ex,
       id: `tmpl-${selectedTemplate.id}-${ex.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       setLogs: ex.setLogs?.map(log => ({
@@ -113,272 +135,260 @@ export default function ApplyTemplateModal({ template, templates, days, preselec
     onClose();
   };
 
-  const gradientClass = selectedTemplate.color ? getGradientClass(selectedTemplate.color) : 'bg-gradient-to-r from-violet-500 to-indigo-600';
-
-  // Step 1: Template picker (only if multiple templates provided)
+  /* ── Krok 1: wybór szablonu (gdy jest ich kilka) ── */
   if (step === 'pickTemplate') {
     return (
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="modal-overlay fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+        onClick={onClose}
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' } as CSSProperties}
+      >
         <div
-          className="relative bg-white sm:rounded-2xl shadow-2xl w-full sm:max-w-md overflow-hidden flex flex-col rounded-t-2xl"
-          style={{ maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 0.5rem)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+          ref={dialogRef}
+          tabIndex={-1}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="tpl-pick-title"
+          onClick={(e) => e.stopPropagation()}
+          className="modal-panel relative flex max-h-[90dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:max-w-md sm:rounded-2xl"
         >
-          {/* Header */}
-          <div className="p-4 bg-gradient-to-r from-slate-600 to-slate-700">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-white/70 text-xs font-semibold uppercase tracking-widest mb-1">Zastosuj szablon</p>
-                <h2 className="text-xl font-bold text-white truncate">Wybierz szablon</h2>
-                <p className="text-white/80 text-sm mt-2">{allTemplates.length} dostępnych szablonów</p>
-              </div>
-              <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors cursor-pointer flex-shrink-0">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M18 6L6 18M6 6l12 12" /></svg>
-              </button>
+          <div className="flex shrink-0 items-start justify-between bg-gradient-to-r from-slate-700 to-slate-800 p-5">
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-white/70">Zastosuj szablon</p>
+              <h2 id="tpl-pick-title" className="text-xl font-bold text-white">Wybierz szablon</h2>
+              <p className="mt-1.5 text-sm text-white/80">{allTemplates.length} dostępnych szablonów</p>
             </div>
+            <button
+              onClick={onClose}
+              aria-label="Zamknij"
+              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/20 text-white transition-colors hover:bg-white/30 cursor-pointer"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
           </div>
 
-          {/* Body - Template picker */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
-            <p className="text-sm font-semibold text-slate-700">Wybierz szablon do zastosowania:</p>
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {allTemplates.map(t => {
-                const tGradient = t.color ? getGradientClass(t.color) : 'bg-gradient-to-r from-violet-500 to-indigo-600';
-                const tStrengthExercises = t.exercises.filter(e => e.muscleGroup !== 'Cardio');
-                const tTotalSets = tStrengthExercises.reduce((a, e) => a + (e.sets || 0), 0);
-                const tCardioCount = t.exercises.filter(e => e.muscleGroup === 'Cardio').length;
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => handleTemplateSelect(t)}
-                    className="w-full p-4 rounded-xl border-2 text-left transition-all cursor-pointer hover:shadow-md hover:border-violet-300 border-slate-200 hover:bg-slate-50"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${tGradient}`} />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-slate-800 truncate">{t.name}</p>
-                        {t.description && <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{t.description}</p>}
-                        <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-2">
-                          <span>{t.exercises.length} ćwiczeń</span>
+          <div className="flex-1 space-y-2 overflow-y-auto p-5">
+            {allTemplates.map(t => {
+              const tStrength = t.exercises.filter(e => e.muscleGroup !== 'Cardio');
+              const tSets = tStrength.reduce((a, e) => a + (e.sets || 0), 0);
+              const tCardio = t.exercises.length - tStrength.length;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => { setSelectedTemplate(t); setStep('apply'); }}
+                  className="flex w-full cursor-pointer items-start gap-3 rounded-xl border-2 border-white/[0.07] p-3 text-left transition-all hover:border-violet-400/40 hover:bg-white/[0.05]"
+                >
+                  <span className={`h-10 w-10 flex-shrink-0 rounded-xl ${templateGradient(t.color)}`} aria-hidden="true" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold text-white">{t.name}</span>
+                    {t.description && <span className="mt-0.5 block truncate text-xs text-slate-400">{t.description}</span>}
+                    <span className="mt-1 flex items-center gap-2 text-[11px] text-slate-400">
+                      <span>{t.exercises.length} {pluralExercise(t.exercises.length)}</span>
+                      <span>·</span>
+                      <span>{tSets} {pluralSet(tSets)}</span>
+                      {tCardio > 0 && (
+                        <>
                           <span>·</span>
-                          <span>{tTotalSets} serii</span>
-                          {tCardioCount > 0 && (
-                            <>
-                              <span>·</span>
-                              <span className="text-sky-600">{tCardioCount} cardio</span>
-                            </>
-                          )}
-                        </p>
-                        <div className="flex flex-wrap gap-1 mt-1.5">
-                          {Array.from(new Set(t.exercises.map(e => e.muscleGroup))).slice(0, 3).map(mg => (
-                            <span key={mg} className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${muscleGroupColors[mg] || 'bg-slate-100 text-slate-600'}`}>{mg}</span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+                          <span className="text-sky-300">{tCardio} cardio</span>
+                        </>
+                      )}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
-          {/* Footer */}
-          <div className="px-6 py-4 border-t border-slate-100">
-            <button onClick={onClose} className="w-full py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all cursor-pointer">Anuluj</button>
+          <div className="shrink-0 border-t border-white/[0.07] px-5 py-4">
+            <button
+              onClick={onClose}
+              className="min-h-[44px] w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm font-semibold text-slate-300 transition-colors hover:bg-white/[0.06] cursor-pointer"
+            >
+              Anuluj
+            </button>
           </div>
         </div>
       </div>
     );
   }
 
-  // Step 2: Day picker
-  if (step === 'pickDay') {
-    return (
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-        <div
-          className="relative bg-white sm:rounded-2xl shadow-2xl w-full sm:max-w-md overflow-hidden flex flex-col rounded-t-2xl"
-          style={{ maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 0.5rem)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
-        >
-          {/* Header */}
-          <div className={`p-4 ${gradientClass}`}>
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-white/70 text-xs font-semibold uppercase tracking-widest mb-1">Zastosuj szablon</p>
-                <h2 className="text-xl font-bold text-white truncate">{selectedTemplate.name}</h2>
-                <p className="text-white/80 text-sm mt-2">{selectedTemplate.exercises.length} ćwiczeń do dodania</p>
-              </div>
-              <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors cursor-pointer flex-shrink-0">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M18 6L6 18M6 6l12 12" /></svg>
-              </button>
-            </div>
+  /* ── Krok 2: dzień + tryb + potwierdzenie ── */
+  return (
+    <div
+      className="modal-overlay fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+      onClick={onClose}
+      style={{ paddingTop: 'env(safe-area-inset-top, 0px)' } as CSSProperties}
+    >
+      <div
+        ref={dialogRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="tpl-apply-title"
+        onClick={(e) => e.stopPropagation()}
+        className="modal-panel relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:max-w-lg sm:rounded-2xl"
+      >
+        {/* Nagłówek */}
+        <div className={`${gradientClass} flex shrink-0 items-start justify-between gap-4 p-5`}>
+          <div className="min-w-0 flex-1">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-white/70">Zastosuj szablon</p>
+            <h2 id="tpl-apply-title" className="truncate text-xl font-bold text-white">{selectedTemplate.name}</h2>
+            <p className="mt-1.5 text-sm text-white/80">
+              {exercises.length} {pluralExercise(exercises.length)}
+              {totalSets > 0 && <> · {totalSets} {pluralSet(totalSets)}</>}
+              {cardioCount > 0 && <> · {cardioCount} cardio</>}
+            </p>
           </div>
+          <button
+            onClick={onClose}
+            aria-label="Zamknij"
+            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/20 text-white transition-colors hover:bg-white/30 cursor-pointer"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
 
-          {/* Body - Day picker */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
-            <p className="text-sm font-semibold text-slate-700">Wybierz dzień, do którego dodać szablon:</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {availableDays.map(day => (
-                <button
-                  key={day.id}
-                  onClick={() => handleDaySelect(day.id)}
-                  className={`p-4 rounded-xl border-2 text-left transition-all cursor-pointer ${
-                    selectedDayId === day.id
-                      ? 'border-violet-500 bg-violet-50 shadow-sm shadow-violet-100'
-                      : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                  }`}
-                >
-                  <p className="font-semibold text-slate-800">{day.name}</p>
-                  <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
-                    {day.exercises.length > 0 ? (
-                      <>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3 h-3"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
-                        {day.exercises.length} ćwiczeń
-                      </>
-                    ) : (
-                      <span className="text-slate-400">Pusty</span>
-                    )}
-                  </p>
-                  {day.isRestDay && <p className="text-xs text-amber-600 mt-1">Dzień wolny</p>}
-                </button>
-              ))}
+        {/* Treść */}
+        <div className="flex-1 space-y-5 overflow-y-auto p-5">
+          {/* Wybór dnia */}
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">Do którego dnia dodać?</p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {availableDays.map(day => {
+                const selected = day.id === selectedDayId;
+                const busy = day.exercises.length > 0;
+                return (
+                  <button
+                    key={day.id}
+                    onClick={() => setSelectedDayId(day.id)}
+                    aria-pressed={selected}
+                    className={`rounded-xl border px-3 py-2.5 text-left transition-all cursor-pointer ${
+                      selected
+                        ? 'border-violet-400/60 bg-violet-500/15'
+                        : 'border-white/[0.07] bg-white/[0.03] hover:border-violet-400/30 hover:bg-white/[0.06]'
+                    }`}
+                  >
+                    <span className={`block text-sm font-semibold ${selected ? 'text-violet-100' : 'text-slate-200'}`}>
+                      {day.name}
+                    </span>
+                    <span className="mt-0.5 block text-[11px] text-slate-400">
+                      {busy ? `${day.exercises.length} ćw.` : 'Pusty'}
+                    </span>
+                  </button>
+                );
+              })}
               {availableDays.length === 0 && (
-                <div className="col-span-full bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 p-8 text-center">
-                  <p className="text-slate-500">Brak dni treningowych w tym tygodniu</p>
-                </div>
+                <p className="col-span-full rounded-xl border border-dashed border-white/10 px-3 py-6 text-center text-xs text-slate-400">
+                  W tym tygodniu nie ma dni, do których można dodać szablon.
+                </p>
               )}
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="px-6 py-4 border-t border-slate-100 flex gap-3">
-            <button onClick={onClose} className="flex-1 py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all cursor-pointer">Anuluj</button>
-            <button
-              onClick={() => handleDaySelect(availableDays[0]?.id ?? '')}
-              disabled={availableDays.length === 0}
-              className={`flex-1 py-3 rounded-xl font-semibold text-sm shadow-md hover:shadow-lg hover:scale-[1.01] transition-all cursor-pointer ${gradientClass} text-white ${availableDays.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              <span className="inline-flex items-center gap-1.5">Dalej <ArrowRightIcon className="h-4 w-4" /></span>
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Step 3: Confirm with mode selector
-  const selectedDay = days.find(d => d.id === selectedDayId);
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div
-        className="relative bg-white sm:rounded-2xl shadow-2xl w-full sm:max-w-md overflow-hidden flex flex-col rounded-t-2xl"
-        style={{ maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 0.5rem)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
-      >
-        {/* Header */}
-        <div className={`p-4 ${gradientClass}`}>
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-white/70 text-xs font-semibold uppercase tracking-widest mb-1">Zastosuj szablon</p>
-              <h2 className="text-xl font-bold text-white truncate">{selectedTemplate.name}</h2>
-              <div className="flex items-center gap-2 mt-2">
-                <span className="text-white/80 text-sm">{selectedDay?.name ?? 'Wybierz dzień'}</span>
-                <span className="text-white/40">·</span>
-                <span className="text-white/80 text-sm">{selectedTemplate.exercises.length} ćwiczeń</span>
-              </div>
-            </div>
-            <button onClick={() => { setStep('pickDay'); setSelectedDayId(''); }} className="w-9 h-9 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors cursor-pointer flex-shrink-0">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M18 6L6 18M6 6l12 12" /></svg>
-            </button>
-          </div>
-        </div>
-
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
-          {/* Template exercises */}
+          {/* Tryb */}
           <div>
-            <h3 className="text-sm font-bold text-slate-700 mb-3">Ćwiczenia do dodania</h3>
-            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-              {selectedTemplate.exercises.map((ex) => (
-                <ExerciseRow key={ex.id} exercise={ex} />
-              ))}
-            </div>
-          </div>
-
-          {/* Summary stats */}
-          <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 space-y-2">
-            <div className="grid grid-cols-3 gap-3 text-center">
-              <div className="bg-white rounded-lg p-3 border border-slate-100">
-                <p className="text-2xl font-bold text-violet-600">{selectedTemplate.exercises.length}</p>
-                <p className="text-[10px] text-slate-500">Ćwiczeń</p>
-              </div>
-              <div className="bg-white rounded-lg p-3 border border-slate-100">
-                <p className="text-2xl font-bold text-emerald-600">{totalSets}</p>
-                <p className="text-[10px] text-slate-500">Serii</p>
-              </div>
-              <div className="bg-white rounded-lg p-3 border border-slate-100">
-                <p className="text-2xl font-bold text-amber-600">{selectedTemplate.exercises.filter(e => e.muscleGroup === 'Cardio').length}</p>
-                <p className="text-[10px] text-slate-500">Cardio</p>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {Array.from(new Set(selectedTemplate.exercises.map(e => e.muscleGroup))).map(mg => (
-                <span key={mg} className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${muscleGroupColors[mg] || 'bg-slate-100 text-slate-600'}`}>{mg}</span>
-              ))}
-            </div>
-          </div>
-
-          {/* Mode selector */}
-          <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
-            <p className="text-sm font-semibold text-slate-700">Jak dodać do dnia?</p>
-            <div className="grid grid-cols-2 gap-3">
+            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">Co zrobić z tym dniem?</p>
+            <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => setMode('append')}
-                className={`p-4 rounded-xl border-2 text-center transition-all cursor-pointer ${
+                aria-pressed={mode === 'append'}
+                className={`rounded-xl border px-3 py-2.5 text-left transition-all cursor-pointer ${
                   mode === 'append'
-                    ? 'border-violet-500 bg-violet-50 shadow-sm shadow-violet-100'
-                    : 'border-slate-200 hover:border-slate-300'
+                    ? 'border-violet-400/60 bg-violet-500/15'
+                    : 'border-white/[0.07] bg-white/[0.03] hover:bg-white/[0.06]'
                 }`}
               >
-                <div className="flex items-center justify-center gap-1.5 mb-1">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-5 h-5 text-violet-600"><path d="M12 5v14M5 12h14" /></svg>
-                  <span className="font-semibold text-slate-800">Dopisz</span>
-                </div>
-                <p className="text-xs text-slate-500">Dodaj na końcu istniejących ćwiczeń</p>
+                <span className={`block text-sm font-semibold ${mode === 'append' ? 'text-violet-100' : 'text-slate-200'}`}>
+                  Dopisz
+                </span>
+                <span className="mt-0.5 block text-[11px] text-slate-400">
+                  Ćwiczenia dojdą do istniejących
+                </span>
               </button>
               <button
                 onClick={() => setMode('replace')}
-                className={`p-4 rounded-xl border-2 text-center transition-all cursor-pointer ${
+                aria-pressed={mode === 'replace'}
+                disabled={(selectedDay?.exercises.length ?? 0) === 0}
+                className={`rounded-xl border px-3 py-2.5 text-left transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 ${
                   mode === 'replace'
-                    ? 'border-amber-500 bg-amber-50 shadow-sm shadow-amber-100'
-                    : 'border-slate-200 hover:border-slate-300'
+                    ? 'border-amber-400/60 bg-amber-400/15'
+                    : 'border-white/[0.07] bg-white/[0.03] hover:bg-white/[0.06]'
                 }`}
               >
-                <div className="flex items-center justify-center gap-1.5 mb-1">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-5 h-5 text-amber-600"><path d="M21 4H8l7 7 7-7Zm-4 6v10" /></svg>
-                  <span className="font-semibold text-slate-800">Zastąp</span>
-                </div>
-                <p className="text-xs text-slate-500">Usuń obecne i wstaw te z szablonu</p>
+                <span className={`block text-sm font-semibold ${mode === 'replace' ? 'text-amber-100' : 'text-slate-200'}`}>
+                  Zastąp dzień
+                </span>
+                <span className="mt-0.5 block text-[11px] text-slate-400">
+                  Usuń stare ćwiczenia i wstaw szablon
+                </span>
               </button>
             </div>
-            {mode === 'replace' && (
-              <p className="text-xs text-amber-600 bg-amber-50 rounded-lg p-2 border border-amber-100">
-                <span className="inline-flex items-start gap-1.5"><WarningIcon className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />To usunie wszystkie obecne ćwiczenia z tego dnia. Operacji nie można cofnąć.</span>
-              </p>
+          </div>
+
+          {/* Ćwiczenia */}
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">
+              Co dodamy ({exercises.length})
+            </p>
+            <div className="space-y-1.5">
+              {exercises.map((ex, i) => (
+                <ExerciseRow key={`${ex.id}-${i}`} exercise={ex} />
+              ))}
+            </div>
+            {muscleGroups.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {muscleGroups.map(mg => (
+                  <span
+                    key={mg}
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${muscleGroupColors[mg] || 'bg-white/[0.06] text-slate-300'}`}
+                  >
+                    {mg}
+                  </span>
+                ))}
+              </div>
             )}
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-100 flex gap-3">
-          <button onClick={() => { setStep('pickDay'); setSelectedDayId(''); }} className="flex-1 py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all cursor-pointer">Wstecz</button>
-          <button
-            onClick={handleConfirmApply}
-            className={`flex-1 py-3 rounded-xl font-semibold text-sm shadow-md hover:shadow-lg hover:scale-[1.01] transition-all cursor-pointer ${gradientClass} text-white`}
-          >
-            <span className="inline-flex items-center gap-1.5"><CheckIcon className="h-4 w-4" />{mode === 'append' ? 'Dopisz do dnia' : 'Zastąp dzień'}</span>
-          </button>
+        {/* Stopka */}
+        <div
+          className="shrink-0 border-t border-white/[0.07] px-5 py-4"
+          style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
+        >
+          <p className="mb-2.5 text-center text-[11px] text-slate-400">
+            {selectedDay ? (
+              <>
+                {exercises.length} {pluralExercise(exercises.length)} → <span className="font-semibold text-slate-200">{selectedDay.name}</span>
+                {willReplace && (
+                  <span className="text-amber-300"> · zastaniemy {selectedDay?.exercises.length} ćwiczeń tego dnia</span>
+                )}
+              </>
+            ) : (
+              'Wybierz dzień'
+            )}
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="min-h-[44px] flex-1 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm font-semibold text-slate-300 transition-colors hover:bg-white/[0.06] cursor-pointer"
+            >
+              Anuluj
+            </button>
+            <button
+              onClick={handleConfirmApply}
+              disabled={!selectedDayId}
+              className={`${gradientClass} min-h-[44px] flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer`}
+            >
+              <span className="inline-flex items-center gap-1.5">
+                <CheckIcon className="h-4 w-4" />
+                Dodaj do planu
+              </span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

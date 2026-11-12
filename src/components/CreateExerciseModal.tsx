@@ -173,10 +173,10 @@ export default function CreateExerciseModal({ onSave, onClose, editExercise }: C
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
       style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
     >
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 modal-overlay" onClick={onClose} />
 
       <div
-        className="relative bg-white sm:rounded-2xl shadow-2xl w-full sm:max-w-lg overflow-hidden flex flex-col rounded-t-2xl"
+        className="relative bg-white sm:rounded-2xl shadow-2xl w-full sm:max-w-lg overflow-hidden flex flex-col rounded-t-2xl modal-panel"
         style={{
           maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 0.5rem)',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',

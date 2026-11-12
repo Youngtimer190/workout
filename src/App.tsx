@@ -16,13 +16,18 @@ import AuthScreen from './components/auth/AuthScreen';
 import OfflineBanner from './components/auth/OfflineBanner';
 import DemoBanner from './components/auth/DemoBanner';
 import { UndoRemoveBar } from './components/WorkoutPlanner';
+import CloudStatusBanner from './components/CloudStatusBanner';
+import { getCloudState, subscribeCloud, CloudState } from './lib/cloudStatus';
 import { useWorkoutStore } from './store/workoutStore';
 import { useAuthStore } from './store/authStore';
 import { useShareStore } from './store/shareStore';
 import { useTemplateStore } from './store/templateStore';
+import { useWorkoutStats } from './store/workoutStatsStore';
 import { useFavoritesStore } from './store/favoritesStore';
 import { useAppearanceStore } from './store/appearanceStore';
 import { buildDaySnapshot, snapshotToExercises } from './lib/shareService';
+import { pluralExercise, pluralShare, toLocalDateStr } from './lib/format';
+import { weekSetProgress } from './lib/sets';
 import { isSupabaseConfigured } from './lib/supabase';
 import { exerciseLibrary } from './data/exercises';
 import logoUrl from './assets/fitplanner-logo.png';
@@ -241,7 +246,7 @@ function NewPasswordScreen() {
 export default function App() {
   const [activeView, setActiveView] = useState<View>('dashboard');
   /** Komunikat typu toast (np. po dodaniu ćwiczeń do planu). */
-  const [toast, setToast] = useState<{ ok: boolean; text: string } | null>(null);
+  const [toast, setToast] = useState<{ ok: boolean; text: string; actionLabel?: string; onAction?: () => void } | null>(null);
   const [offlineDismissed, setOfflineDismissed] = useState(false);
   const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
   const topRef = useRef<HTMLDivElement>(null);
@@ -254,9 +259,9 @@ export default function App() {
     toggleRestDay, addExercise, removeExercise, updateExercise,
     replaceExercise, moveExercise, moveExerciseToDay, moveAllExercisesToDate, resetWeek, loadGeneratedPlan,
     customExercises, addCustomExercise, updateCustomExercise, deleteCustomExercise,
-    syncing, isHydrating,
+    syncing, isHydrating, refreshFromCloud,
     removedExercise, restoreExercise, expireAndRemoveExercise,
-  } = useWorkoutStore(user?.id);
+  } = useWorkoutStore(user?.id, initialized);
 
   // ── Udostępnienia — jedna instancja store, dane idą do komponentów propami ──
   const shareStore = useShareStore(user?.id);
@@ -276,19 +281,37 @@ export default function App() {
   const favorites = useFavoritesStore(user?.id);
   const appearance = useAppearanceStore();
 
+  // ── Statystyki z historii (pulpit) ──
+  // Obiekt MUSI mieć stabilną tożsamość — inline literal tworzyłby nowy
+  // obiekt co render i przebudowywał zależności (pętla renderów).
+  const currentWeekForStats = useMemo(() => ({ key: weekKey, days }), [weekKey, days]);
+  const workoutStats = useWorkoutStats(
+    user?.id,
+    currentWeekForStats,
+    activeView === 'dashboard'
+  );
+
+  // Plan zmieniony (zaliczone serie) → przelicz statystyki z localStorage.
+  const { refresh: refreshWorkoutStats } = workoutStats;
+  useEffect(() => {
+    refreshWorkoutStats();
+  }, [days, refreshWorkoutStats]);
   // ── Postęp tygodnia (karta w pasku bocznym) ──
-  const weekProgress = useMemo(() => {
-    const totalSets = days.reduce(
-      (acc, d) => acc + d.exercises.reduce((s, e) => s + (e.sets || 0), 0),
-      0
-    );
-    const doneSets = days.reduce(
-      (acc, d) => acc + d.exercises.reduce((s, e) => s + (e.setLogs?.filter(l => l.done).length || 0), 0),
-      0
-    );
-    if (totalSets === 0) return 0;
-    return Math.round((doneSets / totalSets) * 100);
-  }, [days]);
+  //
+  // Mianownik i licznik pochodzą z TEJ SAMEJ bazy (lista serii ćwiczenia),
+  // więc postęp nie skacze powyżej 100% ani nie utknie poniżej. Cardio jest
+  // pomijane — nie ma w nim checkboxów, więc nigdy nie doszłoby do 100%.
+  const weekProgress = useMemo(() => weekSetProgress(days).percent, [days]);
+
+  /**
+   * Podpis pod paskiem postępu.
+   *
+   * `days` to tydzień PRZEGLĄDANY w Planerze, więc przy innym tygodniu
+   * napis „w tym tygodniu” byłby mylący — podajemy wtedy zakres dat.
+   */
+  const progressLabel = weekMeta.isCurrentWeek
+    ? 'Ukończone serie w tym tygodniu'
+    : `Ukończone serie · ${weekMeta.label}`;
 
   useEffect(() => {
     topRef.current?.scrollIntoView({ behavior: 'auto', block: 'start' });
@@ -306,10 +329,23 @@ export default function App() {
 
   const handleViewChange = (view: View) => { setActiveView(view); scrollToTop(); };
 
-  /** Pokazuje komunikat typu toast na 3,5 s. */
-  const showToast = useCallback((ok: boolean, text: string) => {
-    setToast({ ok, text });
-    window.setTimeout(() => setToast(null), 3500);
+  /** Timer zamykający toast — trzymamy referencję, bo kolejny toast musi
+   * anulować poprzedni (inaczej stary timer zgasi nowy komunikat). */
+  const toastTimerRef = useRef<number | null>(null);
+
+  /**
+   * Pokazuje komunikat typu toast na 3,5 s.
+   *
+   * Opcjonalna akcja (np. „Cofnij” po usunięciu szablonu) — kliknięcie
+   * wykonuje ją i zamyka toast.
+   */
+  const showToast = useCallback((ok: boolean, text: string, actionLabel?: string, onAction?: () => void) => {
+    if (toastTimerRef.current !== null) window.clearTimeout(toastTimerRef.current);
+    setToast({ ok, text, actionLabel, onAction });
+    toastTimerRef.current = window.setTimeout(() => {
+      setToast(null);
+      toastTimerRef.current = null;
+    }, actionLabel ? 6000 : 3500);
   }, []);
 
   const handleGoToDay = (dayIndex: number) => {
@@ -363,6 +399,38 @@ export default function App() {
     setActiveView('planner');
     scrollToTop();
   };
+
+  /**
+   * Dni, w których są już ćwiczenia — dla podpowiedzi w pickerze dnia.
+   *
+   * Klucz to data w formacie `YYYY-MM-DD` (lokalna), wartość to liczba
+   * ćwiczeń w dniu. Dzięki temu przy wyborze dnia widzimy, który jest wolny.
+   */
+  const busyDates = useMemo(() => {
+    const map: Record<string, number> = {};
+    if (!weekMeta) return map;
+    const start = new Date(weekMeta.startDate);
+    days.forEach((day, i) => {
+      if (!day.exercises.length) return;
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      map[toLocalDateStr(d)] = day.exercises.length;
+    });
+    return map;
+  }, [days, weekMeta]);
+
+  /** Ostatni odbiorcy udostępnień — podpowiedzi w oknie wysyłki. */
+  const recentRecipients = useMemo(() => {
+    const seen = new Set<string>();
+    const list: string[] = [];
+    for (const s of shareStore.outgoing) {
+      const email = (s.recipient_email ?? '').trim().toLowerCase();
+      if (!email || seen.has(email)) continue;
+      seen.add(email);
+      list.push(email);
+    }
+    return list;
+  }, [shareStore.outgoing]);
 
   // ── Udostępnianie ──────────────────────────────────────────────────────────
 
@@ -423,6 +491,75 @@ export default function App() {
     return shareStore.cancel(shareId);
   };
 
+  // ── Status chmury i automatyczne ponawianie ──────────────────────────
+  //
+  // Gdy Supabase milczy (awaria, wisząca sesja), aplikacja pracuje na danych
+  // lokalnych i sama ponawia połączenie: 5 s → 15 s → 45 s → 5 min.
+  const [cloudFailed, setCloudFailed] = useState(false);
+  const [cloudRetrying, setCloudRetrying] = useState(false);
+
+  // Licznik prób trzymamy w REF, bo efekt ponawiania nie może zależeć od
+  // tożsamości funkcji (ta zmienia się przy każdym renderze → timer byłby
+  // resetowany i ponowienie nigdy by nie nastąpiło).
+  const backoffStepRef = useRef(0);
+  const retryingRef = useRef(false);
+  const retryCloudRef = useRef<() => Promise<void>>(async () => {});
+
+  useEffect(
+    () =>
+      subscribeCloud((state: CloudState) => {
+        setCloudFailed(state === 'failed');
+        // Chmura wróciła — zaczynamy od nowa od najkrótszego odstępu.
+        if (state === 'ok') backoffStepRef.current = 0;
+      }),
+    []
+  );
+
+  const retryCloud = useCallback(async () => {
+    if (retryingRef.current) return;
+    retryingRef.current = true;
+    setCloudRetrying(true);
+    try {
+      await Promise.allSettled([
+        refreshFromCloud(),
+        templateStore.refreshTemplates(),
+        favorites.sync(),
+        shareStore.refresh(),
+      ]);
+    } finally {
+      retryingRef.current = false;
+      setCloudRetrying(false);
+    }
+  }, [refreshFromCloud, templateStore, favorites, shareStore]);
+
+  // Najświeższa wersja ponowienia — efekt ponawiania korzysta z niej,
+  // żeby nie restartować się przy każdym renderze.
+  useEffect(() => {
+    retryCloudRef.current = retryCloud;
+  }, [retryCloud]);
+
+  useEffect(() => {
+    if (!cloudFailed) return;
+
+    // Kolejne próby z coraz dłuższym odstępem (5 s, 15 s, 45 s, 5 min).
+    const delays = [5000, 15000, 45000, 300000];
+    let timer: number | undefined;
+
+    const schedule = () => {
+      const delay = delays[Math.min(backoffStepRef.current, delays.length - 1)];
+      backoffStepRef.current += 1;
+      timer = window.setTimeout(async () => {
+        await retryCloudRef.current();
+        if (getCloudState() === 'failed') schedule();
+      }, delay);
+    };
+
+    schedule();
+    return () => {
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
+  }, [cloudFailed]);
+
   // ── Szablony treningów ──
   const handleApplyTemplate = (
     template: WorkoutTemplate,
@@ -457,6 +594,22 @@ export default function App() {
 
     // If we were highlighting a day, clear it
     setSelectedDayIndex(null);
+
+    // Odnotuj zastosowanie — porządkuje listę („ostatnio używane”)
+    // i jest widoczne na karcie szablonu.
+    void templateStore.markUsed(template.id);
+
+    // Informacja zwrotna — bez niej użytkownik nie wie, co się stało.
+    const count = cleanExercises.length;
+    showToast(
+      true,
+      `Dodano ${count} ${pluralExercise(count)} do: ${targetDay.name}.`,
+      'Otwórz w Planerze',
+      () => {
+        setActiveView('planner');
+        scrollToTop();
+      }
+    );
   };
 
   const handleCreateTemplateFromDay = async (
@@ -500,7 +653,14 @@ export default function App() {
 
   const renderView = () => {
     switch (activeView) {
-      case 'dashboard': return <Dashboard days={days} onGoToPlanner={() => handleViewChange('planner')} onGoToDay={handleGoToDay} />;
+      case 'dashboard': return (
+        <Dashboard
+          days={days}
+          stats={workoutStats.stats}
+          onGoToPlanner={() => handleViewChange('planner')}
+          onGoToDay={handleGoToDay}
+        />
+      );
       case 'generator': return <PlanGenerator onApplyPlan={handleApplyGeneratedPlan} onGoToPlanner={() => handleViewChange('planner')} />;
       case 'planner':
         return (
@@ -522,7 +682,7 @@ export default function App() {
                 </span>
                 <span className="flex-1 min-w-0">
                   <span className="block text-violet-700 text-xs sm:text-sm font-bold">
-                    Masz {shareStore.pendingCount} {shareStore.pendingCount === 1 ? 'udostępnienie' : 'udostępnień'} do akceptacji
+                    Masz {shareStore.pendingCount} {pluralShare(shareStore.pendingCount)} do akceptacji
                   </span>
                   <span className="block text-violet-500 text-[11px] mt-0.5">
                     Kliknij, aby zobaczyć szczegóły
@@ -548,6 +708,7 @@ export default function App() {
               highlightDayIndex={selectedDayIndex}
               canShare={shareStore.canShare}
               currentUserEmail={user?.email ?? null}
+              recentRecipients={recentRecipients}
               onSendShare={handleSendShare}
               templates={templateStore.templates}
               onApplyTemplate={handleApplyTemplate}
@@ -601,10 +762,15 @@ export default function App() {
             loading={shareStore.loading}
             error={shareStore.error}
             canShare={shareStore.canShare}
-            onRefresh={shareStore.refresh}
+            lastRefreshedAt={shareStore.lastRefreshedAt}
+            userId={user?.id ?? null}
+            busyDates={busyDates}
+            onRefresh={() => shareStore.refresh()}
             onAccept={handleAcceptShare}
             onDecline={handleDeclineShare}
             onCancel={handleCancelShare}
+            onNotify={showToast}
+            onOpenPlanner={() => handleViewChange('planner')}
           />
         );
       case 'templates':
@@ -617,8 +783,12 @@ export default function App() {
             error={templateStore.error}
             onCreateTemplate={templateStore.addTemplate}
             onUpdateTemplate={templateStore.updateTemplate}
+            onTogglePin={(template) => templateStore.setPinned(template.id, !template.pinned)}
             onDeleteTemplate={templateStore.deleteTemplate}
+            onRestoreTemplate={templateStore.restoreTemplate}
+            onDuplicateTemplate={templateStore.duplicateTemplate}
             onApplyTemplate={(template, exercises, mode, dayId) => handleApplyTemplate(template, exercises, mode, dayId)}
+            onNotify={showToast}
           />
         );
       default: return null;
@@ -641,6 +811,7 @@ export default function App() {
         onViewChange={handleViewChange}
         pendingCount={shareStore.pendingCount}
         progress={weekProgress}
+        progressLabel={progressLabel}
         favoriteCount={favorites.favoriteCount}
         user={user}
         onSignOut={signOut}
@@ -676,13 +847,27 @@ export default function App() {
                   <path d="M12 16h.01" />
                 </svg>
               )}
-              <span>{toast.text}</span>
+              <span className="min-w-0 flex-1">{toast.text}</span>
+
+              {/* Akcja toasta (np. „Cofnij” po usunięciu szablonu) */}
+              {toast.actionLabel && (
+                <button
+                  onClick={() => {
+                    toast.onAction?.();
+                    setToast(null);
+                  }}
+                  className="flex-shrink-0 rounded-lg border border-white/20 bg-white/10 px-2.5 py-1 text-xs font-bold text-white transition-colors hover:bg-white/20 cursor-pointer"
+                >
+                  {toast.actionLabel}
+                </button>
+              )}
             </div>
           </div>
         )}
 
         {isDemoMode && <DemoBanner onExit={exitDemoMode} />}
         {!isSupabaseConfigured && !offlineDismissed && <OfflineBanner onDismiss={() => setOfflineDismissed(true)} />}
+        <CloudStatusBanner onRetry={retryCloud} retrying={cloudRetrying} />
 
         {syncing && isSupabaseConfigured && (
           <div className="bg-violet-500/10 border-b border-violet-500/20 px-4 py-2 flex items-center gap-2">

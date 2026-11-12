@@ -3,6 +3,7 @@
  * Działa w trybie "offline-first": zmiany zapisywane lokalnie natychmiast,
  * a następnie synchronizowane z bazą w tle.
  */
+import { logCloudIssue, markCloudFailed, markCloudOk, isNetworkError } from './cloudStatus';
 import { supabase, isSupabaseConfigured } from './supabase';
 import { WorkoutDay, Exercise } from '../types';
 
@@ -22,20 +23,91 @@ export interface WeekPlanFetchResult {
  * istotne: przy błędzie nie wolno nadpisywać chmury danymi z localStorage,
  * bo skasowałoby to trening zapisany na innym urządzeniu.
  */
+/**
+ * Limit czasu dla odczytów z chmury.
+ *
+ * Bez tego wisząca baza zatrzymuje aplikację na szkieletcie w nieskończoność
+ * (synchroniczacja nigdy się nie kończy, `finally` nie wypala).
+ */
+const CLOUD_TIMEOUT_MS = 10_000;
+
+function timeoutSignal(): AbortSignal {
+  return AbortSignal.timeout(CLOUD_TIMEOUT_MS);
+}
+
 export async function fetchWeekPlan(userId: string, weekKey: string): Promise<WeekPlanFetchResult> {
   if (!isSupabaseConfigured) return { days: null, error: null };
-  const { data, error } = await supabase
-    .from('week_plans')
-    .select('days_data')
-    .eq('user_id', userId)
-    .eq('week_key', weekKey)
-    .maybeSingle();
-  if (error) {
-    console.error('[syncService] fetchWeekPlan error:', error);
-    return { days: null, error: new Error(error.message) };
+  try {
+    const { data, error } = await supabase
+      .from('week_plans')
+      .select('days_data')
+      .eq('user_id', userId)
+      .eq('week_key', weekKey)
+      .abortSignal(timeoutSignal())
+      .maybeSingle();
+    if (error) {
+      logCloudIssue('syncService:fetchWeekPlan', error);
+      markCloudFailed(error.message);
+      return { days: null, error: new Error(error.message) };
+    }
+    markCloudOk();
+    if (!data) return { days: null, error: null };
+    return { days: data.days_data as WorkoutDay[], error: null };
+  } catch (err) {
+    // Wisząca baza albo przerwane połączenie — nie zostawiamy wywołującego
+    // z niewykonanym żądaniem w nieskończoność.
+    logCloudIssue('syncService:fetchWeekPlan', err);
+    markCloudFailed(err instanceof Error ? err.message : String(err));
+    return { days: null, error: err instanceof Error ? err : new Error(String(err)) };
   }
-  if (!data) return { days: null, error: null };
-  return { days: data.days_data as WorkoutDay[], error: null };
+}
+
+/**
+ * Wczytuje WSZYSTKIE zapisane tygodnie użytkownika jednym zapytaniem.
+ *
+ * Potrzebne do statystyk na pulpicie (treningi w miesiącu, passa tygodni,
+ * wolumen od początku) — w pamięci aplikacji jest tylko bieżący tydzień.
+ *
+ * Tabela `week_plans` ma jeden wiersz na tydzień, więc jeden `select`
+ * zwraca całą historię.
+ */
+export async function fetchAllWeekPlans(userId: string): Promise<Record<string, WorkoutDay[]>> {
+  if (!isSupabaseConfigured) return {};
+
+  // Timeout: gdy baza nie odpowiada, nie blokujemy statystyk — zostają dane
+  // lokalne, a odczyt ponowi się przy następnym wejściu.
+  let data: { week_key: string; days_data: unknown }[] | null = null;
+  let error: { message: string } | null = null;
+
+  try {
+    const res = await supabase
+      .from('week_plans')
+      .select('week_key, days_data')
+      .eq('user_id', userId)
+      .order('week_key', { ascending: true })
+      .abortSignal(timeoutSignal());
+    data = res.data as { week_key: string; days_data: unknown }[] | null;
+    error = res.error as { message: string } | null;
+  } catch (err) {
+    logCloudIssue('syncService:fetchAllWeekPlans', err);
+    markCloudFailed(err instanceof Error ? err.message : String(err));
+    return {};
+  }
+
+  if (error) {
+    logCloudIssue('syncService:fetchAllWeekPlans', error);
+    markCloudFailed(error.message);
+    return {};
+  }
+  markCloudOk();
+
+  const weeks: Record<string, WorkoutDay[]> = {};
+  for (const row of data ?? []) {
+    const key = row.week_key as string;
+    const days = row.days_data as WorkoutDay[] | null;
+    if (key && Array.isArray(days)) weeks[key] = days;
+  }
+  return weeks;
 }
 
 /**
@@ -46,15 +118,26 @@ export async function fetchWeekPlan(userId: string, weekKey: string): Promise<We
  */
 export async function upsertWeekPlan(userId: string, weekKey: string, days: WorkoutDay[]): Promise<Error | null> {
   if (!isSupabaseConfigured) return null;
-  const { error } = await supabase.from('week_plans').upsert(
-    { user_id: userId, week_key: weekKey, days_data: days, updated_at: new Date().toISOString() },
-    { onConflict: 'user_id,week_key' }
-  );
-  if (error) {
-    console.error('[syncService] upsertWeekPlan error:', error);
-    return new Error(error.message);
+  try {
+    const { error } = await supabase
+      .from('week_plans')
+      .upsert(
+        { user_id: userId, week_key: weekKey, days_data: days, updated_at: new Date().toISOString() },
+        { onConflict: 'user_id,week_key' }
+      )
+      .abortSignal(timeoutSignal());
+    if (error) {
+      logCloudIssue('syncService:upsertWeekPlan', error);
+      if (isNetworkError(error)) markCloudFailed(error.message);
+      return new Error(error.message);
+    }
+    markCloudOk();
+    return null;
+  } catch (err) {
+    logCloudIssue('syncService:upsertWeekPlan', err);
+    markCloudFailed(err instanceof Error ? err.message : String(err));
+    return err instanceof Error ? err : new Error(String(err));
   }
-  return null;
 }
 
 export async function fetchAllWeekKeys(userId: string): Promise<string[]> {
@@ -63,7 +146,8 @@ export async function fetchAllWeekKeys(userId: string): Promise<string[]> {
     .from('week_plans')
     .select('week_key')
     .eq('user_id', userId)
-    .order('week_key', { ascending: false });
+    .order('week_key', { ascending: false })
+    .abortSignal(timeoutSignal());
   return (data ?? []).map((r: { week_key: string }) => r.week_key);
 }
 
@@ -75,8 +159,15 @@ export async function fetchCustomExercises(userId: string): Promise<Exercise[]> 
     .from('custom_exercises')
     .select('exercise_data')
     .eq('user_id', userId)
-    .order('created_at', { ascending: true });
-  if (error || !data) return [];
+    .order('created_at', { ascending: true })
+    .abortSignal(timeoutSignal());
+  if (error) {
+    logCloudIssue('syncService:fetchCustomExercises', error);
+    markCloudFailed(error.message);
+    return [];
+  }
+  if (!data) return [];
+  markCloudOk();
   return data.map((r: { exercise_data: Exercise }) => r.exercise_data);
 }
 
@@ -107,24 +198,46 @@ export async function deleteCustomExerciseRemote(userId: string, exerciseId: str
 export async function syncAllDataFromCloud(userId: string): Promise<{
   weeks: Record<string, WorkoutDay[]>;
   customExercises: Exercise[];
+  /**
+   * Czy odczyt z chmury się udał.
+   *
+   * WAŻNE: gdy `ok` jest fałszywe, zwracamy puste dane — ale wołający NIE
+   * może wtedy nadpisywać nimi danych lokalnych (kasowałby trening
+   * zapisany na tym urządzeniu).Dlatego sygnalizujemy to flagą.
+   */
+  ok: boolean;
 }> {
-  if (!isSupabaseConfigured) return { weeks: {}, customExercises: [] };
+  if (!isSupabaseConfigured) return { weeks: {}, customExercises: [], ok: false };
 
-  const [{ data: plansData }, { data: exercisesData }] = await Promise.all([
-    supabase.from('week_plans').select('week_key, days_data').eq('user_id', userId),
-    supabase.from('custom_exercises').select('exercise_data').eq('user_id', userId).order('created_at', { ascending: true }),
-  ]);
+  try {
+    const [plans, exercises] = await Promise.all([
+      supabase.from('week_plans').select('week_key, days_data').eq('user_id', userId).abortSignal(timeoutSignal()),
+      supabase.from('custom_exercises').select('exercise_data').eq('user_id', userId).order('created_at', { ascending: true }).abortSignal(timeoutSignal()),
+    ]);
 
-  const weeks: Record<string, WorkoutDay[]> = {};
-  (plansData ?? []).forEach((r: { week_key: string; days_data: WorkoutDay[] }) => {
-    weeks[r.week_key] = r.days_data;
-  });
+    const error = plans.error ?? exercises.error;
+    if (error) {
+      logCloudIssue('syncService:syncAllDataFromCloud', error);
+      markCloudFailed(error.message);
+      return { weeks: {}, customExercises: [], ok: false };
+    }
+    markCloudOk();
 
-  const customExercises: Exercise[] = (exercisesData ?? []).map(
-    (r: { exercise_data: Exercise }) => r.exercise_data
-  );
+    const weeks: Record<string, WorkoutDay[]> = {};
+    (plans.data ?? []).forEach((r: { week_key: string; days_data: WorkoutDay[] }) => {
+      weeks[r.week_key] = r.days_data;
+    });
 
-  return { weeks, customExercises };
+    const customExercises: Exercise[] = (exercises.data ?? []).map(
+      (r: { exercise_data: Exercise }) => r.exercise_data
+    );
+
+    return { weeks, customExercises, ok: true };
+  } catch (err) {
+    logCloudIssue('syncService:syncAllDataFromCloud', err);
+    markCloudFailed(err instanceof Error ? err.message : String(err));
+    return { weeks: {}, customExercises: [], ok: false };
+  }
 }
 
 // ─── Push all local data to cloud (first login) ──────────────────────────────

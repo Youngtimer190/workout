@@ -12,6 +12,8 @@ interface ShareWorkoutModalProps {
   weekKey: string;
   /** E-mail zalogowanego użytkownika — nie wolno udostępnić samemu sobie. */
   currentUserEmail?: string | null;
+  /** Ostatni odbiorcy, którym udostępnianośmy trening — podpowiedzi. */
+  recentRecipients?: string[];
   /** Wysyłka udostępnienia — zwraca błąd albo `null` przy sukcesie. */
   onSend: (recipientEmail: string) => Promise<{ error: Error | null }>;
   onClose: () => void;
@@ -21,6 +23,7 @@ export default function ShareWorkoutModal({
   day,
   weekKey,
   currentUserEmail,
+  recentRecipients = [],
   onSend,
   onClose,
 }: ShareWorkoutModalProps) {
@@ -117,7 +120,7 @@ export default function ShareWorkoutModal({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/50"
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center modal-overlay"
       onClick={onClose}
       style={{
         WebkitTapHighlightColor: 'transparent',
@@ -130,13 +133,16 @@ export default function ShareWorkoutModal({
       } as CSSProperties}
     >
       <div
-        className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden modal-sheet animate-slide-up"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="share-workout-title"
+        className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden modal-sheet animate-slide-up modal-panel"
         onClick={(e) => e.stopPropagation()}
         style={{ display: 'flex', flexDirection: 'column' }}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-violet-500 to-indigo-600 px-4 py-3 flex items-center justify-between flex-shrink-0">
-          <h2 className="text-white font-bold text-base sm:text-lg">Udostępnij trening</h2>
+        <div className="bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-3 flex items-center justify-between flex-shrink-0">
+          <h2 id="share-workout-title" className="text-white font-bold text-base sm:text-lg">Udostępnij trening</h2>
           <button
             onClick={onClose}
             className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-white/20 flex items-center justify-center active:bg-white/30 cursor-pointer flex-shrink-0"
@@ -168,13 +174,22 @@ export default function ShareWorkoutModal({
               Trafienie do planu wymaga akceptacji odbiorcy — to on wskaże dzień, w którym trening ma się pojawić.
             </p>
 
-            <button
-              onClick={onClose}
-              className="mt-5 w-full px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-500 to-indigo-600 active:opacity-80 cursor-pointer"
-              style={{ WebkitTapHighlightColor: 'transparent' }}
-            >
-              Zamknij
-            </button>
+            <div className="mt-5 w-full space-y-2">
+              <button
+                onClick={() => { setSent(false); setEmail(''); setError(null); }}
+                className="w-full px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold text-violet-700 bg-violet-50 border border-violet-200 active:bg-violet-100 cursor-pointer"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
+              >
+                Udostępnij kolejny trening
+              </button>
+              <button
+                onClick={onClose}
+                className="w-full px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-purple-600 active:opacity-80 cursor-pointer"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
+              >
+                Zamknij
+              </button>
+            </div>
           </div>
         ) : (
           <>
@@ -201,7 +216,7 @@ export default function ShareWorkoutModal({
                   {day.exercises.map((ex, i) => (
                     <li key={`${ex.id}-${i}`} className="text-xs text-slate-500 truncate">
                       • {ex.name}
-                      {ex.sets ? ` — ${ex.sets} × ${ex.reps ?? ''}`.trim() : ''}
+                      {ex.sets ? ` · ${ex.sets} × ${ex.reps ?? ''}` : ''}
                     </li>
                   ))}
                 </ul>
@@ -212,6 +227,23 @@ export default function ShareWorkoutModal({
                 <label htmlFor="share-recipient-email" className="block text-xs sm:text-sm font-semibold text-slate-700 mb-2 cursor-pointer">
                   Adres e-mail odbiorcy:
                 </label>
+
+                {/* Podpowiedzi — odbiorcy, którym już udostępnianośmy trening */}
+                {recentRecipients.length > 0 && (
+                  <div className="mb-2 flex flex-wrap gap-1.5">
+                    {recentRecipients.slice(0, 4).map(email => (
+                      <button
+                        key={email}
+                        type="button"
+                        onClick={() => setEmail(email)}
+                        className="max-w-full truncate rounded-full border border-violet-400/25 bg-violet-500/10 px-2.5 py-1 text-[11px] font-semibold text-violet-200 transition-all hover:bg-violet-500/20 cursor-pointer"
+                      >
+                        {email}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 <input
                   id="share-recipient-email"
                   ref={emailInputRef}

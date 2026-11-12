@@ -5,6 +5,7 @@
  * W bazie trzymamy wyłącznie identyfikatory ćwiczeń; pełne dane
  * ćwiczenia są już w bibliotece aplikacji (`src/data/exercises.ts`).
  */
+import { logCloudIssue, markCloudFailed, markCloudOk } from './cloudStatus';
 import { supabase, isSupabaseConfigured } from './supabase';
 
 /**
@@ -38,9 +39,11 @@ export async function fetchFavoriteIds(userId: string): Promise<string[] | null>
     .select('exercise_id')
     .eq('user_id', userId);
   if (error) {
-    console.error('[favoritesService] fetchFavoriteIds error:', error);
+    logCloudIssue('favoritesService:fetchFavoriteIds', error);
+    markCloudFailed(error.message);
     return null;
   }
+  markCloudOk();
   return (data ?? []).map(row => row.exercise_id as string);
 }
 

@@ -123,6 +123,8 @@ interface WorkoutPlannerProps {
     targetDateStr: string
   ) => Promise<{ error: Error | null }> | void;
   customExercises?: Exercise[];
+  /** Pełna biblioteka ćwiczeń — dla okna tworzenia szablonu. */
+  availableExercises?: Exercise[];
   onSaveCustomExercise?: (exercise: Exercise) => void;
   onDeleteCustomExercise?: (id: string) => void;
   highlightDayIndex?: number | null;
@@ -130,6 +132,8 @@ interface WorkoutPlannerProps {
   canShare?: boolean;
   /** E-mail zalogowanego użytkownika — nie może udostępnić samemu sobie. */
   currentUserEmail?: string | null;
+  /** Ostatni odbiorcy udostępnień — podpowiedzi w oknie wysyłki. */
+  recentRecipients?: string[];
   /** Wysyłka udostępnienia dnia — zwraca błąd albo `null` przy sukcesie. */
   onSendShare?: (
     recipientEmail: string,
@@ -173,11 +177,13 @@ export default function WorkoutPlanner({
   userId,
   onCopyWorkout,
   customExercises = [],
+  availableExercises,
   onSaveCustomExercise,
   onDeleteCustomExercise,
   highlightDayIndex,
   canShare,
   currentUserEmail,
+  recentRecipients,
   onSendShare,
   templates = [],
   onApplyTemplate,
@@ -351,11 +357,13 @@ export default function WorkoutPlanner({
               onRequestReplace={(exercise) => handleRequestReplace(day.id, exercise)}
               canShare={canShare}
               currentUserEmail={currentUserEmail}
+        recentRecipients={recentRecipients}
               weekKey={weekMeta.key}
               onSendShare={onSendShare}
               templates={templates}
               onApplyTemplate={onApplyTemplate}
               onCreateTemplateFromDay={onCreateTemplateFromDay}
+              availableExercises={availableExercises}
             />
           </div>
         ))}

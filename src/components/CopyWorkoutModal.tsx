@@ -144,7 +144,7 @@ export default function CopyWorkoutModal({ userId, onCopy, onClose }: CopyWorkou
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-start sm:items-center justify-center bg-black/50"
+      className="fixed inset-0 z-[100] flex items-start sm:items-center justify-center modal-overlay"
       onClick={onClose}
       style={{
         WebkitTapHighlightColor: 'transparent',
@@ -158,7 +158,7 @@ export default function CopyWorkoutModal({ userId, onCopy, onClose }: CopyWorkou
       } as CSSProperties}
     >
       <div
-        className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-b-2xl shadow-2xl overflow-hidden modal-sheet animate-slide-down"
+        className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-b-2xl shadow-2xl overflow-hidden modal-sheet animate-slide-down modal-panel"
         onClick={(e) => e.stopPropagation()}
         style={{ display: 'flex', flexDirection: 'column' }}
       >

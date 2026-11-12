@@ -211,6 +211,35 @@ export function ShareIcon(props: IconProps) {
   );
 }
 
+export function EyeOffIcon(props: IconProps) {
+  return (
+    <svg {...svgProps(props)}>
+      <path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c7 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19" />
+      <path d="M6.61 6.61A18.1 18.1 0 0 0 2 12s3 8 10 8a9.1 9.1 0 0 0 5.39-1.61" />
+      <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+      <line x1="2" y1="2" x2="22" y2="22" />
+    </svg>
+  );
+}
+
+export function PinIcon(props: IconProps) {
+  return (
+    <svg {...svgProps(props)}>
+      <path d="M12 17v5" />
+      <path d="M9 10.5V4h6v6.5l2 2.5H7l2-2.5Z" />
+    </svg>
+  );
+}
+export function ArchiveIcon(props: IconProps) {
+  return (
+    <svg {...svgProps(props)}>
+      <rect x="2" y="3" width="20" height="5" rx="1" />
+      <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" />
+      <path d="M10 12h4" />
+    </svg>
+  );
+}
+
 export function RepeatIcon(props: IconProps) {
   return (
     <svg {...svgProps(props)}>

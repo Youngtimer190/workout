@@ -21,6 +21,16 @@ import {
 
 const STORAGE_PREFIX = 'fitplanner-favorites';
 
+/**
+ * Identyfikator trybu demo.
+ *
+ * W demo nie ma prawdziwego konta w chmurze — odpytywanie bazy z id
+ * „demo" kończy się błędem formatu uuid, który wygląda jak awaria
+ * chmury. Dlatego demo w ogóle nie synchronizuje się z chmurą
+ * (tak jak `templateStore` i `shareStore`).
+ */
+const DEMO_USER_ID = 'demo';
+
 interface PendingOps {
   adds: string[];
   removes: string[];
@@ -96,7 +106,8 @@ export function useFavoritesStore(userId?: string) {
    *  3. zapisuje go lokalnie.
    */
   const sync = useCallback(async () => {
-    if (!userId) return;
+    // Tryb demo nie synchronizuje się z chmurą (brak prawdziwego konta).
+    if (!userId || userId === DEMO_USER_ID) return;
 
     setIsSyncing(true);
     try {

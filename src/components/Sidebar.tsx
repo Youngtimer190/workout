@@ -32,8 +32,10 @@ interface SidebarProps {
   onViewChange: (v: View) => void;
   /** Liczba udostępnień czekających na akceptację — do badge'a. */
   pendingCount?: number;
-  /** Procent ukończonych serii w bieżącym tygodniu (0-100). */
+  /** Procent ukończonych serii w przeglądanym tygodniu (0-100). */
   progress?: number;
+  /** Podpis pod paskiem postępu (np. „Ukończone serie · 9 – 15 lis 2026”). */
+  progressLabel?: string;
   /** Liczba ulubionych ćwiczeń. */
   favoriteCount?: number;
   /**
@@ -203,6 +205,7 @@ export default function Sidebar({
   onViewChange,
   pendingCount = 0,
   progress = 0,
+  progressLabel = 'Ukończone serie w tym tygodniu',
   favoriteCount = 0,
   user = null,
   onSignOut,
@@ -377,7 +380,7 @@ export default function Sidebar({
               <span className="w-9 text-right text-xs font-bold text-slate-300">{progress}%</span>
             </div>
             <p className="relative mt-2 text-[10px] leading-snug text-slate-500">
-              Ukończone serie w tym tygodniu
+              {progressLabel}
             </p>
           </div>
         </nav>
@@ -473,8 +476,13 @@ export default function Sidebar({
             aria-label="Więcej opcji"
             aria-expanded={moreOpen}
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition-all duration-200">
+            <span className="relative flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition-all duration-200">
               <MoreIcon className="h-5 w-5" />
+              {pendingCount > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 min-w-[16px] h-[16px] px-1 rounded-full bg-fuchsia-500 text-white text-[9px] font-bold flex items-center justify-center">
+                  {pendingCount > 9 ? '9+' : pendingCount}
+                </span>
+              )}
             </span>
             <span className="text-[10px] font-semibold leading-none text-slate-500">Więcej</span>
           </button>
@@ -491,6 +499,8 @@ export default function Sidebar({
         lastWorkout={lastWorkout}
         onGoToLastWorkout={onGoToLastWorkout}
         progress={progress}
+        progressLabel={progressLabel}
+        pendingCount={pendingCount}
       />
     </>
   );
