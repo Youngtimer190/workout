@@ -377,6 +377,23 @@ export default function Stepper({
     </button>
   );
 
+  /**
+   * Szerokość pola wartości — zależna od trybu:
+   * • `expanded` (pasek) — elastyczne, zajmuje wolne miejsce,
+   * • `inline` (desktop) — stałe 80 px, żeby przyciski ± nie rozjeżdżały się,
+   * • `compact` (telefon/tablet) — WYPEŁNIA komórkę (`w-full`).
+   *
+   * UWAGA: w trybie `compact` nie wolno dawać stałej szerokości (80 px) —
+   * komórka ma wtedy ~56 px, a sztywne 80 px wypychało kolumnę „Plan”
+   * do 8 px i tekst „8-12” był ucięty.
+   */
+  const valueSizeClass =
+    mode === 'expanded'
+      ? 'min-w-0 flex-1 h-10 text-base px-2'
+      : mode === 'inline'
+        ? 'w-20 h-8 text-xs px-1'
+        : 'w-full h-8 text-xs px-1';
+
   const valueControl = editing ? (
     <input
       ref={inputRef}
@@ -395,10 +412,8 @@ export default function Stepper({
         if (e.key === 'Escape') { e.preventDefault(); onEditingChange(false); }
       }}
       className={`text-center rounded-lg border-2 bg-white focus:outline-none text-slate-800 ${
-        mode === 'expanded'
-          ? 'min-w-0 flex-1 h-10 text-base font-bold px-2'
-          : 'w-20 h-8 text-xs font-bold px-1'
-      } ${
+        mode === 'expanded' ? 'font-bold' : 'font-bold'
+      } ${valueSizeClass} ${
         tone === 'amber' ? 'border-amber-400' : 'border-violet-400'
       }`}
     />
@@ -406,11 +421,7 @@ export default function Stepper({
     <button
       type="button"
       onClick={() => onBeginEdit()}
-      className={`text-center font-bold rounded-lg border-2 transition-all cursor-pointer active:scale-95 ${
-        mode === 'expanded'
-          ? 'min-w-0 flex-1 h-10 text-base px-2'
-          : 'w-20 h-8 text-xs px-1'
-      } ${toneClasses}`}
+      className={`text-center font-bold rounded-lg border-2 transition-all cursor-pointer active:scale-95 ${valueSizeClass} ${toneClasses}`}
     >
       {value != null ? (
         <>
