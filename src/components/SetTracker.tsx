@@ -3,7 +3,7 @@ import { SetLog, Exercise } from '../types';
 import { CheckIcon, TimerIcon } from './icons';
 import { buildCardioLog, CARDIO_DEFAULT_MINUTES } from '../lib/cardio';
 import Stepper from './Stepper';
-import { useIsNarrow } from '../hooks/useMediaQuery';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 
 interface SetTrackerProps {
   exercise?: Exercise;
@@ -147,7 +147,17 @@ export default function SetTracker({
   // Telefon: komórka ma tylko ~56 px, więc przyciski ± pojawiają się
   // dopiero po dotknięciu wartości. Przy okazji chowamy kolumnę „Plan”,
   // żeby zwolnić miejsce na większe przyciski.
-  const isNarrow = useIsNarrow();
+  /**
+   * Czy używamy modelu „pasek pod wierszem” zamiast przycisków w komórce.
+   *
+   * Na telefonie i tablecie komórka jest za wąska (56–79 px), żeby zmieścić
+   * wygodne przyciski ± obok wartości. Dlatego do 1024 px edytor otwiera
+   * się jako pasek pod wierszem — tam przyciski mają 40 px (cel dla kciuka),
+   * a układ kolumn pozostaje nieruchomy.
+   *
+   * Na desktopie (mysz) przyciski ± są widoczne od razu w komórce.
+   */
+  const useStrip = useMediaQuery('(max-width: 1023px)');
 
   /**
    * Szablon kolumn trackera na telefonie.
@@ -231,12 +241,12 @@ export default function SetTracker({
           max={999}
           precision={isReps ? 0 : 1}
           tone={isReps ? 'violet' : 'amber'}
-          mode={isNarrow ? 'compact' : 'inline'}
+          mode={useStrip ? 'compact' : 'inline'}
           label={isReps ? 'Powtórzenia' : 'Ciężar'}
           prefix={isReps ? undefined : (isDumbbell && !isUnilateral ? '2×' : undefined)}
-          editing={!isNarrow && isEditingCell(idx, field)}
+          editing={!useStrip && isEditingCell(idx, field)}
           done={log.done}
-          autoFocusInput={!isNarrow}
+          autoFocusInput={!useStrip}
           onBeginEdit={() => startEdit(idx, field)}
           onEditingChange={() => cancelEdit()}
         />
@@ -251,15 +261,15 @@ export default function SetTracker({
    * dla kciuka, a pozostałe wiersze tabeli zostają dokładnie tam, gdzie były.
    */
   const renderStepperStrip = (log: SetLog, idx: number, field: 'reps' | 'weight') => {
-    if (!isNarrow) return null;
+    if (!useStrip) return null;
     if (!isEditingCell(idx, field)) return null;
 
     const isReps = field === 'reps';
     const value = isReps ? (log.actualReps ?? null) : (log.weight ?? null);
 
     return (
-      <div className="sm:hidden px-2 pb-2 -mt-1">
-        <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2">
+      <div className="lg:hidden px-2 pb-2 -mt-1">
+        <div className="flex flex-col items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2.5">
           <span className={`text-[11px] font-semibold ${isReps ? 'text-violet-700' : 'text-amber-700'}`}>
             {isReps ? 'Powtórzenia' : 'Ciężar'}
           </span>
@@ -521,10 +531,6 @@ export default function SetTracker({
                 {renderStepperCell(log, idx, 'weight')}
               </div>
 
-              {/* Pasek edytora (telefon) — nie przesuwa pozostałych wierszy */}
-              {renderStepperStrip(log, idx, 'reps')}
-              {renderStepperStrip(log, idx, 'weight')}
-
               {/* Row - desktop */}
               <div className={`hidden sm:grid gap-x-1 items-center px-2 py-1.5 transition-colors ${
                 isUnilateral
@@ -571,6 +577,10 @@ export default function SetTracker({
                 {/* Weight */}
                 {renderStepperCell(log, idx, 'weight')}
               </div>
+
+              {/* Pasek edytora (telefon i tablet) — nie przesuwa pozostałych wierszy */}
+              {renderStepperStrip(log, idx, 'reps')}
+              {renderStepperStrip(log, idx, 'weight')}
             </Fragment>
           );
         })}

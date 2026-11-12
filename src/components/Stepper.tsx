@@ -304,8 +304,12 @@ export default function Stepper({
       : 'border-violet-200 bg-violet-50 text-violet-800';
   })();
 
-  const btnSize = mode === 'expanded' ? 'w-7 h-7' : 'w-5 h-5';
-  const iconSize = mode === 'expanded' ? 'h-4 w-4' : 'h-3 w-3';
+  // Rozmiary celów dotykowych:
+  // • „expanded" (pasek na telefonie/tablecie) — 40 px, cel dla kciuka,
+  // • „inline" (desktop) — 32 px, wygodne dla myszy.
+  // Wcześniej było 20/28 px — za mało, palec trafiał obok.
+  const btnSize = mode === 'expanded' ? 'w-10 h-10' : 'w-8 h-8';
+  const iconSize = mode === 'expanded' ? 'h-5 w-5' : 'h-4 w-4';
 
   const stepButton = (direction: 1 | -1, ariaLabel: string) => (
     <button
@@ -354,7 +358,11 @@ export default function Stepper({
         userSelect: 'none',
         WebkitTouchCallout: 'none',
       }}
-      className={`${btnSize} flex-shrink-0 rounded-md border border-slate-100 bg-slate-100 text-slate-500 flex items-center justify-center transition-colors active:scale-90 cursor-pointer hover:bg-slate-200 hover:text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed`}
+      className={`${btnSize} flex-shrink-0 rounded-xl border flex items-center justify-center transition-all active:scale-90 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+        direction === 1
+          ? 'border-violet-400/50 bg-violet-600 text-white shadow-sm shadow-violet-500/30 hover:bg-violet-500'
+          : 'border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200'
+      }`}
       disabled={value === null && direction === -1}
     >
       {direction === 1 ? (
@@ -386,7 +394,11 @@ export default function Stepper({
         if (e.key === 'Enter') { e.preventDefault(); commit(); }
         if (e.key === 'Escape') { e.preventDefault(); onEditingChange(false); }
       }}
-      className={`min-w-0 flex-1 text-center text-xs font-bold px-1 py-2.5 rounded-lg border-2 bg-white focus:outline-none text-slate-800 ${
+      className={`text-center rounded-lg border-2 bg-white focus:outline-none text-slate-800 ${
+        mode === 'expanded'
+          ? 'min-w-0 flex-1 h-10 text-base font-bold px-2'
+          : 'w-20 h-8 text-xs font-bold px-1'
+      } ${
         tone === 'amber' ? 'border-amber-400' : 'border-violet-400'
       }`}
     />
@@ -394,7 +406,11 @@ export default function Stepper({
     <button
       type="button"
       onClick={() => onBeginEdit()}
-      className={`min-w-0 flex-1 text-center text-xs font-bold py-2.5 px-1 rounded-lg border-2 transition-all cursor-pointer active:scale-95 ${toneClasses}`}
+      className={`text-center font-bold rounded-lg border-2 transition-all cursor-pointer active:scale-95 ${
+        mode === 'expanded'
+          ? 'min-w-0 flex-1 h-10 text-base px-2'
+          : 'w-20 h-8 text-xs px-1'
+      } ${toneClasses}`}
     >
       {value != null ? (
         <>
