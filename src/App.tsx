@@ -260,7 +260,7 @@ export default function App() {
     replaceExercise, moveExercise, moveExerciseToDay, moveAllExercisesToDate, resetWeek, loadGeneratedPlan,
     customExercises, addCustomExercise, updateCustomExercise, deleteCustomExercise,
     syncing, isHydrating, refreshFromCloud,
-    removedExercise, restoreExercise, expireAndRemoveExercise,
+    removedExercises, restoreExercise, expireRemovedExercise,
   } = useWorkoutStore(user?.id, initialized);
 
   // ── Udostępnienia — jedna instancja store, dane idą do komponentów propami ──
@@ -560,6 +560,28 @@ export default function App() {
     };
   }, [cloudFailed]);
 
+  // ── Skrót: Ctrl+Z cofa ostatnie usunięcie ────────────────────────────
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'z') return;
+      // W polu tekstowym zostawiamy natywne cofanie (edytujemy wartość).
+      const target = e.target as HTMLElement | null;
+      if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+      const last = removedExercises[removedExercises.length - 1];
+      if (!last) return;
+      e.preventDefault();
+      restoreExercise(last);
+      showToast(
+        true,
+        last.kind === 'weekReset'
+          ? 'Przywrócono plan tygodnia.'
+          : `Przywrócono ćwiczenie „${last.exercise.name}”.`
+      );
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [removedExercises, restoreExercise, showToast]);
+
   // ── Szablony treningów ──
   const handleApplyTemplate = (
     template: WorkoutTemplate,
@@ -713,8 +735,6 @@ export default function App() {
               templates={templateStore.templates}
               onApplyTemplate={handleApplyTemplate}
               onCreateTemplateFromDay={handleCreateTemplateFromDay}
-              removedExercise={removedExercise}
-              onRestoreExercise={restoreExercise}
             />
           </>
         );
@@ -886,13 +906,19 @@ export default function App() {
         </main>
 
         {/* Undo remove bar - visible on all pages */}
-        {removedExercise && (
+        {removedExercises.length > 0 && (
           <UndoRemoveBar
-            key={removedExercise.exercise.id + '-' + removedExercise.timestamp}
-            days={days}
-            removedExercise={removedExercise}
-            onRestore={restoreExercise}
-            onExpire={expireAndRemoveExercise}
+            removedExercises={removedExercises}
+            onRestore={(entry) => {
+              restoreExercise(entry);
+              showToast(
+                true,
+                entry.kind === 'weekReset'
+                  ? 'Przywrócono plan tygodnia.'
+                  : `Przywrócono ćwiczenie „${entry.exercise.name}”.`
+              );
+            }}
+            onExpire={expireRemovedExercise}
           />
         )}
       </div>

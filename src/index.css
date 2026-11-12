@@ -387,3 +387,9 @@ input[type="number"] {
   animation: none !important;
   scroll-behavior: auto !important;
 }
+
+/* ── Pasek cofnięcia: linia odliczająca czas na cofnięcie ─────────────── */
+@keyframes undo-shrink {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}

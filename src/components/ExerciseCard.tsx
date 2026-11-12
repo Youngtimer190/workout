@@ -16,7 +16,6 @@ interface ExerciseCardProps {
 export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }: ExerciseCardProps) {
   const [editing, setEditing] = useState(false);
   const [showSets, setShowSets] = useState(false);
-  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
 
   // Local edit state — initialized once from props, NOT re-synced from props
   const [sets, setSets] = useState(String(exercise.sets || 3));
@@ -205,9 +204,9 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
                 </button>
                 {/* Delete */}
                 <button
-                  onClick={() => setShowRemoveConfirm(true)}
+                  onClick={onRemove}
+                  title="Usuń ćwiczenie"
                   className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-50 active:bg-red-100 text-slate-300 hover:text-red-500 transition-colors cursor-pointer"
-                  title="Usuń"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
                     <polyline points="3 6 5 6 21 6" />
@@ -296,29 +295,8 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
           </div>
         </div>
 
-        {/* ── Remove confirmation ── */}
-        {showRemoveConfirm && (
-          <div className="mx-3 mb-3 rounded-xl bg-red-50 border border-red-200 px-3 py-2.5 flex items-center justify-between gap-3 animate-in">
-            <p className="text-xs text-red-700 font-medium">Usunąć to ćwiczenie?</p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={onRemove}
-                className="px-3 py-1.5 rounded-lg bg-red-500 text-white text-xs font-semibold active:bg-red-600 transition-colors cursor-pointer"
-              >
-                Usuń
-              </button>
-              <button
-                onClick={() => setShowRemoveConfirm(false)}
-                className="px-3 py-1.5 rounded-lg bg-white text-slate-600 text-xs font-semibold border border-slate-200 active:bg-slate-50 transition-colors cursor-pointer"
-              >
-                Anuluj
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* ── Set tracker toggle ── */}
-        {!editing && !showRemoveConfirm && (
+        {!editing && (
           <div className="px-3 pb-3">
             <button
               onClick={() => setShowSets(prev => !prev)}

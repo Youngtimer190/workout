@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { WorkoutDay, Exercise, WorkoutTemplate } from '../types';
-import { WeekMeta } from '../store/weekStore';
+import { WeekMeta, DAY_NAMES } from '../store/weekStore';
+import { RemovedExercise } from '../store/workoutStore';
 import DayColumn from './DayColumn';
 import WeekNavigator from './WeekNavigator';
 import AddExerciseModal from './AddExerciseModal';
@@ -8,95 +9,100 @@ import ReplaceExerciseModal from './ReplaceExerciseModal';
 import CreateExerciseModal from './CreateExerciseModal';
 import CopyWorkoutModal from './CopyWorkoutModal';
 
-export interface RemovedExercise {
-  dayId: string;
-  exercise: Exercise;
-  index: number;
-  timestamp: number;
-}
+/** Ile sekund użytkownik ma na cofnięcie operacji. */
+const UNDO_WINDOW_MS = 8000;
 
 interface UndoRemoveBarProps {
-  days: WorkoutDay[];
-  removedExercise: RemovedExercise | null;
-  onRestore: () => void;
-  onExpire: () => void;
+  /** Kolejka cofnięć — pasek pokazuje ostatni wpis. */
+  removedExercises: RemovedExercise[];
+  onRestore: (entry: RemovedExercise) => void;
+  onExpire: (entry: RemovedExercise) => void;
 }
 
-export function UndoRemoveBar({ days, removedExercise, onRestore, onExpire }: UndoRemoveBarProps) {
-  const [progress, setProgress] = useState(0);
-  const startTimeRef = useRef<number | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+/**
+ * Pasek cofnięcia (snackbar).
+ *
+ * Pokazuje ostatnie usunięcie i pozwala je cofnąć. Po cofnięciu na ekranie
+ * pojawia się kolejny wpis z kolejki — nic nie ginie.
+ *
+ * Pasek siedzi NAD dolną nawigacją na telefonie (inaczej zasłaniałby dock)
+ * i jest czytany przez czytniki ekranowe (role="status" + aria-live).
+ */
+export function UndoRemoveBar({ removedExercises, onRestore, onExpire }: UndoRemoveBarProps) {
+  const current = removedExercises[removedExercises.length - 1] ?? null;
+  const [secondsLeft, setSecondsLeft] = useState(Math.ceil(UNDO_WINDOW_MS / 1000));
 
   useEffect(() => {
-    if (!removedExercise) {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-      startTimeRef.current = null;
-      setProgress(0);
-      return;
-    }
+    if (!current) return;
 
-    // Czyrkamy ewentualny poprzedni timer
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
+    setSecondsLeft(Math.ceil(UNDO_WINDOW_MS / 1000));
+    const started = Date.now();
 
-    startTimeRef.current = Date.now();
-    setProgress(0); // Resetuj progress przy każdym nowym usunięciu
-    const duration = 5000;
+    const tick = window.setInterval(() => {
+      const left = Math.max(0, Math.ceil((UNDO_WINDOW_MS - (Date.now() - started)) / 1000));
+      setSecondsLeft(left);
+      if (left === 0) window.clearInterval(tick);
+    }, 250);
 
-    intervalRef.current = setInterval(() => {
-      if (startTimeRef.current === null) return;
-
-      const elapsed = Date.now() - startTimeRef.current;
-      const newProgress = Math.min(100, (elapsed / duration) * 100);
-      setProgress(newProgress);
-
-      if (elapsed >= duration) {
-        clearInterval(intervalRef.current!);
-        intervalRef.current = null;
-        startTimeRef.current = null;
-        onExpire();
-      }
-    }, 100);
+    const hard = window.setTimeout(() => onExpire(current), UNDO_WINDOW_MS);
 
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-      startTimeRef.current = null;
+      window.clearInterval(tick);
+      window.clearTimeout(hard);
     };
-  }, [removedExercise, onExpire]);
+  }, [current, onExpire]);
 
-  if (!removedExercise) return null;
+  if (!current) return null;
 
-  const day = days.find(d => d.id === removedExercise.dayId);
-  const dayName = day?.name ?? 'ten dzień';
+  // Nazwa dnia bierzemy z numeru w tygodniu — działa też wtedy, gdy user
+  // jest w innym tygodniu niż ten, z którego usunięto ćwiczenie.
+  const dayIndex = Number(current.dayId.split('-day-')[1]);
+  const dayName = (Number.isFinite(dayIndex) && DAY_NAMES[dayIndex]) || 'ten dzień';
+  const isReset = current.kind === 'weekReset';
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 max-w-md w-full">
-      <div className="bg-slate-800 text-white rounded-xl shadow-2xl px-4 py-3 flex items-center gap-3">
-        <div className="flex-1">
-          <div className="text-sm font-medium mb-1">
-            Usunięto ćwiczenie „{removedExercise.exercise.name}” z {dayName}
-          </div>
-          <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-violet-500 transition-all duration-100"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
+    <div
+      role="status"
+      aria-live="polite"
+      className="fixed left-1/2 z-50 -translate-x-1/2 bottom-[104px] md:bottom-6 w-[calc(100%-2rem)] max-w-sm"
+    >
+      <div
+        key={current.timestamp}
+        className="relative overflow-hidden rounded-2xl border border-violet-400/30 bg-[#1a1030]/95 backdrop-blur-xl shadow-2xl animate-fade-up"
+      >
+        {/* Pasek odliczający czas na cofnięcie */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-violet-400/15">
+          <div
+            className="h-full bg-violet-400 origin-left"
+            style={{ animation: `undo-shrink ${UNDO_WINDOW_MS}ms linear forwards` }}
+          />
         </div>
-        <button
-          onClick={onRestore}
-          className="px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold transition-colors cursor-pointer"
-        >
-          Przywróć
-        </button>
+
+        <div className="flex items-center gap-3 px-4 pt-3.5 pb-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-white truncate">
+              {isReset ? (
+                'Zresetowano plan tygodnia'
+              ) : (
+                <>
+                  Usunięto <span className="font-bold">{current.exercise.name}</span>
+                </>
+              )}
+            </p>
+            <p className="text-[11px] text-slate-400 truncate">
+              {isReset
+                ? 'Zmiany można cofnąć'
+                : `z ${dayName} · cofnięcie za ${secondsLeft} s`}
+            </p>
+          </div>
+
+          <button
+            onClick={() => onRestore(current)}
+            className="flex-shrink-0 min-h-[40px] px-3.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold transition-colors cursor-pointer"
+          >
+            Przywróć
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -146,10 +152,6 @@ interface WorkoutPlannerProps {
   onApplyTemplate?: (template: WorkoutTemplate, exercises: Exercise[], mode: 'append' | 'replace', dayId: string) => void;
   /** Callback: utwórz szablon z ćwiczeń dnia. */
   onCreateTemplateFromDay?: (day: WorkoutDay, templateData: Omit<WorkoutTemplate, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  /** Usunięte ćwiczenie do przywrócenia (jeśli istnieje). */
-  removedExercise?: RemovedExercise | null;
-  /** Callback: przywróć usunięte ćwiczenie. */
-  onRestoreExercise?: () => void;
 }
 
 // Modal state type
@@ -304,7 +306,7 @@ export default function WorkoutPlanner({
             </div>
             <div>
               <p className="text-sm font-bold text-red-700">Resetować cały plan tego tygodnia?</p>
-              <p className="text-xs text-red-500 mt-0.5">Wszystkie ćwiczenia i dane serii zostaną usunięte. Tej operacji nie można cofnąć.</p>
+              <p className="text-xs text-red-500 mt-0.5">Wszystkie ćwiczenia i dane serii zostaną usunięte. Możesz to cofnąć paskiem na dole ekranu.</p>
             </div>
           </div>
           <div className="flex gap-2 flex-shrink-0 ml-12 sm:ml-0">

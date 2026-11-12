@@ -70,6 +70,32 @@ migrateOldData();
 const DEMO_USER_ID = 'demo';
 
 /**
+ * Wpis w kolejce cofnięć.
+ *
+ * • `kind: 'exercise'` — usunięto jedno ćwiczenie (przywracamy je
+ *   w tym samym dniu i na tej samej pozycji),
+ * • `kind: 'weekReset'` — zresetowano cały tydzień (przywracamy kopię
+ *   dni sprzed resetu).
+ *
+ * `weekKey` jest potrzebny, bo użytkownik może przejść do innego tygodnia,
+ * a pasek „Przywróć” nadal musi przywrócić ćwiczenie TAM, gdzie je usunięto.
+ */
+export interface RemovedExercise {
+  kind: 'exercise' | 'weekReset';
+  /** Id dnia, w którym usunięto ćwiczenie. */
+  dayId: string;
+  /** Usunięte ćwiczenie (przywracane ze wszystkimi seriami). */
+  exercise: Exercise;
+  /** Pozycja ćwiczenia w dniu (liczona od zera). */
+  index: number;
+  /** Klucz tygodnia, w którym zaszła operacja. */
+  weekKey: string;
+  /** Kopia dni tygodnia sprzed resetu (tylko dla 'weekReset'). */
+  snapshot?: WorkoutDay[];
+  timestamp: number;
+}
+
+/**
  * Stan magazynu treningów.
  *
  * @param userId  identyfikator zalogowanego użytkownika (undefined = wylogowany)
@@ -100,14 +126,8 @@ export function useWorkoutStore(userId?: string, authInitialized = true) {
   const [syncing, setSyncing] = useState(false);
   const [isHydrating, setIsHydrating] = useState(() => !!isSupabaseConfigured);
 
-  // ── Undo state for exercise removal ──
-  interface RemovedExercise {
-    dayId: string;
-    exercise: Exercise;
-    index: number;
-    timestamp: number;
-  }
-  const [removedExercise, setRemovedExercise] = useState<RemovedExercise | null>(null);
+  // ── Kolejka cofnięć ──
+  const [removedExercises, setRemovedExercises] = useState<RemovedExercise[]>([]);
 
   /**
    * Oczekujące zapisy do chmury (klucz tygodnia → dane).
@@ -537,13 +557,18 @@ export function useWorkoutStore(userId?: string, authInitialized = true) {
 
       if (!exercise) return prev;
 
-      // Zapisz usunięte ćwiczenie z informacją o indeksie
-      setRemovedExercise({
-        dayId,
-        exercise,
-        index,
-        timestamp: Date.now(),
-      });
+      // Usunięte ćwiczenie dodajemy do kolejki cofnięć (pasek „Przywróć”).
+      setRemovedExercises(queue => [
+        ...queue,
+        {
+          kind: 'exercise',
+          dayId,
+          exercise,
+          index,
+          weekKey,
+          timestamp: Date.now(),
+        },
+      ]);
 
       const next = prev.map(d =>
         d.id === dayId ? { ...d, exercises: d.exercises.filter(e => e.id !== exerciseId) } : d
@@ -553,28 +578,69 @@ export function useWorkoutStore(userId?: string, authInitialized = true) {
     });
   }, [weekKey, persistDays]);
 
-  const restoreExercise = useCallback(() => {
-    setDays(prev => {
-      if (!removedExercise) return prev;
+  /**
+   * Przywraca usunięte ćwiczenie (albo cały zresetowany tydzień).
+   *
+   * Działa niezależnie od tego, który tydzień właśnie ogląda użytkownik —
+   * operację pamiętamy wraz z kluczem tygodnia, więc przywrócenie trafia
+   * zawsze tam, skąd ćwiczenie usunięto.
+   */
+  const restoreExercise = useCallback((entry: RemovedExercise) => {
+    setRemovedExercises(queue => queue.filter(e => e !== entry));
 
-      const { dayId, exercise, index } = removedExercise;
-      const day = prev.find(d => d.id === dayId);
-      if (!day) return prev;
+    if (entry.kind === 'weekReset' && entry.snapshot) {
+      const restored = entry.snapshot;
+      saveWeekDays(entry.weekKey, restored);
+      persistDays(restored, entry.weekKey);
+      if (entry.weekKey === weekKey) setDays(restored);
+      return;
+    }
 
-      const newExercises = [...day.exercises];
-      newExercises.splice(index, 0, exercise);
+    // Wstawia ćwiczenie do dnia o podanym indeksie (tworząc dzień, jeśli
+    // w tym tygodniu go nie ma).
+    const insertInto = (list: WorkoutDay[]): WorkoutDay[] => {
+      const dayIndex = Number(entry.dayId.split('-day-')[1]);
+      const target = list.find(d => d.id === entry.dayId);
 
-      const next = prev.map(d =>
-        d.id === dayId ? { ...d, exercises: newExercises } : d
-      );
-      persistDays(next, weekKey);
-      setRemovedExercise(null);
+      if (target) {
+        const exercises = [...target.exercises];
+        exercises.splice(Math.min(entry.index, exercises.length), 0, entry.exercise);
+        return list.map(d => (d.id === entry.dayId ? { ...d, exercises } : d));
+      }
+
+      // Dnia nie ma w tym zapisanym tygodniu — odtwarzamy go z dnia
+      // o tym samym numerze (np. „Poniedziałek”).
+      const template = list[dayIndex] ?? createDefaultDays(entry.weekKey)[dayIndex];
+      if (!template) return list;
+      const day = {
+        ...template,
+        id: entry.dayId,
+        exercises: [entry.exercise],
+      };
+      const next = [...list];
+      next[dayIndex] = day;
       return next;
-    });
-  }, [removedExercise, weekKey, persistDays]);
+    };
 
-  const expireAndRemoveExercise = useCallback(() => {
-    setRemovedExercise(null);
+    if (entry.weekKey === weekKey) {
+      setDays(prev => {
+        const next = insertInto(prev);
+        persistDays(next, weekKey);
+        return next;
+      });
+      return;
+    }
+
+    // Inny tydzień — pracujemy na jego zapisanej wersji.
+    const otherWeek = loadWeekDays(entry.weekKey);
+    const next = insertInto(otherWeek);
+    saveWeekDays(entry.weekKey, next);
+    persistDays(next, entry.weekKey);
+  }, [weekKey, persistDays]);
+
+  /** Wygaszenie wpisu (koniec okna cofnięcia) — wpis znikamy z kolejki. */
+  const expireRemovedExercise = useCallback((entry: RemovedExercise) => {
+    setRemovedExercises(queue => queue.filter(e => e !== entry));
   }, []);
 
   const updateExercise = useCallback((dayId: string, exerciseId: string, updates: Partial<Exercise>) => {
@@ -748,9 +814,24 @@ export function useWorkoutStore(userId?: string, authInitialized = true) {
   }, [days, weekKey, persistDays, userId, flushCloudWrites]);
 
   const resetWeek = useCallback(() => {
-    const fresh = createDefaultDays(weekKey);
-    setDays(fresh);
-    persistDays(fresh, weekKey);
+    // Kopia dni sprzed resetu — pozwala cofnąć operację paskiem „Przywróć”.
+    setDays(prev => {
+      setRemovedExercises(queue => [
+        ...queue,
+        {
+          kind: 'weekReset',
+          dayId: '',
+          exercise: ({} as Exercise),
+          index: 0,
+          weekKey,
+          snapshot: prev,
+          timestamp: Date.now(),
+        },
+      ]);
+      const fresh = createDefaultDays(weekKey);
+      persistDays(fresh, weekKey);
+      return fresh;
+    });
   }, [weekKey, persistDays]);
 
   const clearWeek = useCallback(() => {
@@ -845,9 +926,9 @@ export function useWorkoutStore(userId?: string, authInitialized = true) {
     loadGeneratedPlan,
     updateDaysForCurrentWeek,
     // Undo remove
-    removedExercise,
+    removedExercises,
     restoreExercise,
-    expireAndRemoveExercise,
+    expireRemovedExercise,
     // Custom exercises
     customExercises,
     addCustomExercise,
