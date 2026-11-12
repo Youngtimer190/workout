@@ -271,6 +271,66 @@ Dwie rzeczy warto wiedzieć:
 
 ---
 
+## 3a. Szablony treningów — przypięcie i ostatnie użycie
+
+Wklej **całość** pliku **`SUPABASE_SETUP_TEMPLATES_V2.sql`** do Supabase → SQL Editor
+i kliknij **Run**. Plik jest idempotentny (`ADD COLUMN IF NOT EXISTS`).
+
+### Co dodaje
+
+| Element | Po co |
+|---|---|
+| `workout_templates.pinned` | Czy użytkownik przypiął szablon — przypięte są zawsze na górze listy, niezależnie od sortowania |
+| `workout_templates.last_used_at` | Kiedy szablon ostatnio zastosowano — napędza sortowanie „Ostatnio używane” i komunikat na karcie |
+| `REVOKE` dla `PUBLIC` / `anon` | Szablony są prywatne; dostęp ma wyłącznie właściciel wiersza (RLS) |
+
+### Czy ten skrypt jest konieczny?
+
+**Nie — aplikacja działa bez niego.** Obie flagi są w pełni opcjonalne:
+
+• zapisywane są lokalnie (`localStorage`, klucz per konto) i od razu widoczne w interfejsie,
+• przy zapisie szablonu do chmury klient wysyła pełny payload, a gdy baza zgłosi brak
+  kolumn (`PGRST204`), **automatycznie ponawia zapis bez nich** — synchronizacja szablonów
+  działa więc także przed uruchomieniem tego skryptu,
+• po uruchomieniu skryptu te same wartości zaczynają podróżować między urządzeniami.
+
+```
+// Przykład odpowiedzi bazy, gdy kolumny jeszcze nie istnieją:
+{ "code": "PGRST204",
+  "message": "Could not find the 'last_used_at' column of 'workout_templates' in the schema cache" }
+```
+
+## 3b. Hardening bazy (limity sesji)
+
+Wklej **całość** pliku **`SUPABASE_HARDENING.sql`** do Supabase → SQL Editor
+i kliknij **Run**. Plik jest idempotentny.
+
+### Po co
+
+11.11.2026 projekt przestał odpowiadać: PostgREST przyjmował połączenia, ale nic
+nie zwracał, a po restarcie zwracał 521. Przyczyną były sesje w stanie
+`idle in transaction` — trzymały blokadę i połączenie w puli, więc kolejne
+zapytania czekały w kolejce aż do wyczerpania puli.
+
+Domyślnie Supabase ma `idle_in_transaction_session_timeout = 0` (wyłączony),
+więc wisząca transakcja mogła blokować bazę **w nieskończoność**. Skrypt ustawia:
+
+| Limit | Wartość | Co chroni |
+|---|---|---|
+| `idle_in_transaction_session_timeout` | 30 s | Transakcja bez zapytań nie trzyma blokady w nieskończoność |
+| `statement_timeout` | 30 s | Zapytanie nie wisi w nieskończoność |
+| `lock_timeout` | 10 s | Czekanie na blokadę nie zajmuje połączenia puli w nieskończoność |
+
+Skrypt dodaje też funkcję `public.kill_stuck_sessions()` — wywołaj ją w SQL
+Editorze, gdy projekt „wisze” i trzeba szybko odblokować:
+
+```sql
+SELECT * FROM public.kill_stuck_sessions();
+```
+
+> Uwaga: `ALTER DATABASE … SET` działa dla **nowych** połączeń. Po uruchomieniu
+> skryptu zamknij bieżące sesje jednorazowo (instrukcja w sekcji 4 pliku SQL).
+
 ## 4. Weryfikacja
 
 Po wykonaniu SQL sprawdź w panelu Supabase:
@@ -350,6 +410,26 @@ Jeśli zmienne `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` nie są ustawione:
 - Brak synchronizacji między urządzeniami
 - Brak logowania/rejestracji
 - **Udostępnianie jest wyłączone** (przycisk udostępniania się nie pojawia)
+
+### Gdy chmura nie odpowiada (projekt wisie albo jest restartowany)
+
+Aplikacja jest „offline-first", więc awaria bazy NIE oznacza utraty danych:
+
+| Co się dzieje | Jak aplikacja reaguje |
+|---|---|
+| Odczyt z chmury nie udaje się | Zostają dane lokalne; **nie są kasowane** (dane z chmury mogą być niekompletne) |
+| Zapis do chmury nie udaje się | Zapis zostaje w kolejce i wróci przy najbliższym połączeniu |
+| Żaden odczyt nie kończy się w 10 s | Odczyt jest przerywany (limit czasu), aplikacja nie zostaje na szkieletcie |
+| Chmura milczy dłużej | Pokazuje się baner „Chmura nie odpowiada” + „Spróbuj ponownie” |
+| Baner nie pomaga | Automatyczne ponawianie: 5 s → 15 s → 45 s → 5 min |
+
+Dodatkowo tydzień w pamięci jest **normalizowany do 7 dni** — nawet gdy
+w chmurze (albo w localStorage) jest tylko część tygodnia, aplikacja nie
+wywraca się, tylko dopełnia brakujące dni.
+
+> Te zabezpieczenia są po stronie aplikacji. Skrypt
+> **`SUPABASE_HARDENING.sql`** (sekcja 3b) dodatkowo zabezpiecza bazę
+> przed wiszącymi sesjami, które blokują pulę połączeń.
 
 ---
 
