@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, Fragment } from 'react';
 import { SetLog, Exercise } from '../types';
 import { CheckIcon, TimerIcon } from './icons';
 import { buildCardioLog, CARDIO_DEFAULT_MINUTES } from '../lib/cardio';
-import Stepper, { StepperMode } from './Stepper';
+import Stepper from './Stepper';
 import { useIsNarrow } from '../hooks/useMediaQuery';
 
 interface SetTrackerProps {
@@ -148,34 +148,16 @@ export default function SetTracker({
   // dopiero po dotknięciu wartości. Przy okazji chowamy kolumnę „Plan”,
   // żeby zwolnić miejsce na większe przyciski.
   const isNarrow = useIsNarrow();
-  const hidePlanColumn = isNarrow && editingCell !== null;
 
   /**
    * Szablon kolumn trackera na telefonie.
    *
-   * Gdy włączony jest tryb steppera, edytowana kolumna dostaje 2× więcej
-   * miejsca (przyciski ± + pole na wpisanie wartości), a kolumna „Plan”
-   * chodzi — dzięki temu nic nie wychodzi poza komórkę.
-   *
    * UWAGA: klasy MUSZĄ być zapisane dosłownie — Tailwind nie rozpoznaje
    * nazw klas składanych dynamicznie (wtedy siatka się rozsypuje).
    */
-  const mobileGridClass = (() => {
-    const editingField = editingCell?.field;
-    if (hidePlanColumn) {
-      if (isUnilateral) {
-        return editingField === 'reps'
-          ? 'grid-cols-[44px_24px_28px_2fr_1fr]'
-          : 'grid-cols-[44px_24px_28px_1fr_2fr]';
-      }
-      return editingField === 'reps'
-        ? 'grid-cols-[44px_24px_2fr_1fr]'
-        : 'grid-cols-[44px_24px_1fr_2fr]';
-    }
-    return isUnilateral
-      ? 'grid-cols-[44px_24px_28px_1fr_1fr_1fr]'
-      : 'grid-cols-[44px_24px_1fr_1fr_1fr]';
-  })();
+  const mobileGridClass = isUnilateral
+    ? 'grid-cols-[44px_24px_28px_1fr_1fr_1fr]'
+    : 'grid-cols-[44px_24px_1fr_1fr_1fr]';
 
   /** Zwraca etykietę strony dla uni-lateralnych ćwiczeń: Prawa / Lewa */
   const getSideLabel = (idx: number): 'Prawa' | 'Lewa' => (idx % 2 === 0 ? 'Prawa' : 'Lewa');
@@ -216,21 +198,25 @@ export default function SetTracker({
     });
   };
 
+  /** Czy dana komórka jest teraz w trybie edycji. */
+  const isEditingCell = (idx: number, field: 'reps' | 'weight') =>
+    editingCell?.setIdx === idx && editingCell.field === field;
+
   /**
    * Komórka „Powt.” / „Kg” ze stepperem.
    *
-   * Na tablecie i desktopie przyciski ± są widoczne od razu. Na telefonie
-   * najpierw dotykamy wartości (kolumna „Plan” znika, przyciski robią się
-   * duże), a wtedy można też wpisać dokładną wartość.
+   * Na tablecie i desktopie przyciski ± są widoczne od razu (tryb „inline”).
+   * Na telefonie komórka pokazuje samą wartość, a edytor z przyciskami
+   * pojawia się jako **pasek pod wierszem** (patrz renderStepperStrip).
+   *
+   * Dlaczego pasek, a nie rozszerzenie komórki: układ kolumn MUSI zostać
+   * nieruchomy. Wcześniej otwarcie edytora usuwało kolumnę „Plan” i cała
+   * tabela przesuwała się pod palcem — dotknięcie lądowało na sąsiednim
+   * przycisku albo w pustce.
    */
   const renderStepperCell = (log: SetLog, idx: number, field: 'reps' | 'weight') => {
-    const isEditing = editingCell?.setIdx === idx && editingCell.field === field;
     const isReps = field === 'reps';
     const value = isReps ? (log.actualReps ?? null) : (log.weight ?? null);
-
-    const mode: StepperMode = !isNarrow
-      ? 'inline'
-      : (isEditing ? 'expanded' : 'compact');
 
     return (
       <div className="flex justify-center">
@@ -245,14 +231,59 @@ export default function SetTracker({
           max={999}
           precision={isReps ? 0 : 1}
           tone={isReps ? 'violet' : 'amber'}
-          mode={mode}
+          mode={isNarrow ? 'compact' : 'inline'}
           label={isReps ? 'Powtórzenia' : 'Ciężar'}
           prefix={isReps ? undefined : (isDumbbell && !isUnilateral ? '2×' : undefined)}
-          editing={isEditing}
+          editing={!isNarrow && isEditingCell(idx, field)}
           done={log.done}
+          autoFocusInput={!isNarrow}
           onBeginEdit={() => startEdit(idx, field)}
           onEditingChange={() => cancelEdit()}
         />
+      </div>
+    );
+  };
+
+  /**
+   * Pasek edytora pod wierszem (tylko telefon).
+   *
+   * Zajmuje całą szerokość wiersza, więc przyciski ± są duże i wygodne
+   * dla kciuka, a pozostałe wiersze tabeli zostają dokładnie tam, gdzie były.
+   */
+  const renderStepperStrip = (log: SetLog, idx: number, field: 'reps' | 'weight') => {
+    if (!isNarrow) return null;
+    if (!isEditingCell(idx, field)) return null;
+
+    const isReps = field === 'reps';
+    const value = isReps ? (log.actualReps ?? null) : (log.weight ?? null);
+
+    return (
+      <div className="sm:hidden px-2 pb-2 -mt-1">
+        <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2">
+          <span className={`text-[11px] font-semibold ${isReps ? 'text-violet-700' : 'text-amber-700'}`}>
+            {isReps ? 'Powtórzenia' : 'Ciężar'}
+          </span>
+          <Stepper
+            value={value}
+            onChange={next => {
+              if (isReps) updateLog(idx, { actualReps: next });
+              else updateLog(idx, { weight: next });
+            }}
+            step={1}
+            min={0}
+            max={999}
+            precision={isReps ? 0 : 1}
+            tone={isReps ? 'violet' : 'amber'}
+            mode="expanded"
+            label={isReps ? 'Powtórzenia' : 'Ciężar'}
+            prefix={isReps ? undefined : (isDumbbell && !isUnilateral ? '2×' : undefined)}
+            editing
+            done={log.done}
+            autoFocusInput={false}
+            onBeginEdit={() => startEdit(idx, field)}
+            onEditingChange={() => cancelEdit()}
+          />
+        </div>
       </div>
     );
   };
@@ -415,9 +446,7 @@ export default function SetTracker({
         {isUnilateral && (
           <div className="text-[9px] font-bold text-slate-400 text-center truncate">Str.</div>
         )}
-        {!hidePlanColumn && (
-          <div className="text-[10px] font-bold text-slate-400 text-center">Plan</div>
-        )}
+        <div className="text-[10px] font-bold text-slate-400 text-center">Plan</div>
         <div className="text-[10px] font-bold text-slate-400 text-center">Powt.</div>
         <div className="text-[10px] font-bold text-slate-400 text-center">
           {isDumbbell && !isUnilateral ? 'Kg (2 x)' : 'Kg'}
@@ -481,11 +510,9 @@ export default function SetTracker({
                 )}
 
                 {/* Target reps */}
-                {!hidePlanColumn && (
-                  <div className="text-xs text-center text-slate-400 font-medium truncate px-0.5">
-                    {log.targetReps || '—'}
-                  </div>
-                )}
+                <div className="text-xs text-center text-slate-400 font-medium truncate px-0.5">
+                  {log.targetReps || '—'}
+                </div>
 
                 {/* Actual reps */}
                 {renderStepperCell(log, idx, 'reps')}
@@ -493,6 +520,10 @@ export default function SetTracker({
                 {/* Weight */}
                 {renderStepperCell(log, idx, 'weight')}
               </div>
+
+              {/* Pasek edytora (telefon) — nie przesuwa pozostałych wierszy */}
+              {renderStepperStrip(log, idx, 'reps')}
+              {renderStepperStrip(log, idx, 'weight')}
 
               {/* Row - desktop */}
               <div className={`hidden sm:grid gap-x-1 items-center px-2 py-1.5 transition-colors ${

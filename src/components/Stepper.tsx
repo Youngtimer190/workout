@@ -33,9 +33,27 @@ interface StepperProps {
   editing: boolean;
   /** Czy seria jest zaliczona — zmienia kolor wartości. */
   done?: boolean;
+  /**
+   * Czy otwarte pole ma od razu dostać fokus (i otworzyć klawiaturę).
+   *
+   * Na telefonie NIE chcemy tego: klawiatura zasłania tracker, a użytkownik
+   * często chce tylko pokliknąć „+”. Tam pole dostanie fokus dopiero po
+   * dotknięciu.
+   */
+  autoFocusInput?: boolean;
   onBeginEdit: () => void;
   onEditingChange: (editing: boolean) => void;
 }
+
+/**
+ * Maksymalny czas powtarzania kroku przy przytrzymaniu przycisku.
+ *
+ * Bez tego limitu zdarza się, że przeglądarka (zdarza się to na iOS
+ * Safari) nie dostarczy zdarzenia „pointerup" i wartość rośnie
+ * w nieskończoność. Limit jest twardy — po jego upływie powtarzanie
+ * się zatrzymuje, a przycisk trzeba puścić i nacisnąć ponownie.
+ */
+const MAX_REPEAT_MS = 4_000;
 
 /** Zaokrąglenie do zadanej liczby miejsc po przecinku (bez błędów float). */
 export function roundTo(value: number, precision: number): number {
@@ -90,6 +108,7 @@ export default function Stepper({
   prefix,
   editing,
   done = false,
+  autoFocusInput = true,
   onBeginEdit,
   onEditingChange,
 }: StepperProps) {
@@ -106,16 +125,25 @@ export default function Stepper({
   const repeatTimer = useRef<number | null>(null);
   const pressStartedAt = useRef(0);
   const longPress = useRef(false);
+  /**
+   * Czy właśnie wciśnięto przycisk ±.
+   *
+   * Ważne na telefonie: naciśnięcie „+" przenosi fokus z pola na przycisk,
+   * a pole traci fokus (blur) → bez tej flagi edytor by się zamykał
+   * i „stepper znikał" po pierwszym kliknięciu.
+   */
+  const stepping = useRef(false);
 
   // Pole wejściowe dostaje fokus przy otwarciu (bez tego klawiatura
-  // mobilna nie otwiera się sama).
+  // mobilna nie otwiera się sama). Na telefonie pomijamy to — klawiatura
+  // zasłaniałaby tracker, a użytkownik często chce tylko użyć „+”.
   const inputRef = useRef<HTMLInputElement | null>(null);
   useEffect(() => {
-    if (editing && inputRef.current) {
+    if (editing && autoFocusInput && inputRef.current) {
       inputRef.current.focus();
       inputRef.current.select?.();
     }
-  }, [editing]);
+  }, [editing, autoFocusInput]);
 
   const clearTimers = useCallback(() => {
     if (pressTimer.current !== null) {
@@ -129,6 +157,20 @@ export default function Stepper({
   }, []);
 
   useEffect(() => clearTimers, [clearTimers]);
+
+  // Schowanie karty (np. przełączanie aplikacji) musi zatrzymać powtarzanie —
+  // inaczej w tle wartość rosłaby w nieskończoność.
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.hidden) {
+        clearTimers();
+        longPress.current = true;
+        stepping.current = false;
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, [clearTimers]);
 
   // Wartość w polu podczas edycji
   useEffect(() => {
@@ -161,7 +203,9 @@ export default function Stepper({
     } else {
       onChange(clamp(parsed));
     }
-    onEditingChange(false);
+    // Krok ± nie może zamknąć edytora (na telefonie kliknięcie przycisku
+    // zabiera fokus z pola → blur → zamknięcie → „stepper znika”).
+    if (!stepping.current) onEditingChange(false);
   }, [draft, clamp, onChange, onEditingChange]);
 
   /* ── Przytrzymanie przycisku ± ────────────────────────────────────────── */
@@ -171,17 +215,31 @@ export default function Stepper({
    * (np. 20 → 60 powtórzeń), ale nie ucieka do setek.
    */
   const scheduleRepeat = useCallback((direction: 1 | -1) => {
-    const fast = Date.now() - pressStartedAt.current > 1500;
+    const elapsed = Date.now() - pressStartedAt.current;
+    // Twardy limit: przytrzymanie nie może trwać w nieskończoność
+    // (zdarza się, że przeglądarka nie dostarczy zdarzenia „pointerup").
+    if (elapsed > MAX_REPEAT_MS) {
+      longPress.current = true; // kończymy bez dodatkowego kroku
+      return;
+    }
+    const fast = elapsed > 1500;
     repeatTimer.current = window.setTimeout(() => {
       applyStep(direction, fast ? 5 : 1);
       scheduleRepeat(direction);
-    }, fast ? 300 : 200);
+    }, fast ? 400 : 200);
   }, [applyStep]);
 
-  const startPress = (direction: 1 | -1) => {
+  const startPress = (direction: 1 | -1, event?: React.PointerEvent<HTMLButtonElement>) => {
     clearTimers();
     longPress.current = false;
+    stepping.current = true;
     pressStartedAt.current = Date.now();
+
+    // Przechwytujemy wskaźnik: dzięki temu zdarzenia „pointerup”
+    // zawsze trafią do przycisku, nawet jeśli palec zejdzie z niego
+    // (bez tego powtarzanie mogłoby działać w nieskończoność).
+    try { event?.currentTarget.setPointerCapture?.(event.pointerId); } catch { /* nieobsługiwane */ }
+
     pressTimer.current = window.setTimeout(() => {
       longPress.current = true;
       applyStep(direction);
@@ -189,8 +247,21 @@ export default function Stepper({
     }, 600);
   };
 
-  const endPress = () => {
+  /**
+   * Zakończenie naciśnięcia.
+   *
+   * Krok zastosujemy TUTAJ (przy "pointerup"), a nie w "click" — na iOS
+   * Safari preventDefault() w "pointerdown" potrafi zablokować event
+   * "click", przez co kliknięcie nic by nie robiło.
+   */
+  const endPress = (direction: 1 | -1, event?: React.PointerEvent<HTMLButtonElement>) => {
+    const wasLong = longPress.current;
     clearTimers();
+    try { event?.currentTarget.releasePointerCapture?.(event.pointerId); } catch { /* nieobsługiwane */ }
+    if (!wasLong) applyStep(direction);
+    // Flaga „krokujemy” trzymamy jeszcze chwilę — blur pola bywa
+    // opóźniony o jedno zdarzenie.
+    window.setTimeout(() => { stepping.current = false; }, 300);
   };
 
   /* ── Wygląd ───────────────────────────────────────────────────────────── */
@@ -215,19 +286,37 @@ export default function Stepper({
       aria-label={ariaLabel}
       title={ariaLabel}
       onPointerDown={e => {
+        // Blokujemy domyślne zachowanie (przeniesienie fokusu, menu
+        // kontekstowe) — na iOS inaczej przycisk „zjada" kliknięcia.
         e.preventDefault();
-        startPress(direction);
+        startPress(direction, e);
       }}
-      onPointerUp={endPress}
-      onPointerLeave={endPress}
-      onPointerCancel={endPress}
+      onPointerUp={e => {
+        e.preventDefault();
+        endPress(direction, e);
+      }}
+      onPointerCancel={() => {
+        clearTimers();
+        stepping.current = false;
+      }}
+      onLostPointerCapture={() => {
+        clearTimers();
+        stepping.current = false;
+      }}
       onContextMenu={e => e.preventDefault()}
-      onClick={() => {
-        // Po przytrzymaniu klik nie może dodać jeszcze jednego kroku.
-        if (longPress.current) { longPress.current = false; return; }
-        applyStep(direction);
+      onMouseDown={e => e.preventDefault()}
+      onClick={e => {
+        // Klawiatura (Enter/Space) wysyła „click” bez pointerdown/pointerup —
+        // wtedy krok jeszcze nie został zastosowany. Dla myszy/touchu
+        // krok zastosowaliśmy już w „pointerup”, więc tego kliku nie
+        // dublujemy (detail === 0 oznacza aktywację klawiaturą).
+        if (e.detail === 0) applyStep(direction);
       }}
-      style={{ touchAction: 'manipulation', userSelect: 'none' }}
+      style={{
+        touchAction: 'manipulation',
+        userSelect: 'none',
+        WebkitTouchCallout: 'none',
+      }}
       className={`${btnSize} flex-shrink-0 rounded-md border border-slate-100 bg-slate-100 text-slate-500 flex items-center justify-center transition-colors active:scale-90 cursor-pointer hover:bg-slate-200 hover:text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed`}
       disabled={value === null && direction === -1}
     >
