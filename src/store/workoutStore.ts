@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { WorkoutDay, Exercise } from '../types';
 import {
   loadWeekDays,
@@ -109,6 +109,36 @@ export function useWorkoutStore(userId?: string, authInitialized = true) {
   }
   const [removedExercise, setRemovedExercise] = useState<RemovedExercise | null>(null);
 
+  /**
+   * Oczekujące zapisy do chmury (klucz tygodnia → dane).
+   *
+   * Dlaczego to w ogóle istnieje: przyciski ± w trackerze serii pozwalają
+   * dodać 10–20 punktów w kilka sekund. Bez grupowania zapisów każde
+   * kliknięcie wysyłałoby CAŁY tydzień do Supabase (to jest cały plan
+   * jednym upsertem) — kilkanaście zapytań pod rząd i obciążenie bazy.
+   *
+   * Zapis do localStorage jest natychmiastowy (UI nie czeka na sieć),
+   * a do chmury leci raz, po ~600 ms od ostatniej zmiany.
+   */
+  const pendingCloudWrites = useRef<Map<string, WorkoutDay[]>>(new Map());
+  const cloudWriteTimer = useRef<number | null>(null);
+
+  /** Wysyła oczekujące zapisy do chmury (wywoływane przed odczytem z chmury). */
+  const flushCloudWrites = useCallback(() => {
+    if (cloudWriteTimer.current !== null) {
+      window.clearTimeout(cloudWriteTimer.current);
+      cloudWriteTimer.current = null;
+    }
+    const pending = Array.from(pendingCloudWrites.current.entries());
+    pendingCloudWrites.current.clear();
+    if (!pending.length || !userId || !isSupabaseConfigured) return;
+    for (const [key, days] of pending) {
+      upsertWeekPlan(userId, key, days).then(err => {
+        if (err) console.error('[WorkoutStore] persistDays — zapis w chmurze nieudany:', err);
+      });
+    }
+  }, [userId]);
+
   // ── On userId change: sync data from cloud ──
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -197,6 +227,9 @@ export function useWorkoutStore(userId?: string, authInitialized = true) {
     if (!userId || userId === DEMO_USER_ID || !isSupabaseConfigured) return;
     setSyncing(true);
     try {
+      // Najpierw zapisujemy oczekujące zmiany — nie chcemy nadpisać chmury
+      // starą wersją tygodnia.
+      flushCloudWrites();
       const { weeks: cloudWeeks, customExercises: cloudCustom, ok } = await syncAllDataFromCloud(userId);
       // Nieudany odczyt = nie ruszamy danych lokalnych.
       if (!ok) return;
@@ -211,7 +244,7 @@ export function useWorkoutStore(userId?: string, authInitialized = true) {
     } finally {
       setSyncing(false);
     }
-  }, [userId]);
+  }, [userId, flushCloudWrites]);
 
   // ── Week navigation ──
   const goToPrevWeek = useCallback(async () => {
@@ -223,6 +256,9 @@ export function useWorkoutStore(userId?: string, authInitialized = true) {
 
       // Fetch from cloud in background
       if (userId && isSupabaseConfigured) {
+        // Najpierw wysyłamy oczekujące zmiany — inaczej odczyt mógłby
+        // nadpisać świeżą wersję tygodnia starą wersją z chmury.
+        flushCloudWrites();
         fetchWeekPlan(userId, newKey).then(({ days: cloudDays }) => {
           if (cloudDays) {
             saveWeekDays(newKey, cloudDays);
@@ -233,7 +269,7 @@ export function useWorkoutStore(userId?: string, authInitialized = true) {
 
       return newMonday;
     });
-  }, [userId]);
+  }, [userId, flushCloudWrites]);
 
   const goToNextWeek = useCallback(async () => {
     setCurrentMonday(prev => {
@@ -253,7 +289,7 @@ export function useWorkoutStore(userId?: string, authInitialized = true) {
 
       return newMonday;
     });
-  }, [userId]);
+  }, [userId, flushCloudWrites]);
 
   const goToCurrentWeek = useCallback(() => {
     const monday = getMondayOf(new Date());
@@ -280,6 +316,7 @@ export function useWorkoutStore(userId?: string, authInitialized = true) {
     setDays(loadWeekDays(key));
 
     if (userId && isSupabaseConfigured) {
+      flushCloudWrites();
       fetchWeekPlan(userId, key).then(({ days: cloudDays }) => {
         if (cloudDays) {
           saveWeekDays(key, cloudDays);
@@ -287,7 +324,7 @@ export function useWorkoutStore(userId?: string, authInitialized = true) {
         }
       });
     }
-  }, [userId]);
+  }, [userId, flushCloudWrites]);
 
   const goToWeekByKey = useCallback((key: string) => {
     const [yearStr, weekStr] = key.split('-W');
@@ -302,15 +339,33 @@ export function useWorkoutStore(userId?: string, authInitialized = true) {
     setDays(loadWeekDays(key));
   }, []);
 
-  // ── Helpers ──
+  // ── Helpers ────────────────────────────────────────────────────────────
+
   const persistDays = useCallback((newDays: WorkoutDay[], key: string) => {
     saveWeekDays(key, newDays);
-    if (userId && isSupabaseConfigured) {
-      upsertWeekPlan(userId, key, newDays).then(err => {
-        if (err) console.error('[WorkoutStore] persistDays — zapis w chmurze nieudany:', err);
-      });
-    }
-  }, [userId]);
+    if (!userId || !isSupabaseConfigured) return;
+
+    pendingCloudWrites.current.set(key, newDays);
+    if (cloudWriteTimer.current !== null) window.clearTimeout(cloudWriteTimer.current);
+    cloudWriteTimer.current = window.setTimeout(() => {
+      flushCloudWrites();
+    }, 600);
+  }, [userId, flushCloudWrites]);
+
+  // Przed zamknięciem karty (albo wylogowaniem) nie może zginąć zapis.
+  useEffect(() => {
+    const flush = () => flushCloudWrites();
+    const onVisibility = () => { if (document.hidden) flush(); };
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('beforeunload', flush);
+    window.addEventListener('pagehide', flush);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('beforeunload', flush);
+      window.removeEventListener('pagehide', flush);
+      flush();
+    };
+  }, [flushCloudWrites]);
 
   /**
    * Skopiuj trening (listę ćwiczeń) z dowolnego tygodnia do dnia docelowego.
@@ -346,6 +401,7 @@ export function useWorkoutStore(userId?: string, authInitialized = true) {
     // ── Baza: chmura (źródło prawdy) scalona z localStorage ──
     let targetDays = loadWeekDays(targetKey);
     if (userId && isSupabaseConfigured) {
+      flushCloudWrites();
       const { days: cloudDays, error: fetchError } = await fetchWeekPlan(userId, targetKey);
       if (fetchError) {
         // Nie znamy aktualnego stanu chmury — zapis mógłby nadpisać cudze dane.
@@ -397,7 +453,7 @@ export function useWorkoutStore(userId?: string, authInitialized = true) {
     }
 
     return { error, weekKey: targetKey, dayIndex: targetIdx };
-  }, [userId, weekKey]);
+  }, [userId, weekKey, flushCloudWrites]);
 
   // ── Ostatnio zarejestrowany trening ──
   /**
@@ -656,6 +712,7 @@ export function useWorkoutStore(userId?: string, authInitialized = true) {
     //     z drugiego urządzenia nadpisałby chmurę defaultami.
     let targetDays = loadWeekDays(targetKey);
     if (userId && isSupabaseConfigured) {
+      flushCloudWrites();
       const { days: cloudDays, error: fetchError } = await fetchWeekPlan(userId, targetKey);
       if (fetchError) {
         console.error('[WorkoutStore] moveAllExercisesToDate — nie pobrano tygodnia z chmury:', fetchError);
@@ -688,7 +745,7 @@ export function useWorkoutStore(userId?: string, authInitialized = true) {
     });
 
     return { error };
-  }, [days, weekKey, persistDays, userId]);
+  }, [days, weekKey, persistDays, userId, flushCloudWrites]);
 
   const resetWeek = useCallback(() => {
     const fresh = createDefaultDays(weekKey);

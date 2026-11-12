@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, Fragment } from 'react';
 import { SetLog, Exercise } from '../types';
 import { CheckIcon, TimerIcon } from './icons';
 import { buildCardioLog, CARDIO_DEFAULT_MINUTES } from '../lib/cardio';
+import Stepper, { StepperMode } from './Stepper';
+import { useIsNarrow } from '../hooks/useMediaQuery';
 
 interface SetTrackerProps {
   exercise?: Exercise;
@@ -117,7 +119,6 @@ export default function SetTracker({
 
   // Editing cell state
   const [editingCell, setEditingCell] = useState<{ setIdx: number; field: 'reps' | 'weight' } | null>(null);
-  const [tempValue, setTempValue] = useState('');
 
   const updateLog = (idx: number, updates: Partial<SetLog>) => {
     setLocalLogs(prev => {
@@ -128,33 +129,53 @@ export default function SetTracker({
     });
   };
 
-  const startEdit = (setIdx: number, field: 'reps' | 'weight', current: string) => {
+  /** Wchodzi w tryb edycji komórki (pola to pilnuje sam Stepper). */
+  const startEdit = (setIdx: number, field: 'reps' | 'weight') => {
     isEditingRef.current = true;
     setEditingCell({ setIdx, field });
-    setTempValue(current);
   };
 
-  const commitEdit = () => {
-    if (!editingCell) return;
-    const { setIdx, field } = editingCell;
-    if (field === 'reps') {
-      updateLog(setIdx, { actualReps: tempValue === '' ? null : Number(tempValue) });
-    } else if (field === 'weight') {
-      updateLog(setIdx, { weight: tempValue === '' ? null : Number(tempValue) });
-    }
-    setEditingCell(null);
-    setTempValue('');
-    isEditingRef.current = false;
-  };
-
+  /** Wyjście z trybu edycji — wartość zapisuje sam Stepper. */
   const cancelEdit = () => {
     setEditingCell(null);
-    setTempValue('');
     isEditingRef.current = false;
   };
 
   const isDumbbell = !!exercise?.requiredEquipment?.includes('dumbbells');
   const isUnilateral = !!exercise?.isUnilateral;
+
+  // Telefon: komórka ma tylko ~56 px, więc przyciski ± pojawiają się
+  // dopiero po dotknięciu wartości. Przy okazji chowamy kolumnę „Plan”,
+  // żeby zwolnić miejsce na większe przyciski.
+  const isNarrow = useIsNarrow();
+  const hidePlanColumn = isNarrow && editingCell !== null;
+
+  /**
+   * Szablon kolumn trackera na telefonie.
+   *
+   * Gdy włączony jest tryb steppera, edytowana kolumna dostaje 2× więcej
+   * miejsca (przyciski ± + pole na wpisanie wartości), a kolumna „Plan”
+   * chodzi — dzięki temu nic nie wychodzi poza komórkę.
+   *
+   * UWAGA: klasy MUSZĄ być zapisane dosłownie — Tailwind nie rozpoznaje
+   * nazw klas składanych dynamicznie (wtedy siatka się rozsypuje).
+   */
+  const mobileGridClass = (() => {
+    const editingField = editingCell?.field;
+    if (hidePlanColumn) {
+      if (isUnilateral) {
+        return editingField === 'reps'
+          ? 'grid-cols-[44px_24px_28px_2fr_1fr]'
+          : 'grid-cols-[44px_24px_28px_1fr_2fr]';
+      }
+      return editingField === 'reps'
+        ? 'grid-cols-[44px_24px_2fr_1fr]'
+        : 'grid-cols-[44px_24px_1fr_2fr]';
+    }
+    return isUnilateral
+      ? 'grid-cols-[44px_24px_28px_1fr_1fr_1fr]'
+      : 'grid-cols-[44px_24px_1fr_1fr_1fr]';
+  })();
 
   /** Zwraca etykietę strony dla uni-lateralnych ćwiczeń: Prawa / Lewa */
   const getSideLabel = (idx: number): 'Prawa' | 'Lewa' => (idx % 2 === 0 ? 'Prawa' : 'Lewa');
@@ -193,6 +214,47 @@ export default function SetTracker({
       setTimeout(() => onChange(next), 0);
       return next;
     });
+  };
+
+  /**
+   * Komórka „Powt.” / „Kg” ze stepperem.
+   *
+   * Na tablecie i desktopie przyciski ± są widoczne od razu. Na telefonie
+   * najpierw dotykamy wartości (kolumna „Plan” znika, przyciski robią się
+   * duże), a wtedy można też wpisać dokładną wartość.
+   */
+  const renderStepperCell = (log: SetLog, idx: number, field: 'reps' | 'weight') => {
+    const isEditing = editingCell?.setIdx === idx && editingCell.field === field;
+    const isReps = field === 'reps';
+    const value = isReps ? (log.actualReps ?? null) : (log.weight ?? null);
+
+    const mode: StepperMode = !isNarrow
+      ? 'inline'
+      : (isEditing ? 'expanded' : 'compact');
+
+    return (
+      <div className="flex justify-center">
+        <Stepper
+          value={value}
+          onChange={next => {
+            if (isReps) updateLog(idx, { actualReps: next });
+            else updateLog(idx, { weight: next });
+          }}
+          step={1}
+          min={0}
+          max={999}
+          precision={isReps ? 0 : 1}
+          tone={isReps ? 'violet' : 'amber'}
+          mode={mode}
+          label={isReps ? 'Powtórzenia' : 'Ciężar'}
+          prefix={isReps ? undefined : (isDumbbell && !isUnilateral ? '2×' : undefined)}
+          editing={isEditing}
+          done={log.done}
+          onBeginEdit={() => startEdit(idx, field)}
+          onEditingChange={() => cancelEdit()}
+        />
+      </div>
+    );
   };
 
   const completedSets = localLogs.filter(s => s.done).length;
@@ -345,11 +407,7 @@ export default function SetTracker({
       </div>
 
       {/* Column headers - mobile */}
-      <div className={`sm:hidden grid gap-x-1 px-2 py-1.5 border-b border-slate-100 bg-white/[0.04] ${
-        isUnilateral
-          ? 'grid-cols-[44px_24px_28px_1fr_1fr_1fr]'
-          : 'grid-cols-[44px_24px_1fr_1fr_1fr]'
-      }`}>
+      <div className={`sm:hidden grid gap-x-1 px-2 py-1.5 border-b border-slate-100 bg-white/[0.04] ${mobileGridClass}`}>
         <div className="flex justify-center text-[10px] font-bold text-slate-400 text-center">
           <CheckIcon className="h-3 w-3" strokeWidth={2.6} />
         </div>
@@ -357,7 +415,9 @@ export default function SetTracker({
         {isUnilateral && (
           <div className="text-[9px] font-bold text-slate-400 text-center truncate">Str.</div>
         )}
-        <div className="text-[10px] font-bold text-slate-400 text-center">Plan</div>
+        {!hidePlanColumn && (
+          <div className="text-[10px] font-bold text-slate-400 text-center">Plan</div>
+        )}
         <div className="text-[10px] font-bold text-slate-400 text-center">Powt.</div>
         <div className="text-[10px] font-bold text-slate-400 text-center">
           {isDumbbell && !isUnilateral ? 'Kg (2 x)' : 'Kg'}
@@ -387,17 +447,10 @@ export default function SetTracker({
       {/* Rows */}
       <div className="divide-y divide-slate-100">
         {localLogs.map((log, idx) => {
-          const isEditingReps = editingCell?.setIdx === idx && editingCell.field === 'reps';
-          const isEditingWeight = editingCell?.setIdx === idx && editingCell.field === 'weight';
-
           return (
             <Fragment key={log.id}>
               {/* Row - mobile */}
-              <div className={`sm:hidden grid gap-x-1 items-center px-2 py-1.5 transition-colors ${
-                isUnilateral
-                  ? 'grid-cols-[44px_24px_28px_1fr_1fr_1fr]'
-                  : 'grid-cols-[44px_24px_1fr_1fr_1fr]'
-              } ${log.done ? 'bg-emerald-50/70' : 'bg-white/[0.02]'}`}
+              <div className={`sm:hidden grid gap-x-1 items-center px-2 py-1.5 transition-colors ${mobileGridClass} ${log.done ? 'bg-emerald-50/70' : 'bg-white/[0.02]'}`}
               >
                 {/* Checkbox */}
                 <div className="flex justify-center">
@@ -428,81 +481,17 @@ export default function SetTracker({
                 )}
 
                 {/* Target reps */}
-                <div className="text-xs text-center text-slate-400 font-medium truncate px-0.5">
-                  {log.targetReps || '—'}
-                </div>
+                {!hidePlanColumn && (
+                  <div className="text-xs text-center text-slate-400 font-medium truncate px-0.5">
+                    {log.targetReps || '—'}
+                  </div>
+                )}
 
                 {/* Actual reps */}
-                <div className="flex justify-center">
-                  {isEditingReps ? (
-                    <input
-                      autoFocus
-                      type="number"
-                      inputMode="numeric"
-                      min="0"
-                      value={tempValue}
-                      onChange={e => setTempValue(e.target.value)}
-                      onBlur={commitEdit}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); commitEdit(); }
-                        if (e.key === 'Escape') cancelEdit();
-                      }}
-                      className="w-full text-center text-xs font-bold px-1 py-2.5 rounded-lg border-2 border-violet-400 bg-white focus:outline-none text-slate-800"
-                    />
-                  ) : (
-                    <button
-                      onClick={() => startEdit(idx, 'reps', log.actualReps != null ? String(log.actualReps) : '')}
-                      className={`w-full text-center text-xs font-bold py-2.5 px-1 rounded-lg border-2 transition-all cursor-pointer active:scale-95 ${
-                        log.actualReps != null
-                          ? log.done
-                            ? 'border-emerald-200 bg-emerald-100 text-emerald-800'
-                            : 'border-violet-200 bg-violet-50 text-violet-800'
-                          : 'border-dashed border-slate-200 bg-transparent text-slate-300 hover:border-violet-300 hover:text-violet-400'
-                      }`}
-                    >
-                      {log.actualReps != null ? log.actualReps : '—'}
-                    </button>
-                  )}
-                </div>
+                {renderStepperCell(log, idx, 'reps')}
 
                 {/* Weight */}
-                <div className="flex justify-center">
-                  {isEditingWeight ? (
-                    <input
-                      autoFocus
-                      type="number"
-                      inputMode="decimal"
-                      min="0"
-                      step="0.5"
-                      value={tempValue}
-                      onChange={e => setTempValue(e.target.value)}
-                      onBlur={commitEdit}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); commitEdit(); }
-                        if (e.key === 'Escape') cancelEdit();
-                      }}
-                      className="w-full text-center text-xs font-bold px-1 py-2.5 rounded-lg border-2 border-amber-400 bg-white focus:outline-none text-slate-800"
-                    />
-                  ) : (
-                    <button
-                      onClick={() => startEdit(idx, 'weight', log.weight != null ? String(log.weight) : '')}
-                      className={`w-full text-center text-xs font-bold py-2.5 px-1 rounded-lg border-2 transition-all cursor-pointer active:scale-95 ${
-                        log.weight != null
-                          ? log.done
-                            ? 'border-emerald-200 bg-emerald-100 text-emerald-800'
-                            : 'border-amber-200 bg-amber-50 text-amber-800'
-                          : 'border-dashed border-slate-200 bg-transparent text-slate-300 hover:border-amber-300 hover:text-amber-400'
-                      }`}
-                    >
-                      {log.weight != null ? (
-                        <>
-                          {isDumbbell && !isUnilateral && <span className="text-[9px] font-bold text-slate-400 mr-0.5">2×</span>}
-                          {log.weight}
-                        </>
-                      ) : '—'}
-                    </button>
-                  )}
-                </div>
+                {renderStepperCell(log, idx, 'weight')}
               </div>
 
               {/* Row - desktop */}
@@ -546,76 +535,10 @@ export default function SetTracker({
                 </div>
 
                 {/* Actual reps */}
-                <div className="flex justify-center">
-                  {isEditingReps ? (
-                    <input
-                      autoFocus
-                      type="number"
-                      inputMode="numeric"
-                      min="0"
-                      value={tempValue}
-                      onChange={e => setTempValue(e.target.value)}
-                      onBlur={commitEdit}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); commitEdit(); }
-                        if (e.key === 'Escape') cancelEdit();
-                      }}
-                      className="w-full text-center text-xs font-bold px-1 py-2.5 rounded-lg border-2 border-violet-400 bg-white focus:outline-none text-slate-800"
-                    />
-                  ) : (
-                    <button
-                      onClick={() => startEdit(idx, 'reps', log.actualReps != null ? String(log.actualReps) : '')}
-                      className={`w-full text-center text-xs font-bold py-2.5 px-1 rounded-lg border-2 transition-all cursor-pointer active:scale-95 ${
-                        log.actualReps != null
-                          ? log.done
-                            ? 'border-emerald-200 bg-emerald-100 text-emerald-800'
-                            : 'border-violet-200 bg-violet-50 text-violet-800'
-                          : 'border-dashed border-slate-200 bg-transparent text-slate-300 hover:border-violet-300 hover:text-violet-400'
-                      }`}
-                    >
-                      {log.actualReps != null ? log.actualReps : '—'}
-                    </button>
-                  )}
-                </div>
+                {renderStepperCell(log, idx, 'reps')}
 
                 {/* Weight */}
-                <div className="flex justify-center">
-                  {isEditingWeight ? (
-                    <input
-                      autoFocus
-                      type="number"
-                      inputMode="decimal"
-                      min="0"
-                      step="0.5"
-                      value={tempValue}
-                      onChange={e => setTempValue(e.target.value)}
-                      onBlur={commitEdit}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); commitEdit(); }
-                        if (e.key === 'Escape') cancelEdit();
-                      }}
-                      className="w-full text-center text-xs font-bold px-1 py-2.5 rounded-lg border-2 border-amber-400 bg-white focus:outline-none text-slate-800"
-                    />
-                  ) : (
-                    <button
-                      onClick={() => startEdit(idx, 'weight', log.weight != null ? String(log.weight) : '')}
-                      className={`w-full text-center text-xs font-bold py-2.5 px-1 rounded-lg border-2 transition-all cursor-pointer active:scale-95 ${
-                        log.weight != null
-                          ? log.done
-                            ? 'border-emerald-200 bg-emerald-100 text-emerald-800'
-                            : 'border-amber-200 bg-amber-50 text-amber-800'
-                          : 'border-dashed border-slate-200 bg-transparent text-slate-300 hover:border-amber-300 hover:text-amber-400'
-                      }`}
-                    >
-                      {log.weight != null ? (
-                        <>
-                          {isDumbbell && !isUnilateral && <span className="text-[9px] font-bold text-slate-400 mr-0.5">2×</span>}
-                          {log.weight}
-                        </>
-                      ) : '—'}
-                    </button>
-                  )}
-                </div>
+                {renderStepperCell(log, idx, 'weight')}
               </div>
             </Fragment>
           );
@@ -689,7 +612,7 @@ export default function SetTracker({
           ) : isDumbbell && isUnilateral ? (
             <>Wpisuj wagę <span className="font-semibold">jednego hantla</span> (jednostronnie)</>
           ) : (
-            <>Dotknij <span className="font-semibold">Powt.</span> lub <span className="font-semibold">Kg</span> aby wpisać · <CheckIcon className="inline h-3 w-3 -mt-0.5" strokeWidth={2.6} /> gdy seria gotowa</>
+            <>Dotknij <span className="font-semibold">Powt.</span> lub <span className="font-semibold">Kg</span> aby wpisać · <span className="font-semibold">±</span> zmienia wartość · <CheckIcon className="inline h-3 w-3 -mt-0.5" strokeWidth={2.6} /> gdy seria gotowa</>
           )}
         </p>
       </div>
