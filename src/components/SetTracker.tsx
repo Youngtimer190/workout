@@ -224,7 +224,20 @@ export default function SetTracker({
    * tabela przesuwała się pod palcem — dotknięcie lądowało na sąsiednim
    * przycisku albo w pustce.
    */
-  const renderStepperCell = (log: SetLog, idx: number, field: 'reps' | 'weight') => {
+  /**
+   * Komórka z wartością.
+   *
+   * `mobileRow` rozróżnia dwa egzemplarze steppera (mobilny i desktopowy
+   * wiersz renderuje ten sam kod). Edytor może być otwarty TYLKO w jednym
+   * z nich — inaczej ukryty egzemplarz z mobilnego wiersza zamykałby edytor
+   * przy każdym kliknięciu (reagował na „kliknięcie poza”).
+   */
+  const renderStepperCell = (
+    log: SetLog,
+    idx: number,
+    field: 'reps' | 'weight',
+    mobileRow = false,
+  ) => {
     const isReps = field === 'reps';
     const value = isReps ? (log.actualReps ?? null) : (log.weight ?? null);
 
@@ -244,10 +257,11 @@ export default function SetTracker({
           mode={useStrip ? 'compact' : 'inline'}
           label={isReps ? 'Powtórzenia' : 'Ciężar'}
           prefix={isReps ? undefined : (isDumbbell && !isUnilateral ? '2×' : undefined)}
-          editing={!useStrip && isEditingCell(idx, field)}
+          editing={!mobileRow && !useStrip && isEditingCell(idx, field)}
           done={log.done}
           autoFocusInput={!useStrip}
           onBeginEdit={() => startEdit(idx, field)}
+          onRequestClose={() => cancelEdit()}
           onEditingChange={() => cancelEdit()}
         />
       </div>
@@ -267,12 +281,27 @@ export default function SetTracker({
     const isReps = field === 'reps';
     const value = isReps ? (log.actualReps ?? null) : (log.weight ?? null);
 
+    const label = (
+      <span className={`text-[11px] font-semibold ${isReps ? 'text-violet-700' : 'text-amber-700'}`}>
+        {isReps ? 'Powtórzenia' : 'Ciężar'}
+      </span>
+    );
+
+    // Przycisk zamknięcia — pod kontrolkami, żeby nie kolidował z „±”
+    // (dokładnie tam, gdzie użytkownik nieświadomie trafia palcem).
+    const bottomBtn = (
+      <button
+        onClick={() => cancelEdit()}
+        className="mx-auto rounded-lg border border-violet-400/30 bg-violet-500/15 px-3 py-1.5 text-[11px] font-bold text-violet-200 transition-colors hover:bg-violet-500/25 active:scale-95 cursor-pointer min-h-[30px]"
+      >
+        Gotowe
+      </button>
+    );
+
     return (
       <div className="lg:hidden px-2 pb-2 -mt-1">
         <div className="flex flex-col items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2.5">
-          <span className={`text-[11px] font-semibold ${isReps ? 'text-violet-700' : 'text-amber-700'}`}>
-            {isReps ? 'Powtórzenia' : 'Ciężar'}
-          </span>
+          {label}
           <Stepper
             value={value}
             onChange={next => {
@@ -291,8 +320,10 @@ export default function SetTracker({
             done={log.done}
             autoFocusInput={false}
             onBeginEdit={() => startEdit(idx, field)}
+            onRequestClose={() => cancelEdit()}
             onEditingChange={() => cancelEdit()}
           />
+          {bottomBtn}
         </div>
       </div>
     );
@@ -525,10 +556,10 @@ export default function SetTracker({
                 </div>
 
                 {/* Actual reps */}
-                {renderStepperCell(log, idx, 'reps')}
+                {renderStepperCell(log, idx, 'reps', true)}
 
                 {/* Weight */}
-                {renderStepperCell(log, idx, 'weight')}
+                {renderStepperCell(log, idx, 'weight', true)}
               </div>
 
               {/* Row - desktop */}

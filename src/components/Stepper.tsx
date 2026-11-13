@@ -34,6 +34,13 @@ interface StepperProps {
   /** Czy seria jest zaliczona — zmienia kolor wartości. */
   done?: boolean;
   /**
+   * Poproś o zamknięcie edytora (dotknięcie poza nim).
+   *
+   * Wywoływane dopiero PO zapisaniu wartości z pola — inaczej wpisana
+   * liczba zniknęłaby razem z zamknięciem.
+   */
+  onRequestClose?: () => void;
+  /**
    * Czy otwarte pole ma od razu dostać fokus (i otworzyć klawiaturę).
    *
    * Na telefonie NIE chcemy tego: klawiatura zasłania tracker, a użytkownik
@@ -118,6 +125,7 @@ export default function Stepper({
   editing,
   done = false,
   autoFocusInput = true,
+  onRequestClose,
   onBeginEdit,
   onEditingChange,
 }: StepperProps) {
@@ -158,6 +166,8 @@ export default function Stepper({
   // mobilna nie otwiera się sama). Na telefonie pomijamy to — klawiatura
   // zasłaniałaby tracker, a użytkownik często chce tylko użyć „+”.
   const inputRef = useRef<HTMLInputElement | null>(null);
+  // Korzeń steppera — po nim rozpoznajemy dotknięcia „wewnątrz”.
+  const rootRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     if (editing && autoFocusInput && inputRef.current) {
       inputRef.current.focus();
@@ -185,7 +195,6 @@ export default function Stepper({
       if (document.hidden) {
         clearTimers();
         longPress.current = true;
-        stepping.current = false;
       }
     };
     document.addEventListener('visibilitychange', onVisibility);
@@ -197,10 +206,43 @@ export default function Stepper({
     if (editing) setDraft(value != null ? String(value) : '');
   }, [editing, value]);
 
+  /**
+   * Dotknięcie POZA edytorem → zapisujemy pole i zamykamy.
+   *
+   * Bez tego każde przypadkowe dotknięcie pustego miejsca obok „+”
+   * zamykało edytor (bo gubił fokus, a blur zamykał). Teraz blur tylko
+   * zapisuje, a zamknięcie wymaga świadomego gestu: „Gotowe”, Enter,
+   * Escape albo dotknięcie poza edytorem.
+   */
+  useEffect(() => {
+    if (!editing || !onRequestClose) return;
+
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as Node | null;
+      if (!target) return;
+      // „Wewnątrz” to cały pasek (etykieta + przyciski + „Gotowe”), a nie
+      // tylko rząd z przyciskami. Kontener nadrzędny steppera to pasek
+      // (telefon) albo komórka kolumny (desktop).
+      if (rootRef.current?.contains(target)) return;
+      if (rootRef.current?.parentElement?.contains(target)) return;
+      // Zapisz, zanim zamkniemy — inaczej wpisana wartość zniknęłaby razem
+      // z polem (unmount nie wywołuje blura).
+      commitRef.current(false);
+      onRequestClose();
+    };
+
+    document.addEventListener('pointerdown', onPointerDown, true);
+    return () => document.removeEventListener('pointerdown', onPointerDown, true);
+  }, [editing, onRequestClose]);
+
   const clamp = useCallback(
     (v: number) => Math.min(max, Math.max(min, roundTo(v, precision))),
     [min, max, precision]
   );
+
+  // Ref na commit — efekt „dotknięcie poza” jest zdefiniowany wcześniej
+  // niż sama funkcja, a i tak potrzebuje świeżej wersji.
+  const commitRef = useRef<(close?: boolean) => void>(() => {});
 
   /** Zmiana wartości o `direction × step × multiplier`. */
   const applyStep = useCallback(
@@ -216,17 +258,21 @@ export default function Stepper({
     [step, min, max, precision, onChange, editing]
   );
 
-  const commit = useCallback(() => {
+  /**
+   * Zapisuje wartość wpisaną w polu.
+   *
+   * `close = true` tylko przy Enterze. Samo utracie fokusu (blur) NIE zamyka
+   * edytora — na telefonie każde przypadkowe dotknięcie pustego miejsca obok
+   * „+” gubiłoby pole i przerywało pracę. Zamknięcie jest świadome:
+   * „Gotowe”, Enter, Escape albo dotknięcie poza edytorem.
+   */
+  const commit = useCallback((close = false) => {
     const parsed = parseFloat(draft.replace(',', '.'));
-    if (!Number.isFinite(parsed)) {
-      onChange(null);
-    } else {
-      onChange(clamp(parsed));
-    }
-    // Krok ± nie może zamknąć edytora (na telefonie kliknięcie przycisku
-    // zabiera fokus z pola → blur → zamknięcie → „stepper znika”).
-    if (!stepping.current) onEditingChange(false);
+    onChange(Number.isFinite(parsed) ? clamp(parsed) : null);
+    if (close) onEditingChange(false);
   }, [draft, clamp, onChange, onEditingChange]);
+
+  commitRef.current = commit;
 
   /* ── Przytrzymanie przycisku ± ────────────────────────────────────────── */
   /**
@@ -252,7 +298,6 @@ export default function Stepper({
   const startPress = (direction: 1 | -1, event?: React.PointerEvent<HTMLButtonElement>) => {
     clearTimers();
     longPress.current = false;
-    stepping.current = true;
     pressStartedAt.current = Date.now();
 
     // Przechwytujemy wskaźnik: dzięki temu zdarzenia „pointerup”
@@ -286,9 +331,6 @@ export default function Stepper({
       applyStep(direction);
       lastPointerStepAt.current = Date.now();
     }
-    // Flaga „krokujemy” trzymamy jeszcze chwilę — blur pola bywa
-    // opóźniony o jedno zdarzenie.
-    window.setTimeout(() => { stepping.current = false; }, 300);
   };
 
   /* ── Wygląd ───────────────────────────────────────────────────────────── */
@@ -338,8 +380,7 @@ export default function Stepper({
       }}
       onPointerCancel={() => {
         clearTimers();
-        stepping.current = false;
-      }}
+        }}
       onLostPointerCapture={() => {
         clearTimers();
         stepping.current = false;
@@ -397,7 +438,7 @@ export default function Stepper({
   const valueControl = editing ? (
     <input
       ref={inputRef}
-      autoFocus
+      autoFocus={autoFocusInput}
       type="number"
       inputMode="decimal"
       min={min}
@@ -406,9 +447,9 @@ export default function Stepper({
       value={draft}
       aria-label={label}
       onChange={e => setDraft(e.target.value)}
-      onBlur={commit}
+      onBlur={() => commit(false)}
       onKeyDown={e => {
-        if (e.key === 'Enter') { e.preventDefault(); commit(); }
+        if (e.key === 'Enter') { e.preventDefault(); commit(true); }
         if (e.key === 'Escape') { e.preventDefault(); onEditingChange(false); }
       }}
       className={`text-center rounded-lg border-2 bg-white focus:outline-none text-slate-800 ${
@@ -433,11 +474,18 @@ export default function Stepper({
   );
 
   if (mode === 'compact') {
-    return <div className="flex w-full justify-center">{valueControl}</div>;
+    return (
+      <div ref={rootRef} className="flex w-full justify-center">
+        {valueControl}
+      </div>
+    );
   }
 
   return (
-    <div className={`flex items-center justify-center ${mode === 'expanded' ? 'gap-1.5' : 'gap-1'} ${mode === 'expanded' ? '' : 'max-w-[170px] mx-auto'}`}>
+    <div
+      ref={rootRef}
+      className={`flex items-center justify-center ${mode === 'expanded' ? 'gap-1.5' : 'gap-1'} ${mode === 'expanded' ? '' : 'max-w-[170px] mx-auto'}`}
+    >
       {stepButton(-1, `Zmniejsz ${label.toLowerCase()}`)}
       {valueControl}
       {stepButton(1, `Zwiększ ${label.toLowerCase()}`)}
