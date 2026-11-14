@@ -8,6 +8,9 @@ node_modules/
 .env.*.local
 !.env.example
 
+# Sekrety Edge Functions (VAPID_PRIVATE_KEY) — lokalna kopia do `secrets set`.
+supabase/functions/.env
+
 # Uwaga: `dist/` celowo NIE jest ignorowany — na GitHubie trzymamy gotowy
 # build, bo to on jest wdrażany na Vercelu. Przed commitem zbuduj projekt:
 #   npm run build

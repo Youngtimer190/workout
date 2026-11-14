@@ -71,6 +71,7 @@ export type View =
   | 'favorites'
   | 'settings'
   | 'appearance'
+  | 'timer'
   | 'help';
 
 export type TrainingGoal = 'muscle_gain' | 'fat_loss' | 'strength' | 'endurance' | 'general_fitness';

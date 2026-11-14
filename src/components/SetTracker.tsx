@@ -3,7 +3,14 @@ import { SetLog, Exercise } from '../types';
 import { CheckIcon, TimerIcon } from './icons';
 import { buildCardioLog, CARDIO_DEFAULT_MINUTES } from '../lib/cardio';
 import Stepper from './Stepper';
+import RestTimerSheet from './RestTimerSheet';
 import { useMediaQuery } from '../hooks/useMediaQuery';
+import {
+  startDefaultRestTimer,
+  useRestTimer,
+  useRestTimerSettings,
+} from '../store/restTimerStore';
+import { formatDuration, remainingMs } from '../lib/restTimer';
 
 interface SetTrackerProps {
   exercise?: Exercise;
@@ -159,6 +166,13 @@ export default function SetTracker({
    */
   const useStrip = useMediaQuery('(max-width: 1023px)');
 
+  /* ── Timer odpoczynku ─────────────────────────────────────────────────── */
+  const [showTimerSheet, setShowTimerSheet] = useState(false);
+  const restTimer = useRestTimer();
+  const { settings: restSettings } = useRestTimerSettings();
+  const restRunning = restTimer.endsAt != null && !restTimer.paused;
+  const restLeft = remainingMs(restTimer.endsAt, Date.now());
+
   /**
    * Szablon kolumn trackera na telefonie.
    *
@@ -176,6 +190,10 @@ export default function SetTracker({
     const willBeDone = !localLogs[idx].done;
     // Znacznik czasu pozwala ustalić, który trening był zarejestrowany ostatnio
     updateLog(idx, { done: willBeDone, completedAt: willBeDone ? Date.now() : undefined });
+
+    // Przerwa między seriami startuje po zakończeniu serii — to naturalny
+    // moment odpoczynku, więc użytkownik nie musi o timerze pamiętać.
+    if (willBeDone && restSettings.autoStart) startDefaultRestTimer();
   };
 
   /** Dodaje kolejną serię na końcu listy (poza zaplanowaną liczbą). */
@@ -456,15 +474,32 @@ export default function SetTracker({
     <div className="mt-2 rounded-xl border border-slate-100 bg-slate-50/60 overflow-hidden">
 
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 bg-white border-b border-slate-100">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2 px-3 py-2 bg-white border-b border-slate-100">
+        <div className="flex items-center gap-2 min-w-0">
           <span className="text-xs font-bold text-slate-700">Serie</span>
           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-700">
             {completedSets}/{localLogs.length}
           </span>
+
+          {/* Chip timera odpoczynku — dotknięcie otwiera wybór czasu.
+              Gdy przerwa trwa, pokazuje ile zostało. */}
+          <button
+            onClick={() => setShowTimerSheet(true)}
+            aria-label={restRunning ? 'Zmień czas przerwy' : 'Ustaw czas przerwy'}
+            className={`flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold transition-colors active:scale-95 cursor-pointer ${
+              restRunning
+                ? 'bg-cyan-500 text-white'
+                : 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100'
+            }`}
+          >
+            <TimerIcon className="h-3 w-3 flex-shrink-0" />
+            {restRunning
+              ? formatDuration(restLeft)
+              : formatDuration(restSettings.defaultDurationMs)}
+          </button>
         </div>
         {totalVolume > 0 && (
-          <span className="text-[10px] font-semibold text-slate-500">
+          <span className="text-[10px] font-semibold text-slate-500 flex-shrink-0">
             <span className="text-cyan-700 font-bold">{totalVolume.toLocaleString()} kg</span> obj.
           </span>
         )}
@@ -688,6 +723,13 @@ export default function SetTracker({
           )}
         </p>
       </div>
+      {/* Panel wyboru czasu przerwy */}
+      {showTimerSheet && (
+        <RestTimerSheet
+          initialDurationMs={restSettings.defaultDurationMs}
+          onClose={() => setShowTimerSheet(false)}
+        />
+      )}
     </div>
   );
 }

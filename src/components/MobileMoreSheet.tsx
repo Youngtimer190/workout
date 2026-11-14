@@ -12,6 +12,7 @@ import {
   SettingsIcon,
   StarIcon,
   SunIcon,
+  TimerIcon,
   TrophyIcon,
   XIcon,
 } from './icons';
@@ -264,6 +265,11 @@ export default function MobileMoreSheet({
             <button onClick={() => go('appearance')} className={rowClass}>
               <SunIcon className="h-[18px] w-[18px] flex-shrink-0 text-slate-400" />
               <span className="flex-1">Wygląd</span>
+              <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />
+            </button>
+            <button onClick={() => go('timer')} className={rowClass}>
+              <TimerIcon className="h-[18px] w-[18px] flex-shrink-0 text-slate-400" />
+              <span className="flex-1">Timer odpoczynku</span>
               <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />
             </button>
             <button onClick={() => go('help')} className={rowClass}>

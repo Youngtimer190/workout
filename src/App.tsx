@@ -11,14 +11,19 @@ import TemplatesView from './components/TemplatesView';
 import FavoritesView from './components/FavoritesView';
 import SettingsView from './components/settings/SettingsView';
 import AppearanceView from './components/settings/AppearanceView';
+import RestTimerSettingsView from './components/settings/RestTimerSettings';
 import HelpView from './components/settings/HelpView';
 import AuthScreen from './components/auth/AuthScreen';
 import OfflineBanner from './components/auth/OfflineBanner';
 import DemoBanner from './components/auth/DemoBanner';
 import { UndoRemoveBar } from './components/WorkoutPlanner';
 import CloudStatusBanner from './components/CloudStatusBanner';
+import RestTimerBar from './components/RestTimerBar';
 import { getCloudState, subscribeCloud, CloudState } from './lib/cloudStatus';
 import { toUserMessage } from './lib/errorMessages';
+import { bindBellUnlockOnFirstGesture, bindWakeLockRecovery } from './lib/restAudio';
+import { registerServiceWorker } from './lib/pushClient';
+import { resumeRestTimerTicking, useRestTimer } from './store/restTimerStore';
 import { useWorkoutStore } from './store/workoutStore';
 import { useAuthStore } from './store/authStore';
 import { useShareStore } from './store/shareStore';
@@ -291,6 +296,29 @@ export default function App() {
     currentWeekForStats,
     activeView === 'dashboard'
   );
+
+  /* ── Timer odpoczynku ──────────────────────────────────────────────────────
+     Timer jest globalny (moduł-singleton), ale pilnuje dwóch rzeczy:
+     • po załadowaniu aplikacji wznawia odliczanie (przerwa zapisana
+       w localStorage przetrwała odświeżenie strony),
+     • odzyskuje „nie gaszenie ekranu”, gdy użytkownik wraca na kartę
+       (przeglądarka zwalnia Wake Lock przy każdym przejściu w tło).
+     Dodatkowo rejestrujemy service workera — potrzebny do odbierania
+     powiadomień push o końcu przerwy. */
+  useEffect(() => {
+    resumeRestTimerTicking();
+    const unbind = bindWakeLockRecovery();
+    const unbindBell = bindBellUnlockOnFirstGesture();
+    void registerServiceWorker();
+    return () => {
+      unbind();
+      unbindBell();
+    };
+  }, []);
+
+  // Pasek timera jest widoczny → toast musi wchodzić nad niego.
+  const restTimer = useRestTimer();
+  const restTimerVisible = restTimer.endsAt != null || restTimer.finishedAt != null;
 
   // Plan zmieniony (zaliczone serie) → przelicz statystyki z localStorage.
   const { refresh: refreshWorkoutStats } = workoutStats;
@@ -772,6 +800,13 @@ export default function App() {
             onAnimationsChange={appearance.setAnimations}
           />
         );
+      case 'timer':
+        return (
+          <RestTimerSettingsView
+            canUsePush={isAuthenticated && !isDemoMode}
+            userId={user?.id}
+          />
+        );
       case 'help':
         return <HelpView onGoToSettings={() => handleViewChange('settings')} />;
       case 'stats': return <Stats days={days} />;
@@ -848,7 +883,11 @@ export default function App() {
         {toast && (
           <div
             role="status"
-            className="fixed left-1/2 z-50 -translate-x-1/2 bottom-[104px] md:bottom-6 w-[calc(100%-2rem)] max-w-sm animate-fade-up"
+            className={`fixed left-1/2 z-50 -translate-x-1/2 w-[calc(100%-2rem)] max-w-sm animate-fade-up ${
+              // Gdy pasek timera jest widoczny, toast wchodzi nad niego —
+              // inaczej oba elementy znalazłyby się w tym samym miejscu.
+              restTimerVisible ? 'bottom-[176px] md:bottom-[104px]' : 'bottom-[104px] md:bottom-6'
+            }`}
           >
             <div
               className={`flex items-center gap-2.5 rounded-2xl border px-4 py-3 text-sm font-medium shadow-2xl backdrop-blur-xl ${
@@ -887,6 +926,10 @@ export default function App() {
         )}
 
         {isDemoMode && <DemoBanner onExit={exitDemoMode} />}
+
+        {/* Pasek timera odpoczynku — widoczny w każdym widoku, także
+            gdy użytkownik przejdzie do innej zakładki w trakcie przerwy. */}
+        <RestTimerBar />
         {!isSupabaseConfigured && !offlineDismissed && <OfflineBanner onDismiss={() => setOfflineDismissed(true)} />}
         <CloudStatusBanner onRetry={retryCloud} retrying={cloudRetrying} />
 
