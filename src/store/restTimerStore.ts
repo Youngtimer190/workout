@@ -255,13 +255,35 @@ function tick() {
   if (left <= 0) finish();
 }
 
+/**
+ * Ile opóźnienia tolerujemy przy ogłaszaniu końca przerwy.
+ *
+ * Gdy przerwa kończy się, a użytkownik PATRZY na ekran, zegar odchodzi
+ * o ułamek sekundy — wtedy gramy dzwonek i wibrujemy.
+ *
+ * Ale gdy przerwa minęła, gdy aplikacja była w tle (ekran zgaszony albo
+ * telefon zablokowany), przy powrocie do aplikacji zegar „nadrabia”
+ * spóźnienie rzędu minut. Dzwonek w takiej chwili byłby mylący — alarmem
+ * było już powiadomienie systemowe, które dotarło do użytkownika.
+ */
+const MAX_ALARM_LAG_MS = 4000;
+
 /** Kończy przerwę: dźwięk, wibracja, zwolnienie ekranu. */
 function finish() {
   const wasActive = state.endsAt != null;
+  const overdueMs = wasActive ? Date.now() - (state.endsAt ?? 0) : 0;
   stopTicking();
 
-  if (settings.soundEnabled) playBell();
-  if (settings.vibrationEnabled) vibrateDone();
+  // Dźwięk i wibracja tylko wtedy, gdy użytkownik NAPRAWDĘ czekał na koniec
+  // przerwy (przerwa skończyła się przed chwilą, a aplikacja była na
+  // wierzchu). Przerwa, która minęła w tle, kończy się bez dźwięku —
+  // jej alarmem było powiadomienie systemowe.
+  const userWasWaiting = overdueMs <= MAX_ALARM_LAG_MS;
+
+  if (userWasWaiting) {
+    if (settings.soundEnabled) playBell();
+    if (settings.vibrationEnabled) vibrateDone();
+  }
 
   // Powiadomienie systemowe: jeśli aplikacja była w tle, lokalny dźwięk
   // nie zagrał — wtedy powiadomienie zostawiamy (push sam się wyśle).

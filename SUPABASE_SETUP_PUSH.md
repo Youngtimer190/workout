@@ -127,6 +127,12 @@ odtworzenie wygasa po 2,5 s — a każda nowa przerwa je unieważnia. Dźwięk
 rozlega się tylko wtedy, gdy zdążysz dotknąć ekranu tuż po zakończeniu
 przerwy.
 
+Dzwonek odtwarzamy **wyłącznie wtedy, gdy użytkownik naprawdę czekał** na
+koniec przerwy (przerwa skończyła się przed chwilą, a aplikacja była na
+wierzchu). Jeśli przerwa minęła, gdy telefon był zablokowany, jej alarmem
+było **powiadomienie systemowe** — lokalny dzwonek tylko by przeszkadzał
+przy powrocie do aplikacji.
+
 Opóźnienie powiadomienia: **2–3 s** od końca przerwy (serwer budzi się w tle
 i potrzebuje chwili na szyfrowanie oraz wysyłkę). Przy aplikacji na wierzchu
 nie jest to zauważalne — dzwonek lokalny gra wtedy natychmiast.
