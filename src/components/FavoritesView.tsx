@@ -86,7 +86,7 @@ export default function FavoritesView({
           {favorites.length > 0 && (
             <button
               onClick={() => openPicker(favorites.map(e => e.id))}
-              className="group inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-violet-700 text-white text-sm font-semibold shadow-[0_14px_34px_-14px_rgba(139,92,246,1)] hover:brightness-110 transition-all cursor-pointer"
+              className="group inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 via-cyan-500 to-cyan-700 text-white text-sm font-semibold shadow-[0_14px_34px_-14px_rgba(6,182,212,1)] hover:brightness-110 transition-all cursor-pointer"
             >
               <PlusIcon className="h-4 w-4" />
               Dodaj do planu
@@ -121,8 +121,8 @@ export default function FavoritesView({
 
       {/* Lista */}
       {favorites.length === 0 ? (
-        <div className="bg-white/[0.03] rounded-2xl border border-dashed border-violet-400/30 p-12 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/30 to-fuchsia-500/10 text-violet-200">
+        <div className="bg-white/[0.03] rounded-2xl border border-dashed border-cyan-400/30 p-12 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-cyan-400/25 bg-gradient-to-br from-cyan-500/30 to-cyan-400/10 text-cyan-200">
             <StarIcon className="h-8 w-8" />
           </div>
           <h3 className="text-lg font-bold text-white mb-2">Brak ulubionych ćwiczeń</h3>
@@ -135,7 +135,7 @@ export default function FavoritesView({
           {favorites.map(ex => (
             <div
               key={ex.id}
-              className="bg-white rounded-2xl border border-violet-400/15 p-4 transition-colors hover:border-violet-400/30"
+              className="bg-white rounded-2xl border border-cyan-400/15 p-4 transition-colors hover:border-cyan-400/30"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -172,7 +172,7 @@ export default function FavoritesView({
               <div className="mt-4 flex items-center gap-2">
                 <button
                   onClick={() => openPicker([ex.id])}
-                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-violet-400/25 bg-violet-500/10 px-3 py-2 text-xs font-semibold text-violet-200 transition-all hover:bg-violet-500/20 cursor-pointer"
+                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-cyan-400/25 bg-cyan-500/10 px-3 py-2 text-xs font-semibold text-cyan-200 transition-all hover:bg-cyan-500/20 cursor-pointer"
                 >
                   <PlusIcon className="h-3.5 w-3.5" />
                   Dodaj do planu
@@ -204,7 +204,7 @@ export default function FavoritesView({
             onClick={() => setPickerOpen(false)}
           />
 
-          <div className="relative w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl border border-violet-400/20 bg-[#150a2e]/97 backdrop-blur-2xl shadow-2xl animate-sheet-up overflow-hidden">
+          <div className="relative w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl border border-cyan-400/20 bg-[#0c1733]/97 backdrop-blur-2xl shadow-2xl animate-sheet-up overflow-hidden">
             <div className="flex items-start justify-between gap-3 px-5 pt-4 pb-3">
               <div>
                 <h2 className="text-base font-bold text-white">Wybierz dzień planu</h2>
@@ -227,9 +227,9 @@ export default function FavoritesView({
                 <button
                   key={day.id}
                   onClick={() => pickDay(day.id)}
-                  className="flex w-full items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-left transition-all hover:border-violet-400/40 hover:bg-white/[0.07] active:bg-white/[0.1] cursor-pointer"
+                  className="flex w-full items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-left transition-all hover:border-cyan-400/40 hover:bg-white/[0.07] active:bg-white/[0.1] cursor-pointer"
                 >
-                  <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-violet-500/15 text-violet-200">
+                  <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-200">
                     <DumbbellIcon className="h-[18px] w-[18px]" />
                   </span>
                   <span className="flex-1 min-w-0">
@@ -241,14 +241,14 @@ export default function FavoritesView({
                       {day.isRestDay && ' · odpoczynek'}
                     </span>
                   </span>
-                  <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-purple-600 text-white">
+                  <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-600 to-cyan-700 text-white">
                     <PlusIcon className="h-4 w-4" />
                   </span>
                 </button>
               ))}
             </div>
 
-            <div className="border-t border-violet-400/10 px-5 py-3">
+            <div className="border-t border-cyan-400/10 px-5 py-3">
               <button
                 onClick={() => setPickerOpen(false)}
                 className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm font-semibold text-slate-300 transition-all hover:bg-white/[0.07] cursor-pointer"

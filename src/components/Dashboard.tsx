@@ -99,13 +99,13 @@ export default function Dashboard({ days, stats, onGoToPlanner, onGoToDay }: Das
         <div>
           <h1 className="flex items-center gap-2 text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
             Witaj!
-            <SparklesIcon className="h-6 w-6 text-violet-300" />
+            <SparklesIcon className="h-6 w-6 text-cyan-300" />
           </h1>
           <p className="text-slate-400 text-sm mt-1">Oto przegląd Twojego planu treningowego</p>
         </div>
         <button
           onClick={onGoToPlanner}
-          className="group inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-violet-700 text-white text-sm font-semibold shadow-[0_14px_34px_-14px_rgba(139,92,246,1)] hover:brightness-110 transition-all cursor-pointer self-start sm:self-auto"
+          className="group inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 via-cyan-500 to-cyan-700 text-white text-sm font-semibold shadow-[0_14px_34px_-14px_rgba(6,182,212,1)] hover:brightness-110 transition-all cursor-pointer self-start sm:self-auto"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
             <path d="M12 5v14M5 12h14" />
@@ -123,16 +123,16 @@ export default function Dashboard({ days, stats, onGoToPlanner, onGoToDay }: Das
         {statCards.map(stat => (
           <div
             key={stat.label}
-            className="bg-white rounded-2xl p-4 border border-violet-400/15 hover:border-violet-400/30 transition-colors flex flex-col"
+            className="bg-white rounded-2xl p-4 border border-cyan-400/15 hover:border-cyan-400/30 transition-colors flex flex-col"
           >
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-violet-400/25 bg-gradient-to-br from-violet-500/30 to-fuchsia-500/10 text-violet-200 mb-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-400/25 bg-gradient-to-br from-cyan-500/30 to-cyan-400/10 text-cyan-200 mb-3">
               {stat.icon}
             </div>
             <p className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-none">{stat.value}</p>
             <p className="text-xs sm:text-sm text-slate-400 mt-1">{stat.label}</p>
             {stat.sub && <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">{stat.sub}</p>}
             {stat.extra && (
-              <p className="text-[11px] sm:text-xs text-violet-300/80 mt-0.5">{stat.extra}</p>
+              <p className="text-[11px] sm:text-xs text-cyan-300/80 mt-0.5">{stat.extra}</p>
             )}
           </div>
         ))}
@@ -156,7 +156,7 @@ export default function Dashboard({ days, stats, onGoToPlanner, onGoToDay }: Das
       </div>
 
       {/* Week Overview */}
-      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-violet-400/15">
+      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-cyan-400/15">
         <h2 className="text-base font-bold text-white mb-4">Plan tygodnia</h2>
         <div className="grid grid-cols-7 gap-1 sm:gap-2">
           {days.map((day, i) => {
@@ -168,13 +168,13 @@ export default function Dashboard({ days, stats, onGoToPlanner, onGoToDay }: Das
                 className={`flex flex-col items-center gap-1 sm:gap-1.5 ${onGoToDay ? 'cursor-pointer hover:scale-[1.02] transition-transform' : ''}`}
                 title={onGoToDay ? 'Kliknij, aby przejść do planera' : undefined}
               >
-                <span className={`text-[10px] sm:text-xs font-semibold ${isToday ? 'text-violet-300' : 'text-slate-500'}`}>
+                <span className={`text-[10px] sm:text-xs font-semibold ${isToday ? 'text-cyan-300' : 'text-slate-500'}`}>
                   {day.name.substring(0, 2)}
                 </span>
                 <div
                   className={`w-full aspect-square rounded-lg sm:rounded-xl flex items-center justify-center text-xs font-bold transition-all ${
                     isToday
-                      ? 'bg-gradient-to-br from-violet-600 to-purple-600 text-white shadow-[0_10px_24px_-12px_rgba(139,92,246,1)]'
+                      ? 'bg-gradient-to-br from-cyan-600 to-cyan-700 text-white shadow-[0_10px_24px_-12px_rgba(6,182,212,1)]'
                       : day.isRestDay
                       ? 'bg-white/[0.05] text-slate-500'
                       : day.exercises.length > 0
@@ -203,7 +203,7 @@ export default function Dashboard({ days, stats, onGoToPlanner, onGoToDay }: Das
 
       {/* Muscle Distribution */}
       {topMuscles.length > 0 && (
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-violet-400/15">
+        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-cyan-400/15">
           <h2 className="text-base font-bold text-white mb-4">Najczęściej trenowane partie</h2>
           <div className="space-y-2.5">
             {topMuscles.map(([muscle, count]) => {
@@ -216,7 +216,7 @@ export default function Dashboard({ days, stats, onGoToPlanner, onGoToDay }: Das
                   </span>
                   <div className="flex-1 h-2 bg-white/[0.07] rounded-full overflow-hidden min-w-0">
                     <div
-                      className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full transition-all duration-700"
+                      className="h-full bg-gradient-to-r from-cyan-500 to-cyan-400 rounded-full transition-all duration-700"
                       style={{ width: `${pct}%` }}
                     />
                   </div>
@@ -229,15 +229,15 @@ export default function Dashboard({ days, stats, onGoToPlanner, onGoToDay }: Das
       )}
 
       {totalExercises === 0 && (
-        <div className="bg-white/[0.03] rounded-2xl p-8 sm:p-10 border border-dashed border-violet-400/30 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/25 to-fuchsia-500/10 text-violet-200 mb-4">
+        <div className="bg-white/[0.03] rounded-2xl p-8 sm:p-10 border border-dashed border-cyan-400/30 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl border border-cyan-400/25 bg-gradient-to-br from-cyan-500/25 to-cyan-400/10 text-cyan-200 mb-4">
             <DumbbellIcon className="h-8 w-8" />
           </div>
           <h3 className="text-lg font-bold text-white mb-2">Zacznij planować!</h3>
           <p className="text-slate-400 text-sm mb-5">Twój plan treningowy jest pusty. Przejdź do planera i dodaj pierwsze ćwiczenia.</p>
           <button
             onClick={onGoToPlanner}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-violet-700 text-white font-semibold shadow-[0_14px_34px_-14px_rgba(139,92,246,1)] hover:brightness-110 transition-all cursor-pointer text-sm"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-600 via-cyan-500 to-cyan-700 text-white font-semibold shadow-[0_14px_34px_-14px_rgba(6,182,212,1)] hover:brightness-110 transition-all cursor-pointer text-sm"
           >
             Otwórz planer
           </button>
@@ -253,13 +253,13 @@ function DayCard({ day, label, isToday, onClick, clickable }: { day: WorkoutDay;
       onClick={onClick}
       className={`rounded-2xl p-4 sm:p-5 border backdrop-blur-xl transition-all ${
         isToday
-          ? 'border-violet-400/40 bg-gradient-to-br from-violet-500/15 to-fuchsia-500/5 shadow-[0_20px_50px_-30px_rgba(139,92,246,0.9)]'
-          : 'border-violet-400/15 bg-white'
-      } ${clickable ? 'cursor-pointer hover:border-violet-400/35 hover:scale-[1.01]' : ''}`}
+          ? 'border-cyan-400/40 bg-gradient-to-br from-cyan-500/15 to-cyan-400/5 shadow-[0_20px_50px_-30px_rgba(6,182,212,0.9)]'
+          : 'border-cyan-400/15 bg-white'
+      } ${clickable ? 'cursor-pointer hover:border-cyan-400/35 hover:scale-[1.01]' : ''}`}
     >
       <div className="flex items-center justify-between mb-3">
         <div>
-          <span className={`text-[10px] font-bold uppercase tracking-wider ${isToday ? 'text-violet-300' : 'text-slate-500'}`}>
+          <span className={`text-[10px] font-bold uppercase tracking-wider ${isToday ? 'text-cyan-300' : 'text-slate-500'}`}>
             {label}
           </span>
           <p className="text-base font-bold text-white">{day.name}</p>
@@ -267,7 +267,7 @@ function DayCard({ day, label, isToday, onClick, clickable }: { day: WorkoutDay;
         {day.isRestDay ? (
           <span className="px-2.5 py-1 bg-white/[0.07] text-slate-400 text-xs font-semibold rounded-full">Odpoczynek</span>
         ) : (
-          <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${isToday ? 'bg-violet-500/25 text-violet-200 border border-violet-400/30' : 'bg-emerald-500/15 text-emerald-300 border border-emerald-400/25'}`}>
+          <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${isToday ? 'bg-cyan-500/25 text-cyan-200 border border-cyan-400/30' : 'bg-emerald-500/15 text-emerald-300 border border-emerald-400/25'}`}>
             {day.exercises.length} ćwiczeń
           </span>
         )}
@@ -276,7 +276,7 @@ function DayCard({ day, label, isToday, onClick, clickable }: { day: WorkoutDay;
         <ul className="space-y-1.5 mt-2">
           {day.exercises.slice(0, 4).map(ex => (
             <li key={ex.id} className="flex items-center gap-2 text-sm text-slate-300">
-              <span className="w-1.5 h-1.5 rounded-full bg-violet-400 flex-shrink-0" />
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 flex-shrink-0" />
               <span className="truncate text-xs sm:text-sm">{ex.name}</span>
               {ex.sets && <span className="ml-auto text-xs text-slate-500 flex-shrink-0">{ex.sets}×{ex.reps}</span>}
             </li>

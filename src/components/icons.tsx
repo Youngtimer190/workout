@@ -7,7 +7,7 @@
  * Planer i pozostałe widoki wyglądają jak jedna aplikacja (zamiast mieszanki
  * emoji i SVG).
  *
- * Użycie:  <DumbbellIcon className="h-4 w-4 text-violet-300" />
+ * Użycie:  <DumbbellIcon className="h-4 w-4 text-cyan-300" />
  */
 
 import React from 'react';

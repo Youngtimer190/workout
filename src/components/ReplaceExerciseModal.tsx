@@ -72,7 +72,7 @@ export default function ReplaceExerciseModal({
       <div className="md:hidden flex items-center gap-2 px-4 py-3 border-b border-slate-100 flex-shrink-0">
         <button
           onClick={() => setMobileStep('list')}
-          className="flex items-center gap-1 text-violet-600 text-sm font-medium cursor-pointer"
+          className="flex items-center gap-1 text-cyan-600 text-sm font-medium cursor-pointer"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
             <path d="M15 18l-6-6 6-6" />
@@ -100,7 +100,7 @@ export default function ReplaceExerciseModal({
                 onChange={e => setSets(e.target.value)}
                 min={1} max={10}
                 inputMode="numeric"
-                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-300"
+                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-300"
               />
             </div>
             <div>
@@ -110,7 +110,7 @@ export default function ReplaceExerciseModal({
                 value={reps}
                 onChange={e => setReps(e.target.value)}
                 placeholder="np. 8-12"
-                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-300"
+                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-300"
               />
             </div>
             <div>
@@ -124,7 +124,7 @@ export default function ReplaceExerciseModal({
                 min={0} step={0.5}
                 inputMode="decimal"
                 placeholder="np. 80"
-                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-300"
+                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-300"
               />
             </div>
           </>
@@ -137,7 +137,7 @@ export default function ReplaceExerciseModal({
               onChange={e => setDuration(e.target.value)}
               min={1} max={120}
               inputMode="numeric"
-              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-300"
+              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-300"
             />
           </div>
         )}
@@ -151,7 +151,7 @@ export default function ReplaceExerciseModal({
             onChange={e => setNotes(e.target.value)}
             placeholder="Wskazówki, tempo, technika..."
             rows={2}
-            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 resize-none focus:outline-none focus:ring-2 focus:ring-violet-300"
+            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 resize-none focus:outline-none focus:ring-2 focus:ring-cyan-300"
           />
         </div>
       </div>
@@ -160,7 +160,7 @@ export default function ReplaceExerciseModal({
         <button
           onClick={handleReplace}
           disabled={!selectedExercise}
-          className="w-full py-3 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-sm"
+          className="w-full py-3 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-sm"
         >
           Zamień ćwiczenie
         </button>
@@ -181,7 +181,7 @@ export default function ReplaceExerciseModal({
             placeholder="Szukaj ćwiczenia..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-transparent"
+            className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-300 focus:border-transparent"
           />
         </div>
       </div>
@@ -192,7 +192,7 @@ export default function ReplaceExerciseModal({
             key={g}
             onClick={() => setSelectedGroup(g)}
             className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-              selectedGroup === g ? 'bg-violet-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+              selectedGroup === g ? 'bg-cyan-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
             }`}
           >
             {g}
@@ -216,15 +216,15 @@ export default function ReplaceExerciseModal({
               }}
               className={`w-full text-left p-3 rounded-xl border transition-all cursor-pointer ${
                 isSelected
-                  ? 'border-violet-400 bg-violet-50'
-                  : 'border-slate-100 bg-white hover:border-violet-200 hover:bg-slate-50'
+                  ? 'border-cyan-400 bg-cyan-50'
+                  : 'border-slate-100 bg-white hover:border-cyan-200 hover:bg-slate-50'
               }`}
             >
               <div className="flex items-start gap-2">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-sm font-semibold text-slate-800 leading-tight">{ex.name}</span>
-                    {isCustom && <span className="text-[10px] bg-violet-100 text-violet-600 px-1.5 py-0.5 rounded-full font-semibold inline-flex items-center"><SparklesIcon className="h-3 w-3" /></span>}
+                    {isCustom && <span className="text-[10px] bg-cyan-100 text-cyan-600 px-1.5 py-0.5 rounded-full font-semibold inline-flex items-center"><SparklesIcon className="h-3 w-3" /></span>}
                   </div>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <span className="text-xs text-slate-500">{ex.muscleGroup}</span>
@@ -236,7 +236,7 @@ export default function ReplaceExerciseModal({
                   </div>
                 </div>
                 {isSelected && (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-violet-600 flex-shrink-0 mt-0.5">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-cyan-600 flex-shrink-0 mt-0.5">
                     <path d="M20 6L9 17l-5-5" />
                   </svg>
                 )}
@@ -295,7 +295,7 @@ export default function ReplaceExerciseModal({
             <div className="w-1/2 flex flex-col overflow-hidden">
               {selectedExercise ? configPanelJsx : (
                 <div className="flex flex-col items-center justify-center h-full text-center p-8">
-                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/30 to-fuchsia-500/10 text-violet-200"><ArrowLeftIcon className="h-6 w-6" /></div>
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/25 bg-gradient-to-br from-cyan-500/30 to-cyan-400/10 text-cyan-200"><ArrowLeftIcon className="h-6 w-6" /></div>
                   <p className="text-slate-400 text-sm">Wybierz ćwiczenie z listy, aby skonfigurować szczegóły</p>
                 </div>
               )}

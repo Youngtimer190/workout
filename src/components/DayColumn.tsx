@@ -7,6 +7,7 @@ import ShareWorkoutModal from './ShareWorkoutModal';
 import ApplyTemplateModal from './ApplyTemplateModal';
 import CreateTemplateModal from './CreateTemplateModal';
 import { BookIcon, CheckIcon, ChevronDownIcon, ChevronUpIcon, DumbbellIcon, MoonIcon, ShareIcon } from './icons';
+import { resolveDayColor } from '../data/exercises';
 
 interface DayColumnProps {
   day: WorkoutDay;
@@ -141,7 +142,7 @@ function DayColumn({
 
       {/* Header - Two rows: info + actions */}
       <div
-        className={`bg-gradient-to-r ${day.color} cursor-pointer select-none`}
+        className={`bg-gradient-to-r ${resolveDayColor(day.color)} cursor-pointer select-none`}
         onClick={() => setCollapsed(prev => !prev)}
       >
         {/* Row 1: Day badge + info + progress */}
@@ -343,7 +344,7 @@ function DayColumn({
           {day.isRestDay ? (
             <div className="flex items-center justify-between py-2 gap-3">
               <div className="flex items-center gap-3 min-w-0">
-                <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl border border-violet-400/25 bg-gradient-to-br from-violet-500/30 to-fuchsia-500/10 text-violet-200">
+                <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl border border-cyan-400/25 bg-gradient-to-br from-cyan-500/30 to-cyan-400/10 text-cyan-200">
                   <MoonIcon className="h-6 w-6" />
                 </span>
                 <div className="min-w-0">
@@ -353,7 +354,7 @@ function DayColumn({
               </div>
               <button
                 onClick={requestToggleRest}
-                className="text-xs text-violet-500 hover:text-violet-700 font-semibold underline underline-offset-2 transition-colors cursor-pointer flex-shrink-0"
+                className="text-xs text-cyan-500 hover:text-cyan-700 font-semibold underline underline-offset-2 transition-colors cursor-pointer flex-shrink-0"
               >
                 Zamień na trening
               </button>
@@ -362,7 +363,7 @@ function DayColumn({
             <div className="space-y-2">
               {day.exercises.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <span className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/30 to-fuchsia-500/10 text-violet-200">
+                  <span className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-400/25 bg-gradient-to-br from-cyan-500/30 to-cyan-400/10 text-cyan-200">
                     <DumbbellIcon className="h-7 w-7" />
                   </span>
                   <p className="text-slate-500 font-semibold text-lg">Brak ćwiczeń</p>
@@ -392,7 +393,7 @@ function DayColumn({
                                 className={`flex-1 w-9 rounded-lg flex items-center justify-center transition-all cursor-pointer ${
                                   exIndex === 0
                                     ? 'bg-slate-50 text-slate-200 cursor-not-allowed'
-                                    : 'bg-slate-100 hover:bg-violet-100 active:bg-violet-200 text-slate-400 hover:text-violet-600'
+                                    : 'bg-slate-100 hover:bg-cyan-100 active:bg-cyan-200 text-slate-400 hover:text-cyan-600'
                                 }`}
                                 title="Przesuń wyżej"
                               >
@@ -406,7 +407,7 @@ function DayColumn({
                                 className={`flex-1 w-9 rounded-lg flex items-center justify-center transition-all cursor-pointer ${
                                   exIndex === day.exercises.length - 1
                                     ? 'bg-slate-50 text-slate-200 cursor-not-allowed'
-                                    : 'bg-slate-100 hover:bg-violet-100 active:bg-violet-200 text-slate-400 hover:text-violet-600'
+                                    : 'bg-slate-100 hover:bg-cyan-100 active:bg-cyan-200 text-slate-400 hover:text-cyan-600'
                                 }`}
                                 title="Przesuń niżej"
                               >
@@ -446,7 +447,7 @@ function DayColumn({
               {/* Add exercise button */}
               <button
                 onClick={onRequestAdd}
-                className="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-sm text-slate-400 hover:border-violet-300 hover:text-violet-500 hover:bg-violet-50/50 active:bg-violet-100/50 transition-all flex items-center justify-center gap-2 cursor-pointer mt-1"
+                className="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-sm text-slate-400 hover:border-cyan-300 hover:text-cyan-500 hover:bg-cyan-50/50 active:bg-cyan-100/50 transition-all flex items-center justify-center gap-2 cursor-pointer mt-1"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
                   <path d="M12 5v14M5 12h14" />
@@ -459,7 +460,7 @@ function DayColumn({
               {canShareDay && (
                 <button
                   onClick={() => setShareModalOpen(true)}
-                  className="mt-2 w-full min-h-[44px] rounded-xl border border-violet-400/25 bg-violet-500/10 px-3 py-2 text-xs font-semibold text-violet-200 transition-all hover:border-violet-400/45 hover:bg-violet-500/20 active:bg-violet-500/25 flex items-center justify-center gap-2 cursor-pointer"
+                  className="mt-2 w-full min-h-[44px] rounded-xl border border-cyan-400/25 bg-cyan-500/10 px-3 py-2 text-xs font-semibold text-cyan-200 transition-all hover:border-cyan-400/45 hover:bg-cyan-500/20 active:bg-cyan-500/25 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <ShareIcon className="h-4 w-4" />
                   Udostępnij ten trening
@@ -471,7 +472,7 @@ function DayColumn({
               {onCreateTemplateFromDay && (
                 <button
                   onClick={() => setCreateTemplateModalOpen(true)}
-                  className="mt-2 w-full min-h-[44px] rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200 transition-all hover:border-violet-400/35 hover:bg-white/[0.07] active:bg-white/[0.1] flex items-center justify-center gap-2 cursor-pointer"
+                  className="mt-2 w-full min-h-[44px] rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-slate-200 transition-all hover:border-cyan-400/35 hover:bg-white/[0.07] active:bg-white/[0.1] flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <BookIcon className="h-4 w-4" />
                   Zapisz jako szablon

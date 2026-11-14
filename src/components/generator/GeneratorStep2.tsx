@@ -84,25 +84,25 @@ export default function GeneratorStep2({ prefs, onChange }: Props) {
               onClick={() => onChange({ trainingStyle: s.id })}
               className={`w-full p-4 rounded-2xl border-2 text-left transition-all duration-200 cursor-pointer flex items-center gap-4 ${
                 prefs.trainingStyle === s.id
-                  ? 'border-violet-500 bg-violet-50 shadow-md'
+                  ? 'border-cyan-500 bg-cyan-50 shadow-md'
                   : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
               }`}
             >
               <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                prefs.trainingStyle === s.id ? 'bg-violet-100 text-violet-600' : 'bg-slate-100 text-slate-500'
+                prefs.trainingStyle === s.id ? 'bg-cyan-100 text-cyan-600' : 'bg-slate-100 text-slate-500'
               }`}>
                 {s.icon}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className={`font-semibold text-sm ${prefs.trainingStyle === s.id ? 'text-violet-700' : 'text-slate-800'}`}>{s.label}</p>
+                  <p className={`font-semibold text-sm ${prefs.trainingStyle === s.id ? 'text-cyan-700' : 'text-slate-800'}`}>{s.label}</p>
                   <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">{s.days}</span>
                 </div>
                 <p className="text-xs text-slate-500 mt-0.5">{s.desc}</p>
-                <p className="text-xs text-violet-500 mt-0.5">Najlepszy dla: {s.bestFor}</p>
+                <p className="text-xs text-cyan-500 mt-0.5">Najlepszy dla: {s.bestFor}</p>
               </div>
               {prefs.trainingStyle === s.id && (
-                <div className="w-6 h-6 rounded-full bg-violet-500 flex items-center justify-center flex-shrink-0">
+                <div className="w-6 h-6 rounded-full bg-cyan-500 flex items-center justify-center flex-shrink-0">
                   <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
@@ -143,11 +143,11 @@ export default function GeneratorStep2({ prefs, onChange }: Props) {
         </div>
 
         {prefs.focusMuscles.length > 0 ? (
-          <div className="bg-violet-50 border border-violet-200 rounded-xl p-3 space-y-1.5">
-            <p className="text-xs font-semibold text-violet-700">
+          <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-3 space-y-1.5">
+            <p className="text-xs font-semibold text-cyan-700">
               <span className="inline-flex items-center gap-1.5"><TargetIcon className="h-3.5 w-3.5" />Aktywne priorytety: {prefs.focusMuscles.join(', ')}</span>
             </p>
-            <ul className="text-xs text-violet-600 space-y-0.5">
+            <ul className="text-xs text-cyan-600 space-y-0.5">
               <li>• Priorytetowa partia zajmuje pierwsze miejsce w każdej sesji</li>
               <li>• +2 serie na ćwiczeniu compound (zamiast standardowych)</li>
               <li>• 3–4 ćwiczenia izolowane zamiast 1 (specjalizacja)</li>
@@ -172,8 +172,8 @@ export default function GeneratorStep2({ prefs, onChange }: Props) {
               onClick={() => onChange({ sessionDuration: d })}
               className={`px-5 py-3 rounded-2xl font-semibold text-sm transition-all duration-200 cursor-pointer ${
                 prefs.sessionDuration === d
-                  ? 'bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg shadow-indigo-200 scale-105'
-                  : 'bg-white border-2 border-slate-200 text-slate-600 hover:border-violet-300'
+                  ? 'bg-gradient-to-br from-cyan-500 to-cyan-700 text-white shadow-lg shadow-cyan-200 scale-105'
+                  : 'bg-white border-2 border-slate-200 text-slate-600 hover:border-cyan-300'
               }`}
             >
               {d} min

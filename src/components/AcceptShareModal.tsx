@@ -183,7 +183,7 @@ export default function AcceptShareModal({
         style={{ display: 'flex', flexDirection: 'column' }}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-3 flex items-center justify-between flex-shrink-0">
+        <div className="bg-gradient-to-r from-cyan-600 to-cyan-700 px-4 py-3 flex items-center justify-between flex-shrink-0">
           <h2 id="accept-share-title" className="text-white font-bold text-base sm:text-lg">
             {acceptedTo ? 'Trening dodany' : 'Udostępniony trening'}
           </h2>
@@ -221,7 +221,7 @@ export default function AcceptShareModal({
               {onOpenPlanner && (
                 <button
                   onClick={() => onOpenPlanner()}
-                  className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-purple-600 active:opacity-80 cursor-pointer"
+                  className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-cyan-600 to-cyan-700 active:opacity-80 cursor-pointer"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   Otwórz w Planerze
@@ -245,7 +245,7 @@ export default function AcceptShareModal({
             >
               {/* Nadawca */}
               <div className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-cyan-700 flex items-center justify-center flex-shrink-0">
                   <span className="text-white font-bold text-sm uppercase">
                     {(senderLabel || '?').trim().charAt(0).toUpperCase()}
                   </span>
@@ -274,7 +274,7 @@ export default function AcceptShareModal({
                 <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto pr-1">
                   {exercises.map((ex, i) => (
                     <li key={`${ex.name}-${i}`} className="flex items-baseline gap-2 text-xs text-slate-300">
-                      <span className="mt-[6px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-violet-400/70" />
+                      <span className="mt-[6px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-cyan-400/70" />
                       <span className="min-w-0 flex-1 truncate">{ex.name}</span>
                       {ex.sets ? (
                         <span className="flex-shrink-0 text-[11px] text-slate-500">
@@ -304,15 +304,15 @@ export default function AcceptShareModal({
                         title={d.busy > 0 ? `${d.busy} ${pluralExercise(d.busy)} w tym dniu` : undefined}
                         className={`relative flex min-h-[58px] flex-col items-center justify-center rounded-xl border transition-all cursor-pointer ${
                           selected
-                            ? 'border-violet-400/60 bg-gradient-to-b from-violet-500/35 to-violet-600/20 text-white'
-                            : 'border-white/[0.08] bg-white/[0.03] text-slate-300 hover:border-violet-400/30 hover:bg-white/[0.06]'
+                            ? 'border-cyan-400/60 bg-gradient-to-b from-cyan-500/35 to-cyan-600/20 text-white'
+                            : 'border-white/[0.08] bg-white/[0.03] text-slate-300 hover:border-cyan-400/30 hover:bg-white/[0.06]'
                         }`}
                       >
-                        <span className={`text-[10px] font-semibold ${selected ? 'text-violet-200' : 'text-slate-500'}`}>
+                        <span className={`text-[10px] font-semibold ${selected ? 'text-cyan-200' : 'text-slate-500'}`}>
                           {d.isToday ? 'Dziś' : d.isTomorrow ? 'Jutro' : d.weekday}
                         </span>
                         <span className="text-base font-bold leading-tight">{d.dayNum}</span>
-                        <span className={`text-[9px] ${selected ? 'text-violet-200/80' : 'text-slate-600'}`}>
+                        <span className={`text-[9px] ${selected ? 'text-cyan-200/80' : 'text-slate-600'}`}>
                           {d.month}
                         </span>
                         {d.busy > 0 && (
@@ -327,7 +327,7 @@ export default function AcceptShareModal({
                 </div>
 
                 {isValid && targetMonday ? (
-                  <div className="mt-3 rounded-xl border border-violet-400/20 bg-violet-500/10 p-3">
+                  <div className="mt-3 rounded-xl border border-cyan-400/20 bg-cyan-500/10 p-3">
                     <p className="text-slate-800 font-semibold text-sm">
                       {DAY_NAMES[targetIdx]}
                       <span className="text-slate-400 font-normal"> · </span>
@@ -374,7 +374,7 @@ export default function AcceptShareModal({
               <button
                 onClick={handleAccept}
                 disabled={!isValid || busy !== null}
-                className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed active:opacity-80 cursor-pointer"
+                className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-cyan-600 to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed active:opacity-80 cursor-pointer"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 {busy === 'accept' ? 'Dodaję…' : 'Akceptuj i dodaj'}

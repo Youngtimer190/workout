@@ -142,7 +142,7 @@ export default function ShareWorkoutModal({
         style={{ display: 'flex', flexDirection: 'column' }}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-3 flex items-center justify-between flex-shrink-0">
+        <div className="bg-gradient-to-r from-cyan-600 to-cyan-700 px-4 py-3 flex items-center justify-between flex-shrink-0">
           <h2 id="share-workout-title" className="text-white font-bold text-base sm:text-lg">Udostępnij trening</h2>
           <button
             onClick={onClose}
@@ -178,14 +178,14 @@ export default function ShareWorkoutModal({
             <div className="mt-5 w-full space-y-2">
               <button
                 onClick={() => { setSent(false); setEmail(''); setError(null); }}
-                className="w-full px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold text-violet-700 bg-violet-50 border border-violet-200 active:bg-violet-100 cursor-pointer"
+                className="w-full px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold text-cyan-700 bg-cyan-50 border border-cyan-200 active:bg-cyan-100 cursor-pointer"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 Udostępnij kolejny trening
               </button>
               <button
                 onClick={onClose}
-                className="w-full px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-purple-600 active:opacity-80 cursor-pointer"
+                className="w-full px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-cyan-600 to-cyan-700 active:opacity-80 cursor-pointer"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 Zamknij
@@ -237,7 +237,7 @@ export default function ShareWorkoutModal({
                         key={email}
                         type="button"
                         onClick={() => setEmail(email)}
-                        className="max-w-full truncate rounded-full border border-violet-400/25 bg-violet-500/10 px-2.5 py-1 text-[11px] font-semibold text-violet-200 transition-all hover:bg-violet-500/20 cursor-pointer"
+                        className="max-w-full truncate rounded-full border border-cyan-400/25 bg-cyan-500/10 px-2.5 py-1 text-[11px] font-semibold text-cyan-200 transition-all hover:bg-cyan-500/20 cursor-pointer"
                       >
                         {email}
                       </button>
@@ -261,7 +261,7 @@ export default function ShareWorkoutModal({
                   className={`w-full px-4 py-3 rounded-xl border-2 text-slate-800 text-base sm:text-sm font-medium focus:outline-none focus:ring-2 transition-all ${
                     isOwnEmail
                       ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20'
-                      : 'border-slate-200 focus:border-violet-500 focus:ring-violet-500/20'
+                      : 'border-slate-200 focus:border-cyan-500 focus:ring-cyan-500/20'
                   }`}
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 />
@@ -312,7 +312,7 @@ export default function ShareWorkoutModal({
               <button
                 onClick={handleSend}
                 disabled={!isValidEmail || isOwnEmail || sending}
-                className="px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-500 to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed active:opacity-80 cursor-pointer"
+                className="px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-cyan-500 to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed active:opacity-80 cursor-pointer"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 {sending ? 'Wysyłam…' : 'Udostępnij'}

@@ -282,7 +282,7 @@ export default function SetTracker({
     const value = isReps ? (log.actualReps ?? null) : (log.weight ?? null);
 
     const label = (
-      <span className={`text-[11px] font-semibold ${isReps ? 'text-violet-700' : 'text-amber-700'}`}>
+      <span className={`text-[11px] font-semibold ${isReps ? 'text-cyan-700' : 'text-amber-700'}`}>
         {isReps ? 'Powtórzenia' : 'Ciężar'}
       </span>
     );
@@ -292,7 +292,7 @@ export default function SetTracker({
     const bottomBtn = (
       <button
         onClick={() => cancelEdit()}
-        className="mx-auto rounded-lg border border-violet-400/30 bg-violet-500/15 px-3 py-1.5 text-[11px] font-bold text-violet-200 transition-colors hover:bg-violet-500/25 active:scale-95 cursor-pointer min-h-[30px]"
+        className="mx-auto rounded-lg border border-cyan-400/30 bg-cyan-500/15 px-3 py-1.5 text-[11px] font-bold text-cyan-200 transition-colors hover:bg-cyan-500/25 active:scale-95 cursor-pointer min-h-[30px]"
       >
         Gotowe
       </button>
@@ -424,7 +424,7 @@ export default function SetTracker({
               onKeyDown={e => {
                 if (e.key === 'Enter') commitMinutes((e.target as HTMLInputElement).value);
               }}
-              className="w-16 rounded-lg border border-sky-100 bg-white px-2 py-1.5 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-300"
+              className="w-16 rounded-lg border border-sky-100 bg-white px-2 py-1.5 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-300"
             />
             <span className={`text-xs font-semibold ${cardioDone ? 'text-emerald-700' : 'text-sky-700'}`}>min</span>
           </label>
@@ -459,13 +459,13 @@ export default function SetTracker({
       <div className="flex items-center justify-between px-3 py-2 bg-white border-b border-slate-100">
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-slate-700">Serie</span>
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700">
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-700">
             {completedSets}/{localLogs.length}
           </span>
         </div>
         {totalVolume > 0 && (
           <span className="text-[10px] font-semibold text-slate-500">
-            <span className="text-violet-700 font-bold">{totalVolume.toLocaleString()} kg</span> obj.
+            <span className="text-cyan-700 font-bold">{totalVolume.toLocaleString()} kg</span> obj.
           </span>
         )}
       </div>
@@ -473,7 +473,7 @@ export default function SetTracker({
       {/* Progress bar */}
       <div className="h-1 bg-slate-100">
         <div
-          className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 transition-all duration-500"
+          className="h-full bg-gradient-to-r from-cyan-500 to-cyan-600 transition-all duration-500"
           style={{ width: `${localLogs.length > 0 ? (completedSets / localLogs.length) * 100 : 0}%` }}
         />
       </div>
@@ -529,7 +529,7 @@ export default function SetTracker({
                     className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all cursor-pointer border-2 active:scale-95 ${
                       log.done
                         ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm shadow-emerald-200'
-                        : 'border-slate-200 bg-white text-transparent hover:border-violet-400'
+                        : 'border-slate-200 bg-white text-transparent hover:border-cyan-400'
                     }`}
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
@@ -545,7 +545,7 @@ export default function SetTracker({
 
                 {/* Side label for unilateral exercises - mobile: larger P/L */}
                 {isUnilateral && (
-                  <div className="text-xs font-bold text-center text-violet-700 px-0.5 truncate">
+                  <div className="text-xs font-bold text-center text-cyan-700 px-0.5 truncate">
                     {getSideLabel(idx) === 'Prawa' ? 'P' : 'L'}
                   </div>
                 )}
@@ -576,7 +576,7 @@ export default function SetTracker({
                     className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all cursor-pointer border-2 active:scale-95 ${
                       log.done
                         ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm shadow-emerald-200'
-                        : 'border-slate-200 bg-white text-transparent hover:border-violet-400'
+                        : 'border-slate-200 bg-white text-transparent hover:border-cyan-400'
                     }`}
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
@@ -592,7 +592,7 @@ export default function SetTracker({
 
                 {/* Side label for unilateral exercises - desktop: full text */}
                 {isUnilateral && (
-                  <div className="text-xs font-bold text-center text-violet-700 px-1 truncate">
+                  <div className="text-xs font-bold text-center text-cyan-700 px-1 truncate">
                     {getSideLabel(idx)}
                   </div>
                 )}
@@ -620,7 +620,7 @@ export default function SetTracker({
       {/* Add set button */}
       <button
         onClick={addSet}
-        className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-violet-600 hover:text-violet-800 hover:bg-violet-50 active:bg-violet-100 transition-colors cursor-pointer border-t border-dashed border-slate-200"
+        className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-cyan-600 hover:text-cyan-800 hover:bg-cyan-50 active:bg-cyan-100 transition-colors cursor-pointer border-t border-dashed border-slate-200"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
           <path d="M12 5v14M5 12h14" />
@@ -650,7 +650,7 @@ export default function SetTracker({
             <div className="flex items-center gap-3 flex-wrap">
               {avgReps && (
                 <span className="text-[10px] text-slate-500">
-                  Śr.: <span className="font-bold text-violet-700">{avgReps} powt.</span>
+                  Śr.: <span className="font-bold text-cyan-700">{avgReps} powt.</span>
                 </span>
               )}
               {maxWeight != null && (
@@ -660,7 +660,7 @@ export default function SetTracker({
               )}
               {totalVolume > 0 && (
                 <span className="text-[10px] text-slate-500">
-                  Obj.: <span className="font-bold text-indigo-600">{totalVolume.toLocaleString()} kg</span>
+                  Obj.: <span className="font-bold text-sky-600">{totalVolume.toLocaleString()} kg</span>
                 </span>
               )}
             </div>

@@ -163,7 +163,7 @@ export default function CopyWorkoutModal({ userId, onCopy, onClose }: CopyWorkou
         style={{ display: 'flex', flexDirection: 'column' }}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-violet-500 to-indigo-600 px-4 py-3 flex items-center justify-between flex-shrink-0">
+        <div className="bg-gradient-to-r from-cyan-500 to-cyan-700 px-4 py-3 flex items-center justify-between flex-shrink-0">
           <h2 className="text-white font-bold text-base sm:text-lg">Kopiuj trening</h2>
           <button
             onClick={onClose}
@@ -238,8 +238,8 @@ export default function CopyWorkoutModal({ userId, onCopy, onClose }: CopyWorkou
                         !hasWorkout
                           ? 'bg-slate-50 border-slate-200 opacity-50 cursor-not-allowed'
                           : isSelected
-                          ? 'border-violet-500 bg-violet-50 cursor-pointer'
-                          : 'border-slate-200 active:border-violet-300 active:bg-slate-50 cursor-pointer'
+                          ? 'border-cyan-500 bg-cyan-50 cursor-pointer'
+                          : 'border-slate-200 active:border-cyan-300 active:bg-slate-50 cursor-pointer'
                       }`}
                       style={{ WebkitTapHighlightColor: 'transparent' }}
                     >
@@ -248,7 +248,7 @@ export default function CopyWorkoutModal({ userId, onCopy, onClose }: CopyWorkou
                           !hasWorkout
                             ? 'bg-slate-200'
                             : isSelected
-                            ? 'bg-violet-500'
+                            ? 'bg-cyan-500'
                             : 'bg-slate-100'
                         }`}
                       >
@@ -262,7 +262,7 @@ export default function CopyWorkoutModal({ userId, onCopy, onClose }: CopyWorkou
                             !hasWorkout
                               ? 'text-slate-400'
                               : isSelected
-                              ? 'text-violet-700'
+                              ? 'text-cyan-700'
                               : 'text-slate-700'
                           }`}
                         >
@@ -273,7 +273,7 @@ export default function CopyWorkoutModal({ userId, onCopy, onClose }: CopyWorkou
                             !hasWorkout
                               ? 'text-slate-300'
                               : isSelected
-                              ? 'text-violet-500'
+                              ? 'text-cyan-500'
                               : 'text-slate-400'
                           }`}
                         >
@@ -292,7 +292,7 @@ export default function CopyWorkoutModal({ userId, onCopy, onClose }: CopyWorkou
                           strokeWidth={3}
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className="w-5 h-5 text-violet-500 flex-shrink-0"
+                          className="w-5 h-5 text-cyan-500 flex-shrink-0"
                         >
                           <polyline points="20 6 9 17 4 12" />
                         </svg>
@@ -344,13 +344,13 @@ export default function CopyWorkoutModal({ userId, onCopy, onClose }: CopyWorkou
                 type="date"
                 value={targetDateStr}
                 onChange={(e) => setTargetDateStr(e.target.value)}
-                className="w-[240px] max-w-full px-4 py-3 rounded-xl border-2 border-slate-200 text-slate-800 text-base sm:text-sm font-medium focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
+                className="w-[240px] max-w-full px-4 py-3 rounded-xl border-2 border-slate-200 text-slate-800 text-base sm:text-sm font-medium focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               />
             </div>
 
             {targetValid && targetMonday ? (
-              <div className="mt-3 bg-violet-50 rounded-xl p-3 border border-violet-100">
+              <div className="mt-3 bg-cyan-50 rounded-xl p-3 border border-cyan-100">
                 <p className="text-slate-800 font-semibold text-sm">
                   {DAY_NAMES[targetIdx]}
                   <span className="text-slate-400 font-normal"> · </span>
@@ -368,7 +368,7 @@ export default function CopyWorkoutModal({ userId, onCopy, onClose }: CopyWorkou
                     To dzień źródłowy — wybierz inną datę
                   </p>
                 ) : (
-                  <p className={`text-[11px] mt-1 flex items-center gap-1 ${isCrossWeek ? 'text-violet-500' : 'text-slate-400'}`}>
+                  <p className={`text-[11px] mt-1 flex items-center gap-1 ${isCrossWeek ? 'text-cyan-500' : 'text-slate-400'}`}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 flex-shrink-0">
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
@@ -413,7 +413,7 @@ export default function CopyWorkoutModal({ userId, onCopy, onClose }: CopyWorkou
           <button
             onClick={handleCopy}
             disabled={!canCopy || copying}
-            className="px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-500 to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed active:opacity-80 cursor-pointer"
+            className="px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-cyan-500 to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed active:opacity-80 cursor-pointer"
             style={{ WebkitTapHighlightColor: 'transparent' }}
           >
             {copying ? 'Kopiuję…' : 'Kopiuj'}

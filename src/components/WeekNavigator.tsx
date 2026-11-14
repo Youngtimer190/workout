@@ -57,8 +57,8 @@ export default function WeekNavigator({
         <div className="flex-1 min-w-0 text-center">
           <div className="flex items-center justify-center gap-2 flex-wrap">
             {weekMeta.isCurrentWeek && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 text-[10px] font-bold flex-shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse inline-block" />
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-700 text-[10px] font-bold flex-shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse inline-block" />
                 Bieżący
               </span>
             )}
@@ -89,17 +89,17 @@ export default function WeekNavigator({
             <div
               key={i}
               className={`flex flex-col items-center py-2 ${
-                isToday ? 'bg-violet-50' : isWeekend ? 'bg-slate-50/50' : ''
+                isToday ? 'bg-cyan-50' : isWeekend ? 'bg-slate-50/50' : ''
               }`}
             >
               <span className={`text-[9px] font-bold mb-1 uppercase tracking-wide ${
-                isToday ? 'text-violet-600' : isWeekend ? 'text-slate-400' : 'text-slate-400'
+                isToday ? 'text-cyan-600' : isWeekend ? 'text-slate-400' : 'text-slate-400'
               }`}>
                 {dayLetters[i]}
               </span>
               <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
                 isToday
-                  ? 'bg-violet-600 text-white shadow-md shadow-violet-200'
+                  ? 'bg-cyan-600 text-white shadow-md shadow-cyan-200'
                   : isWeekend
                   ? 'text-slate-500'
                   : 'text-slate-700'
@@ -118,7 +118,7 @@ export default function WeekNavigator({
           {/* Stats */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
-              <DumbbellIcon className="h-4 w-4 text-violet-400" />
+              <DumbbellIcon className="h-4 w-4 text-cyan-400" />
               <div>
                 <span className="text-sm font-bold text-slate-800">{trainingDays}</span>
                 <span className="text-[10px] text-slate-400 ml-0.5 hidden sm:inline">treningi</span>
@@ -145,7 +145,7 @@ export default function WeekNavigator({
             {!weekMeta.isCurrentWeek && (
               <button
                 onClick={onGoToday}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-violet-50 text-violet-700 text-xs font-semibold hover:bg-violet-100 active:bg-violet-200 transition-all cursor-pointer border border-violet-100"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-cyan-50 text-cyan-700 text-xs font-semibold hover:bg-cyan-100 active:bg-cyan-200 transition-all cursor-pointer border border-cyan-100"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 flex-shrink-0">
                   <rect x="3" y="4" width="18" height="18" rx="2" />

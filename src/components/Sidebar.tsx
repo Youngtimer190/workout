@@ -178,7 +178,7 @@ function AccountMenuRows({
         <CircleHelpIcon className="h-4 w-4 flex-shrink-0 text-slate-400" />
         <span className="flex-1">Pomoc i wsparcie</span>
       </button>
-      <div className="border-t border-violet-400/10">
+      <div className="border-t border-cyan-400/10">
         <button
           onClick={onSignOut}
           className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white"
@@ -245,19 +245,19 @@ export default function Sidebar({
     <>
       {/* ── Desktop Sidebar ── */}
       <aside
-        className="hidden md:flex flex-col w-72 bg-[#12082a]/85 backdrop-blur-xl border-r border-violet-400/15 fixed left-0 top-0 z-20"
+        className="hidden md:flex flex-col w-72 bg-[#0b1533]/85 backdrop-blur-xl border-r border-cyan-400/15 fixed left-0 top-0 z-20"
         style={{ height: '100dvh' }}
       >
         {/* ── 1. Panel z logo ── */}
-        <div className="relative mx-3 mt-3 mb-5 overflow-hidden rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/12 via-white/[0.02] to-fuchsia-500/10 px-4 py-4 flex-shrink-0">
+        <div className="relative mx-3 mt-3 mb-5 overflow-hidden rounded-2xl border border-cyan-400/25 bg-gradient-to-br from-cyan-500/12 via-white/[0.02] to-cyan-400/10 px-4 py-4 flex-shrink-0">
           {/* poświata w prawym górnym rogu */}
-          <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-violet-500/30 blur-2xl" />
+          <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-cyan-500/30 blur-2xl" />
           <div className="relative flex items-center gap-3">
             <img
               src={logoUrl}
               alt=""
               aria-hidden="true"
-              className="h-11 w-auto flex-shrink-0 drop-shadow-[0_0_18px_rgba(139,92,246,0.65)]"
+              className="h-11 w-auto flex-shrink-0 drop-shadow-[0_0_18px_rgba(6,182,212,0.65)]"
             />
             <div className="min-w-0">
               <p className="font-extrabold text-white text-lg leading-none tracking-tight">FitPlanner</p>
@@ -277,7 +277,7 @@ export default function Sidebar({
                 aria-current={isActive ? 'page' : undefined}
                 className={`group relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all duration-200 cursor-pointer ${
                   isActive
-                    ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-[0_10px_28px_-12px_rgba(139,92,246,1)]'
+                    ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-[0_10px_28px_-12px_rgba(6,182,212,1)]'
                     : 'text-slate-400 hover:bg-white/[0.06] hover:text-white'
                 }`}
               >
@@ -288,7 +288,7 @@ export default function Sidebar({
                 <span className="relative flex-shrink-0">
                   {item.icon}
                   {item.id === 'shares' && pendingCount > 0 && (
-                    <span className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] px-1 rounded-full bg-fuchsia-500 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-[#12082a]">
+                    <span className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] px-1 rounded-full bg-cyan-400 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-[#0b1533]">
                       {pendingCount > 9 ? '9+' : pendingCount}
                     </span>
                   )}
@@ -305,13 +305,13 @@ export default function Sidebar({
           <div className="flex flex-col gap-1.5">
             <button
               onClick={() => go('favorites')}
-              className="flex w-full items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3.5 py-2.5 text-left transition-all duration-200 cursor-pointer hover:border-violet-400/30 hover:bg-white/[0.06]"
+              className="flex w-full items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3.5 py-2.5 text-left transition-all duration-200 cursor-pointer hover:border-cyan-400/30 hover:bg-white/[0.06]"
             >
-              <StarIcon className="h-[18px] w-[18px] text-violet-300 flex-shrink-0" />
+              <StarIcon className="h-[18px] w-[18px] text-cyan-300 flex-shrink-0" />
               <span className="flex-1 text-sm font-medium text-slate-200">
                 Ulubione ćwiczenia
                 {favoriteCount > 0 && (
-                  <span className="ml-2 text-[11px] font-bold text-violet-300">{favoriteCount}</span>
+                  <span className="ml-2 text-[11px] font-bold text-cyan-300">{favoriteCount}</span>
                 )}
               </span>
               <ChevronRightIcon className="h-4 w-4 text-slate-500 flex-shrink-0" />
@@ -322,7 +322,7 @@ export default function Sidebar({
               title={lastWorkout ? `Przejdź do: ${lastWorkout.dayName}` : 'Brak zarejestrowanych treningów'}
               className={`flex w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-all duration-200 ${
                 lastWorkout
-                  ? 'border-white/[0.07] bg-white/[0.03] cursor-pointer hover:border-violet-400/30 hover:bg-white/[0.06]'
+                  ? 'border-white/[0.07] bg-white/[0.03] cursor-pointer hover:border-cyan-400/30 hover:bg-white/[0.06]'
                   : 'border-white/[0.04] bg-white/[0.02] cursor-not-allowed opacity-50'
               }`}
             >
@@ -342,9 +342,9 @@ export default function Sidebar({
             <svg viewBox="0 0 260 40" preserveAspectRatio="none" className="h-10 w-full">
               <defs>
                 <linearGradient id="sidebar-wave" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0" />
-                  <stop offset="45%" stopColor="#a855f7" stopOpacity="0.9" />
-                  <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0" />
+                  <stop offset="0%" stopColor="#06b6d4" stopOpacity="0" />
+                  <stop offset="45%" stopColor="#22d3ee" stopOpacity="0.9" />
+                  <stop offset="100%" stopColor="#06b6d4" stopOpacity="0" />
                 </linearGradient>
               </defs>
               <path
@@ -359,7 +359,7 @@ export default function Sidebar({
 
           {/* ── 5. Karta postępu ── */}
           <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.04] p-4 mb-4 flex-shrink-0">
-            <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-violet-500/20 blur-2xl" />
+            <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-cyan-500/20 blur-2xl" />
             <div className="relative flex items-center gap-3">
               <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-amber-400/25 bg-amber-400/15 text-amber-300">
                 <TrophyIcon className="h-5 w-5" />
@@ -373,7 +373,7 @@ export default function Sidebar({
             <div className="relative mt-3 flex items-center gap-3">
               <div className="h-1.5 flex-1 rounded-full bg-white/10 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-400 transition-all duration-700"
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-cyan-300 transition-all duration-700"
                   style={{ width: `${progress}%` }}
                 />
               </div>
@@ -386,7 +386,7 @@ export default function Sidebar({
         </nav>
 
         {/* ── 6. Sekcja konta ── */}
-        <div className="border-t border-violet-400/10 px-3 py-3 flex-shrink-0">
+        <div className="border-t border-cyan-400/10 px-3 py-3 flex-shrink-0">
           {isSignedIn ? (
             <>
               <button
@@ -396,7 +396,7 @@ export default function Sidebar({
                   menuOpen ? 'bg-white/[0.06]' : 'hover:bg-white/[0.05]'
                 }`}
               >
-                <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-xs font-bold text-white shadow-[0_8px_20px_-10px_rgba(139,92,246,1)]">
+                <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 text-xs font-bold text-white shadow-[0_8px_20px_-10px_rgba(6,182,212,1)]">
                   {initials}
                 </span>
                 <span className="min-w-0 flex-1 text-left">
@@ -409,9 +409,9 @@ export default function Sidebar({
               </button>
 
               {menuOpen && (
-                <div className="mt-2 max-h-[55vh] overflow-y-auto overscroll-contain overflow-hidden rounded-2xl border border-violet-400/20 bg-[#1a0d38]/95 backdrop-blur-xl shadow-2xl animate-fade-in">
-                  <div className="flex items-center gap-3 border-b border-violet-400/10 px-4 py-3">
-                    <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-sm font-bold text-white">
+                <div className="mt-2 max-h-[55vh] overflow-y-auto overscroll-contain overflow-hidden rounded-2xl border border-cyan-400/20 bg-[#0f1f42]/95 backdrop-blur-xl shadow-2xl animate-fade-in">
+                  <div className="flex items-center gap-3 border-b border-cyan-400/10 px-4 py-3">
+                    <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 text-sm font-bold text-white">
                       {initials}
                     </span>
                     <div className="min-w-0">
@@ -438,7 +438,7 @@ export default function Sidebar({
         className="md:hidden fixed left-3 right-3 z-30"
         style={{ bottom: 'max(12px, env(safe-area-inset-bottom))' }}
       >
-        <div className="flex items-stretch gap-1 rounded-3xl border border-white/10 bg-[#12082a]/92 px-1.5 py-1.5 shadow-[0_18px_45px_-18px_rgba(0,0,0,0.9)] backdrop-blur-2xl">
+        <div className="flex items-stretch gap-1 rounded-3xl border border-white/10 bg-[#0b1533]/92 px-1.5 py-1.5 shadow-[0_18px_45px_-18px_rgba(0,0,0,0.9)] backdrop-blur-2xl">
           {mobileItems.map(item => {
             const isActive = activeView === item.id;
             return (
@@ -452,7 +452,7 @@ export default function Sidebar({
                 <span
                   className={`flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 ${
                     isActive
-                      ? 'bg-gradient-to-br from-violet-600 to-purple-600 text-white shadow-[0_8px_20px_-8px_rgba(139,92,246,1)]'
+                      ? 'bg-gradient-to-br from-cyan-600 to-cyan-700 text-white shadow-[0_8px_20px_-8px_rgba(6,182,212,1)]'
                       : 'text-slate-400'
                   }`}
                 >
@@ -460,7 +460,7 @@ export default function Sidebar({
                 </span>
                 <span
                   className={`text-[10px] font-semibold leading-none transition-colors duration-200 ${
-                    isActive ? 'text-violet-300' : 'text-slate-500'
+                    isActive ? 'text-cyan-300' : 'text-slate-500'
                   }`}
                 >
                   {item.shortLabel}
@@ -479,7 +479,7 @@ export default function Sidebar({
             <span className="relative flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition-all duration-200">
               <MoreIcon className="h-5 w-5" />
               {pendingCount > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 min-w-[16px] h-[16px] px-1 rounded-full bg-fuchsia-500 text-white text-[9px] font-bold flex items-center justify-center">
+                <span className="absolute -right-0.5 -top-0.5 min-w-[16px] h-[16px] px-1 rounded-full bg-cyan-400 text-white text-[9px] font-bold flex items-center justify-center">
                   {pendingCount > 9 ? '9+' : pendingCount}
                 </span>
               )}

@@ -228,8 +228,8 @@ export default function SharesView({
   // ── Elementy pomocnicze ───────────────────────────────────────────────────
 
   const renderEmpty = (title: string, sub: string, icon?: React.ReactNode) => (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-violet-400/20 bg-white/[0.02] px-6 py-12 text-center">
-      <span className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/25 to-fuchsia-500/10 text-violet-200">
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-cyan-400/20 bg-white/[0.02] px-6 py-12 text-center">
+      <span className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-400/25 bg-gradient-to-br from-cyan-500/25 to-cyan-400/10 text-cyan-200">
         {icon ?? <InboxIcon className="h-7 w-7" />}
       </span>
       <p className="text-sm font-semibold text-slate-200">{title}</p>
@@ -265,10 +265,10 @@ export default function SharesView({
     return (
       <article
         key={share.id}
-        className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3.5 transition-colors hover:border-violet-400/25 sm:p-4"
+        className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3.5 transition-colors hover:border-cyan-400/25 sm:p-4"
       >
         <div className="flex items-start gap-3">
-          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-xs font-bold uppercase text-white">
+          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-cyan-700 text-xs font-bold uppercase text-white">
             {initialsOf(counterparty || '?')}
           </span>
 
@@ -287,7 +287,7 @@ export default function SharesView({
             {/* Treść udostępnionego dnia */}
             <div className="mt-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                <p className="text-[11px] font-bold uppercase tracking-wide text-violet-200">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-cyan-200">
                   {share.day_name ?? 'Dzień treningowy'}
                 </p>
                 <p className="text-[11px] text-slate-400">
@@ -301,7 +301,7 @@ export default function SharesView({
                   <ul className="mt-2 space-y-1">
                     {(isExpanded ? exercises : exercises.slice(0, 3)).map((ex, i) => (
                       <li key={`${ex.name}-${i}`} className="flex items-baseline gap-2 text-xs text-slate-300">
-                        <span className="mt-[6px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-violet-400/70" />
+                        <span className="mt-[6px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-cyan-400/70" />
                         <span className="min-w-0 flex-1 truncate">{ex.name}</span>
                         {ex.sets ? (
                           <span className="flex-shrink-0 text-[11px] text-slate-500">
@@ -314,7 +314,7 @@ export default function SharesView({
                   {(exercises.length > 3 || compact) && (
                     <button
                       onClick={() => setExpandedId(isExpanded ? null : share.id)}
-                      className="mt-1.5 flex items-center gap-1 text-[11px] font-semibold text-violet-300 transition-colors hover:text-violet-200 cursor-pointer"
+                      className="mt-1.5 flex items-center gap-1 text-[11px] font-semibold text-cyan-300 transition-colors hover:text-cyan-200 cursor-pointer"
                     >
                       {isExpanded
                         ? 'Zwiń listę'
@@ -350,7 +350,7 @@ export default function SharesView({
                   <button
                     onClick={() => setActiveShare(share)}
                     disabled={isBusy}
-                    className="min-h-[40px] flex-1 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-2 text-xs font-semibold text-white shadow-[0_12px_28px_-14px_rgba(139,92,246,1)] transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer sm:flex-none"
+                    className="min-h-[40px] flex-1 rounded-xl bg-gradient-to-r from-cyan-600 to-cyan-700 px-4 py-2 text-xs font-semibold text-white shadow-[0_12px_28px_-14px_rgba(6,182,212,1)] transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer sm:flex-none"
                   >
                     Akceptuj
                   </button>
@@ -420,7 +420,7 @@ export default function SharesView({
         {rest > 0 && (
           <button
             onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
-            className="w-full rounded-2xl border border-white/[0.08] bg-white/[0.02] px-4 py-3 text-xs font-semibold text-violet-200 transition-all hover:border-violet-400/30 hover:bg-white/[0.05] cursor-pointer"
+            className="w-full rounded-2xl border border-white/[0.08] bg-white/[0.02] px-4 py-3 text-xs font-semibold text-cyan-200 transition-all hover:border-cyan-400/30 hover:bg-white/[0.05] cursor-pointer"
           >
             Pokaż starsze ({rest})
           </button>
@@ -447,7 +447,7 @@ export default function SharesView({
                 aria-pressed={active}
                 className={`flex-shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-all cursor-pointer ${
                   active
-                    ? 'border-violet-400/40 bg-violet-500/20 text-violet-100'
+                    ? 'border-cyan-400/40 bg-cyan-500/20 text-cyan-100'
                     : 'border-white/10 bg-white/[0.03] text-slate-400 hover:bg-white/[0.06] hover:text-slate-200'
                 }`}
               >
@@ -465,7 +465,7 @@ export default function SharesView({
             onChange={(e) => { setQuery(e.target.value); setVisibleCount(PAGE_SIZE); }}
             placeholder={tab === 'outgoing' ? 'Szukaj odbiorcy lub dnia…' : 'Szukaj nadawcy lub dnia…'}
             aria-label="Szukaj w historii udostępnień"
-            className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 pl-9 pr-9 text-sm text-white placeholder:text-slate-500 transition-all focus:border-violet-400/50 focus:outline-none focus:ring-2 focus:ring-violet-500/25"
+            className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 pl-9 pr-9 text-sm text-white placeholder:text-slate-500 transition-all focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/25"
           />
           {query && (
             <button
@@ -549,7 +549,7 @@ export default function SharesView({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
-            <ShareIcon className="h-6 w-6 text-violet-300" />
+            <ShareIcon className="h-6 w-6 text-cyan-300" />
             Udostępnienia
           </h1>
           <p className="mt-1 text-sm text-slate-400">
@@ -564,7 +564,7 @@ export default function SharesView({
             onClick={onRefresh}
             disabled={loading}
             aria-label="Odśwież listę udostępnień"
-            className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-semibold text-slate-300 transition-all hover:border-violet-400/30 hover:bg-white/[0.06] hover:text-white disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+            className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-semibold text-slate-300 transition-all hover:border-cyan-400/30 hover:bg-white/[0.06] hover:text-white disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`}>
               <path d="M21 12a9 9 0 1 1-2.64-6.36" />
@@ -633,14 +633,14 @@ export default function SharesView({
               }}
               className={`flex min-w-fit flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2 text-xs font-semibold transition-all sm:text-sm cursor-pointer ${
                 isActive
-                  ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-[0_10px_26px_-14px_rgba(139,92,246,1)]'
+                  ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-[0_10px_26px_-14px_rgba(6,182,212,1)]'
                   : 'text-slate-400 hover:bg-white/[0.06] hover:text-slate-200'
               }`}
             >
               {t.label}
               {count > 0 && (
                 <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                  isActive ? 'bg-white/25 text-white' : 'bg-violet-500/20 text-violet-200'
+                  isActive ? 'bg-white/25 text-white' : 'bg-cyan-500/20 text-cyan-200'
                 }`}>
                   {count}
                 </span>

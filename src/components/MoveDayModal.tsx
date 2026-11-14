@@ -128,7 +128,7 @@ export default function MoveDayModal({ sourceDay, onMove, onClose }: MoveDayModa
         style={{ display: 'flex', flexDirection: 'column' }}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-violet-500 to-indigo-600 px-4 py-3 flex items-center justify-between flex-shrink-0">
+        <div className="bg-gradient-to-r from-cyan-500 to-cyan-700 px-4 py-3 flex items-center justify-between flex-shrink-0">
           <h2 className="text-white font-bold text-base sm:text-lg">Przenieś trening</h2>
           <button
             onClick={onClose}
@@ -183,21 +183,21 @@ export default function MoveDayModal({ sourceDay, onMove, onClose }: MoveDayModa
                 type="date"
                 value={targetDateStr}
                 onChange={(e) => setTargetDateStr(e.target.value)}
-                className="w-[240px] max-w-full px-4 py-3 rounded-xl border-2 border-slate-200 text-slate-800 text-base sm:text-sm font-medium focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
+                className="w-[240px] max-w-full px-4 py-3 rounded-xl border-2 border-slate-200 text-slate-800 text-base sm:text-sm font-medium focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               />
             </div>
 
             {/* Helper line — nazwa dnia + etykieta tygodnia */}
             {isValid && targetMonday ? (
-              <div className="mt-3 bg-violet-50 rounded-xl p-3 border border-violet-100">
+              <div className="mt-3 bg-cyan-50 rounded-xl p-3 border border-cyan-100">
                 <p className="text-slate-800 font-semibold text-sm">
                   {DAY_NAMES[targetIdx]}
                   <span className="text-slate-400 font-normal"> · </span>
                   <span className="text-slate-500 font-normal text-xs">{formatWeekLabel(targetMonday)}</span>
                 </p>
                 {isCrossWeek ? (
-                  <p className="text-[11px] text-violet-500 mt-1 flex items-center gap-1">
+                  <p className="text-[11px] text-cyan-500 mt-1 flex items-center gap-1">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 flex-shrink-0">
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
@@ -240,7 +240,7 @@ export default function MoveDayModal({ sourceDay, onMove, onClose }: MoveDayModa
           <button
             onClick={handleMove}
             disabled={!canMove}
-            className="px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-500 to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed active:opacity-80 cursor-pointer"
+            className="px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-cyan-500 to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed active:opacity-80 cursor-pointer"
             style={{ WebkitTapHighlightColor: 'transparent' }}
           >
             Przenieś

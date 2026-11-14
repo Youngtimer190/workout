@@ -8,9 +8,9 @@ interface Props {
 }
 
 const goals: { id: TrainingGoal; label: string; icon: React.ReactNode; desc: string; color: string }[] = [
-  { id: 'muscle_gain',     label: 'Budowa masy',     icon: <DumbbellIcon className="h-5 w-5" />, desc: 'Hipertrofia mięśni, 8-12 powtórzeń', color: 'from-violet-500 to-purple-600' },
+  { id: 'muscle_gain',     label: 'Budowa masy',     icon: <DumbbellIcon className="h-5 w-5" />, desc: 'Hipertrofia mięśni, 8-12 powtórzeń', color: 'from-cyan-500 to-cyan-600' },
   { id: 'fat_loss',        label: 'Redukcja',         icon: <FlameIcon className="h-5 w-5" />, desc: 'Spalanie tłuszczu, wysoka objętość', color: 'from-orange-500 to-red-600' },
-  { id: 'strength',        label: 'Siła',             icon: <DumbbellIcon className="h-5 w-5" />, desc: 'Siła maksymalna, 3-6 powtórzeń',    color: 'from-blue-500 to-indigo-600' },
+  { id: 'strength',        label: 'Siła',             icon: <DumbbellIcon className="h-5 w-5" />, desc: 'Siła maksymalna, 3-6 powtórzeń',    color: 'from-blue-500 to-sky-600' },
   { id: 'endurance',       label: 'Wytrzymałość',     icon: <ActivityIcon className="h-5 w-5" />, desc: 'Kondycja i wydolność',              color: 'from-emerald-500 to-teal-600' },
   { id: 'general_fitness', label: 'Ogólna sprawność', icon: <ZapIcon className="h-5 w-5" />, desc: 'Balans siły i kondycji',            color: 'from-amber-500 to-yellow-600' },
 ];
@@ -133,12 +133,12 @@ export default function GeneratorStep1({ prefs, onChange }: Props) {
               onClick={() => onChange({ fitnessLevel: l.id })}
               className={`p-4 rounded-2xl border-2 text-left transition-all duration-200 cursor-pointer ${
                 prefs.fitnessLevel === l.id
-                  ? 'border-violet-500 bg-violet-50 shadow-md'
+                  ? 'border-cyan-500 bg-cyan-50 shadow-md'
                   : 'border-slate-200 bg-white hover:border-slate-300'
               }`}
             >
               <span className="text-slate-400">{l.icon}</span>
-              <p className={`font-semibold text-sm mt-2 ${prefs.fitnessLevel === l.id ? 'text-violet-700' : 'text-slate-800'}`}>{l.label}</p>
+              <p className={`font-semibold text-sm mt-2 ${prefs.fitnessLevel === l.id ? 'text-cyan-700' : 'text-slate-800'}`}>{l.label}</p>
               <p className="text-xs text-slate-500 mt-1">{l.desc}</p>
             </button>
           ))}
@@ -166,12 +166,12 @@ export default function GeneratorStep1({ prefs, onChange }: Props) {
                   onClick={() => handlePreset(preset.days)}
                   className={`px-3 py-1.5 rounded-xl text-sm font-medium border-2 transition-all duration-150 cursor-pointer ${
                     isActive
-                      ? 'bg-violet-600 text-white border-violet-600 shadow-md'
-                      : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300'
+                      ? 'bg-cyan-600 text-white border-cyan-600 shadow-md'
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-cyan-300'
                   }`}
                 >
                   <span className="font-bold">{preset.label}</span>
-                  <span className={`ml-1.5 text-xs ${isActive ? 'text-violet-200' : 'text-slate-400'}`}>
+                  <span className={`ml-1.5 text-xs ${isActive ? 'text-cyan-200' : 'text-slate-400'}`}>
                     {preset.desc}
                   </span>
                 </button>
@@ -194,14 +194,14 @@ export default function GeneratorStep1({ prefs, onChange }: Props) {
                   rounded-xl sm:rounded-2xl border-2 py-3 sm:py-4
                   transition-all duration-200 cursor-pointer select-none
                   ${isSelected
-                    ? 'bg-gradient-to-b from-violet-500 to-indigo-600 border-violet-500 text-white shadow-lg shadow-violet-200 scale-[1.05]'
+                    ? 'bg-gradient-to-b from-cyan-500 to-cyan-700 border-cyan-500 text-white shadow-lg shadow-cyan-200 scale-[1.05]'
                     : isWeekend
-                      ? 'bg-slate-50 border-slate-200 text-slate-400 hover:border-violet-300 hover:bg-violet-50'
-                      : 'bg-white border-slate-200 text-slate-600 hover:border-violet-300 hover:bg-violet-50'
+                      ? 'bg-slate-50 border-slate-200 text-slate-400 hover:border-cyan-300 hover:bg-cyan-50'
+                      : 'bg-white border-slate-200 text-slate-600 hover:border-cyan-300 hover:bg-cyan-50'
                   }
                 `}
               >
-                <span className={`text-xs font-semibold ${isSelected ? 'text-violet-200' : 'text-slate-400'}`}>
+                <span className={`text-xs font-semibold ${isSelected ? 'text-cyan-200' : 'text-slate-400'}`}>
                   {isWeekend && <MoonIcon className="h-3.5 w-3.5" />}
                 </span>
                 <span className={`text-sm sm:text-base font-bold mt-0.5 ${isSelected ? 'text-white' : ''}`}>
@@ -222,7 +222,7 @@ export default function GeneratorStep1({ prefs, onChange }: Props) {
         {/* Podsumowanie wyboru */}
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-violet-500 flex-shrink-0" />
+            <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 flex-shrink-0" />
             <span className="text-sm font-medium text-slate-700">
               {prefs.trainingDays.length} {prefs.trainingDays.length === 1 ? 'dzień treningowy' : 'dni treningowe'}
             </span>
@@ -246,7 +246,7 @@ export default function GeneratorStep1({ prefs, onChange }: Props) {
             {prefs.trainingDays.map(di => (
               <span
                 key={di}
-                className="inline-flex items-center gap-1 px-2.5 py-1 bg-violet-100 text-violet-700 rounded-lg text-xs font-medium"
+                className="inline-flex items-center gap-1 px-2.5 py-1 bg-cyan-100 text-cyan-700 rounded-lg text-xs font-medium"
               >
                 <span className="inline-flex items-center gap-1.5"><DumbbellIcon className="h-3.5 w-3.5" />{DAYS[di].full}</span>
               </span>

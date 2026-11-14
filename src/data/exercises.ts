@@ -2990,7 +2990,7 @@ export const exerciseLibrary: Exercise[] = [
 
 export const muscleGroupColors: Record<string, string> = {
   'Klatka piersiowa': 'from-red-500 to-rose-600',
-  'Plecy': 'from-blue-500 to-indigo-600',
+  'Plecy': 'from-blue-500 to-sky-600',
   'Ramiona': 'from-purple-500 to-violet-600',
   'Biceps': 'from-amber-500 to-orange-600',
   'Triceps': 'from-green-500 to-emerald-600',
@@ -3015,11 +3015,34 @@ export const muscleGroupBgColors: Record<string, string> = {
 };
 
 export const dayColors = [
-  'from-violet-500 to-purple-600',
-  'from-blue-500 to-cyan-600',
+  'from-cyan-500 to-cyan-600',
+  'from-blue-500 to-sky-600',
   'from-emerald-500 to-teal-600',
   'from-amber-500 to-orange-600',
   'from-rose-500 to-pink-600',
-  'from-indigo-500 to-blue-600',
+  'from-violet-500 to-purple-600',
   'from-slate-400 to-slate-500',
 ];
+
+/**
+ * Migracja kolorów dni — stare gradienty (fioletowe) na nowe (cyan).
+ *
+ * Kolor dnia jest zapisywany w bazie razem z planem, więc tygodnie sprzed
+ * zmiany motywu wciąż mają stare nazwy klas. Bez tej mapy nagłówek takiego
+ * dnia straciłby gradient (klasa nie istnieje w CSS).
+ */
+const LEGACY_DAY_COLORS: Record<string, string> = {
+  'from-violet-500 to-purple-600': 'from-cyan-500 to-cyan-600',
+  'from-blue-500 to-cyan-600': 'from-blue-500 to-sky-600',
+};
+
+/**
+ * Kolor dnia — z migracją starych zapisów.
+ *
+ * `color` bywa nieznany (np. plan wygenerowany w innej wersji aplikacji) —
+ * wtedy bierzemy kolor pierwszego dnia.
+ */
+export function resolveDayColor(color?: string | null): string {
+  if (!color) return dayColors[0];
+  return LEGACY_DAY_COLORS[color] ?? color;
+}

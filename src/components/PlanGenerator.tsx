@@ -130,14 +130,14 @@ export default function PlanGenerator({ onApplyPlan, onGoToPlanner }: Props) {
           </svg>
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-slate-800 inline-flex items-center gap-2">Plan zastosowany! <SparklesIcon className="h-6 w-6 text-violet-500" /></h2>
+          <h2 className="text-2xl font-bold text-slate-800 inline-flex items-center gap-2">Plan zastosowany! <SparklesIcon className="h-6 w-6 text-cyan-500" /></h2>
           <p className="text-slate-500 mt-2 max-w-sm">
             Twój nowy plan treningowy został załadowany do Planera. Możesz go teraz dostosować do swoich potrzeb.
           </p>
         </div>
         <button
           onClick={onGoToPlanner}
-          className="flex items-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-violet-500 to-indigo-600 text-white font-bold shadow-lg shadow-indigo-200 hover:shadow-xl hover:scale-105 transition-all duration-200 cursor-pointer"
+          className="flex items-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-cyan-700 text-white font-bold shadow-lg shadow-cyan-200 hover:shadow-xl hover:scale-105 transition-all duration-200 cursor-pointer"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -155,7 +155,7 @@ export default function PlanGenerator({ onApplyPlan, onGoToPlanner }: Props) {
       {/* Header */}
       <div className="mb-5 sm:mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-700 flex items-center justify-center shadow-lg shadow-cyan-200">
             <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
             </svg>
@@ -180,7 +180,7 @@ export default function PlanGenerator({ onApplyPlan, onGoToPlanner }: Props) {
                   disabled={s.id > step && !(s.id === 3 && generatedPlan)}
                   className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold transition-all duration-300 flex-shrink-0 ${
                     step === s.id
-                      ? 'bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg shadow-indigo-200 scale-110'
+                      ? 'bg-gradient-to-br from-cyan-500 to-cyan-700 text-white shadow-lg shadow-cyan-200 scale-110'
                       : step > s.id
                       ? 'bg-emerald-500 text-white'
                       : 'bg-slate-100 text-slate-400'
@@ -195,7 +195,7 @@ export default function PlanGenerator({ onApplyPlan, onGoToPlanner }: Props) {
                   )}
                 </button>
                 <div className="hidden sm:block">
-                  <p className={`text-xs font-semibold ${step === s.id ? 'text-violet-600' : step > s.id ? 'text-emerald-600' : 'text-slate-400'}`}>{s.label}</p>
+                  <p className={`text-xs font-semibold ${step === s.id ? 'text-cyan-600' : step > s.id ? 'text-emerald-600' : 'text-slate-400'}`}>{s.label}</p>
                   <p className="text-xs text-slate-400">{s.desc}</p>
                 </div>
               </div>
@@ -211,8 +211,8 @@ export default function PlanGenerator({ onApplyPlan, onGoToPlanner }: Props) {
       <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
         {/* Step header bar */}
         <div className={`h-1.5 bg-gradient-to-r ${
-          step === 1 ? 'from-violet-500 to-indigo-600 w-1/3' :
-          step === 2 ? 'from-violet-500 to-indigo-600 w-2/3' :
+          step === 1 ? 'from-cyan-500 to-cyan-700 w-1/3' :
+          step === 2 ? 'from-cyan-500 to-cyan-700 w-2/3' :
           'from-emerald-500 to-teal-600 w-full'
         } transition-all duration-700`} />
 
@@ -235,8 +235,8 @@ export default function PlanGenerator({ onApplyPlan, onGoToPlanner }: Props) {
           {isGenerating ? (
             <div className="flex flex-col items-center justify-center py-24 gap-6">
               <div className="relative">
-                <div className="w-20 h-20 rounded-full border-4 border-violet-100 border-t-violet-500 animate-spin" />
-                <div className="absolute inset-0 flex items-center justify-center"><SparklesIcon className="h-8 w-8 text-violet-400 animate-pulse" /></div>
+                <div className="w-20 h-20 rounded-full border-4 border-cyan-100 border-t-cyan-500 animate-spin" />
+                <div className="absolute inset-0 flex items-center justify-center"><SparklesIcon className="h-8 w-8 text-cyan-400 animate-pulse" /></div>
               </div>
               <div className="text-center">
                 <h3 className="text-lg font-bold text-slate-800">Generuję plan...</h3>
@@ -246,7 +246,7 @@ export default function PlanGenerator({ onApplyPlan, onGoToPlanner }: Props) {
                 {['Cel', 'Poziom', 'Split', 'Ćwiczenia'].map((label, i) => (
                   <div
                     key={label}
-                    className="px-3 py-1.5 rounded-full text-xs font-medium bg-violet-50 text-violet-600 animate-pulse"
+                    className="px-3 py-1.5 rounded-full text-xs font-medium bg-cyan-50 text-cyan-600 animate-pulse"
                     style={{ animationDelay: `${i * 0.15}s` }}
                   >
                     {label}
@@ -296,7 +296,7 @@ export default function PlanGenerator({ onApplyPlan, onGoToPlanner }: Props) {
 
             <button
               onClick={handleNext}
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-violet-500 to-indigo-600 text-white font-bold text-sm shadow-md shadow-indigo-200 hover:shadow-lg hover:scale-[1.03] transition-all duration-200 cursor-pointer"
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-cyan-700 text-white font-bold text-sm shadow-md shadow-cyan-200 hover:shadow-lg hover:scale-[1.03] transition-all duration-200 cursor-pointer"
             >
               {step === 2 ? (
                 <>
@@ -320,16 +320,16 @@ export default function PlanGenerator({ onApplyPlan, onGoToPlanner }: Props) {
 
       {/* Tips */}
       {step < 3 && !isGenerating && (
-        <div className="mt-6 bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-100 rounded-2xl p-4">
+        <div className="mt-6 bg-gradient-to-br from-cyan-50 to-cyan-100 border border-cyan-100 rounded-2xl p-4">
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center flex-shrink-0">
-              <LightbulbIcon className="h-4 w-4 text-violet-600" />
+            <div className="w-8 h-8 rounded-lg bg-cyan-100 flex items-center justify-center flex-shrink-0">
+              <LightbulbIcon className="h-4 w-4 text-cyan-600" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-violet-800">
+              <p className="text-sm font-semibold text-cyan-800">
                 {step === 1 ? 'Wskazówka: Cel treningowy' : 'Wskazówka: Dobór podziału'}
               </p>
-              <p className="text-xs text-violet-600 mt-1">
+              <p className="text-xs text-cyan-600 mt-1">
                 {step === 1
                   ? 'Dla najlepszych efektów wybierz jeden główny cel. Można go zmienić po 8–12 tygodniach treningu.'
                   : 'Push/Pull/Legs to jeden z najlepszych podziałów dla 4–6 dni/tydz. Full Body świetnie sprawdza się przy 2–3 dniach.'}

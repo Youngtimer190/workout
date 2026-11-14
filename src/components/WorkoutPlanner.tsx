@@ -68,12 +68,12 @@ export function UndoRemoveBar({ removedExercises, onRestore, onExpire }: UndoRem
     >
       <div
         key={current.timestamp}
-        className="relative overflow-hidden rounded-2xl border border-violet-400/30 bg-[#1a1030]/95 backdrop-blur-xl shadow-2xl animate-fade-up"
+        className="relative overflow-hidden rounded-2xl border border-cyan-400/30 bg-[#0f1c3a]/95 backdrop-blur-xl shadow-2xl animate-fade-up"
       >
         {/* Pasek odliczający czas na cofnięcie */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-violet-400/15">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-cyan-400/15">
           <div
-            className="h-full bg-violet-400 origin-left"
+            className="h-full bg-cyan-400 origin-left"
             style={{ animation: `undo-shrink ${UNDO_WINDOW_MS}ms linear forwards` }}
           />
         </div>
@@ -98,7 +98,7 @@ export function UndoRemoveBar({ removedExercises, onRestore, onExpire }: UndoRem
 
           <button
             onClick={() => onRestore(current)}
-            className="flex-shrink-0 min-h-[40px] px-3.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold transition-colors cursor-pointer"
+            className="flex-shrink-0 min-h-[40px] px-3.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-bold transition-colors cursor-pointer"
           >
             Przywróć
           </button>
@@ -212,9 +212,9 @@ export default function WorkoutPlanner({
       if (dayElement) {
         dayElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
         // Dodaj tymczasowe podświetlenie
-        dayElement.classList.add('ring-2', 'ring-violet-500', 'ring-offset-2');
+        dayElement.classList.add('ring-2', 'ring-cyan-500', 'ring-offset-2');
         setTimeout(() => {
-          dayElement.classList.remove('ring-2', 'ring-violet-500', 'ring-offset-2');
+          dayElement.classList.remove('ring-2', 'ring-cyan-500', 'ring-offset-2');
         }, 2000);
       } else if (attempt < 10) {
         // Spróbuj ponownie za chwilę (element może jeszcze nie być zamontowany)

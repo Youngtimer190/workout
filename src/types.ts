@@ -208,9 +208,10 @@ export interface WorkoutTemplate {
 }
 
 export const TEMPLATE_COLORS = [
-  'bg-violet-500', 'bg-indigo-500', 'bg-blue-500', 'bg-sky-500',
-  'bg-emerald-500', 'bg-amber-500', 'bg-orange-500', 'bg-red-500',
-  'bg-pink-500', 'bg-fuchsia-500', 'bg-slate-500', 'bg-stone-500',
+  'bg-cyan-500', 'bg-violet-500', 'bg-indigo-500', 'bg-blue-500',
+  'bg-sky-500', 'bg-emerald-500', 'bg-amber-500', 'bg-orange-500',
+  'bg-red-500', 'bg-pink-500', 'bg-fuchsia-500', 'bg-slate-500',
+  'bg-stone-500',
 ] as const;
 
 /**
@@ -222,6 +223,7 @@ export const TEMPLATE_COLORS = [
  * są wypisane wprost — wtedy Tailwind na pewno je wygeneruje.
  */
 export const TEMPLATE_GRADIENTS: Record<string, string> = {
+  'bg-cyan-500': 'bg-gradient-to-r from-cyan-500 to-cyan-600',
   'bg-violet-500': 'bg-gradient-to-r from-violet-500 to-violet-600',
   'bg-indigo-500': 'bg-gradient-to-r from-indigo-500 to-indigo-600',
   'bg-blue-500': 'bg-gradient-to-r from-blue-500 to-blue-600',
@@ -237,7 +239,7 @@ export const TEMPLATE_GRADIENTS: Record<string, string> = {
 };
 
 /** Gradient domyślny — gdy szablon nie ma koloru. */
-export const TEMPLATE_GRADIENT_DEFAULT = 'bg-gradient-to-r from-violet-500 to-indigo-600';
+export const TEMPLATE_GRADIENT_DEFAULT = 'bg-gradient-to-r from-cyan-500 to-cyan-600';
 
 /** Gradient dla danego koloru (z bezpiecznym fallbackiem). */
 export function templateGradient(color?: string | null): string {
@@ -247,6 +249,7 @@ export function templateGradient(color?: string | null): string {
 
 /** Polskie nazwy kolorów — do opisów dostępnych dla czytników ekranu. */
 export const TEMPLATE_COLOR_LABELS: Record<string, string> = {
+  'bg-cyan-500': 'Cyjan',
   'bg-violet-500': 'Fiolet',
   'bg-indigo-500': 'Indygo',
   'bg-blue-500': 'Niebieski',

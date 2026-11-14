@@ -126,7 +126,7 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
       <div className={`group bg-white rounded-xl border transition-all ${
         isFullyDone
           ? 'border-emerald-200 shadow-sm shadow-emerald-100 bg-emerald-50/20'
-          : 'border-slate-100 hover:border-violet-200 hover:shadow-sm'
+          : 'border-slate-100 hover:border-cyan-200 hover:shadow-sm'
       }`}>
 
         {/* ── Main row ── */}
@@ -193,7 +193,7 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
                 <button
                   onClick={editing ? handleCloseEdit : handleOpenEdit}
                   className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors cursor-pointer ${
-                    editing ? 'bg-violet-100 text-violet-600' : 'hover:bg-slate-100 active:bg-slate-200 text-slate-300 hover:text-violet-600'
+                    editing ? 'bg-cyan-100 text-cyan-600' : 'hover:bg-slate-100 active:bg-slate-200 text-slate-300 hover:text-cyan-600'
                   }`}
                   title="Edytuj parametry"
                 >
@@ -250,12 +250,12 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
               ) : (
                 <>
                   {exercise.sets && (
-                    <span className="text-xs bg-violet-50 text-violet-700 px-2 py-0.5 rounded-full font-medium">
+                    <span className="text-xs bg-cyan-50 text-cyan-700 px-2 py-0.5 rounded-full font-medium">
                       {exercise.sets} serie
                     </span>
                   )}
                   {exercise.reps && (
-                    <span className="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-medium">
+                    <span className="text-xs bg-sky-50 text-sky-700 px-2 py-0.5 rounded-full font-medium">
                       {exercise.reps} powt.
                     </span>
                   )}
@@ -306,12 +306,12 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
                   // Cardio: to rozwija panel z czasem — nie oznacza wykonania.
                   ? (showSets
                     ? 'bg-slate-100 text-slate-600'
-                    : 'bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-violet-600')
+                    : 'bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-cyan-600')
                   : showSets
-                  ? 'bg-violet-600 text-white shadow-sm shadow-violet-200'
+                  ? 'bg-cyan-600 text-white shadow-sm shadow-cyan-200'
                   : hasProgress
-                  ? 'bg-violet-50 text-violet-700 hover:bg-violet-100'
-                  : 'bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-violet-600'
+                  ? 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100'
+                  : 'bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-cyan-600'
               }`}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 flex-shrink-0">
@@ -326,7 +326,7 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
                 ? 'Pokaż postęp'
                 : 'Śledź serie'}
               {!showSets && !isCardio && completedSets > 0 && (
-                <span className="ml-0.5 bg-violet-200 text-violet-800 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                <span className="ml-0.5 bg-cyan-200 text-cyan-800 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                   {completedSets}/{totalSets}
                 </span>
               )}
@@ -363,7 +363,7 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
                   max={600}
                   value={durationInput}
                   onChange={e => setDurationInput(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-300"
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-cyan-300"
                 />
                 <p className="text-[11px] text-slate-400 mt-1">
                   Faktyczny czas wpiszesz przy oznaczaniu ćwiczenia.
@@ -379,7 +379,7 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
                     value={sets}
                     min="1"
                     onChange={e => setSets(e.target.value)}
-                    className="w-full px-2 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-300 text-center"
+                    className="w-full px-2 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-cyan-300 text-center"
                   />
                 </div>
                 <div>
@@ -390,7 +390,7 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
                     value={reps}
                     onChange={e => setReps(e.target.value)}
                     placeholder="8-12"
-                    className="w-full px-2 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-300 text-center"
+                    className="w-full px-2 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-cyan-300 text-center"
                   />
                 </div>
                 <div>
@@ -404,7 +404,7 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
                     min="0"
                     step="0.5"
                     onChange={e => setWeight(e.target.value)}
-                    className="w-full px-2 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-300 text-center"
+                    className="w-full px-2 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-cyan-300 text-center"
                   />
                 </div>
               </div>
@@ -416,13 +416,13 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
                 placeholder="np. Powolne opuszczanie..."
-                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-300"
+                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-cyan-300"
               />
             </div>
             <div className="flex gap-2">
               <button
                 onClick={handleSave}
-                className="flex-1 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-semibold hover:bg-violet-700 active:bg-violet-800 transition-colors cursor-pointer"
+                className="flex-1 py-2.5 rounded-xl bg-cyan-600 text-white text-sm font-semibold hover:bg-cyan-700 active:bg-cyan-800 transition-colors cursor-pointer"
               >
                 Zapisz
               </button>

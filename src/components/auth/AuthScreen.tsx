@@ -290,7 +290,7 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
   const isRegister = view === 'register';
 
   return (
-    <div className="relative isolate min-h-[100dvh] w-full overflow-x-hidden bg-[#0a0416] text-slate-100">
+    <div className="relative isolate min-h-[100dvh] w-full overflow-x-hidden bg-[#060d1f] text-slate-100">
       {/* ── Tło: siłownia + przyciemnienie ── */}
       <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
         <img
@@ -299,9 +299,9 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
           className="h-full w-full object-cover object-center"
           decoding="async"
         />
-        <div className="absolute inset-0 bg-[#0a0416]/72" />
-        <div className="absolute inset-0 bg-[radial-gradient(65%_55%_at_50%_45%,rgba(124,58,237,0.28),transparent_72%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,4,22,0.75)_0%,rgba(10,4,22,0.2)_30%,rgba(10,4,22,0.9)_100%)]" />
+        <div className="absolute inset-0 bg-[#060d1f]/72" />
+        <div className="absolute inset-0 bg-[radial-gradient(65%_55%_at_50%_45%,rgba(8,145,178,0.28),transparent_72%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,13,31,0.75)_0%,rgba(6,13,31,0.2)_30%,rgba(6,13,31,0.9)_100%)]" />
       </div>
 
       <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[1500px] flex-col items-center gap-8 px-4 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))] sm:px-6 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)_minmax(0,1fr)] lg:items-center lg:gap-6 lg:py-10">
@@ -309,12 +309,12 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
         <div className="order-1 w-full text-center lg:order-3 lg:w-auto lg:justify-self-end lg:self-start lg:pt-12 lg:text-left">
           <h2 className="text-[28px] font-extrabold italic leading-[1.15] tracking-tight sm:text-4xl lg:text-[42px]">
             <span className="block text-white">Planuj treningi.</span>
-            <span className="block bg-gradient-to-r from-fuchsia-400 via-purple-400 to-violet-400 bg-clip-text text-transparent">
+            <span className="block bg-gradient-to-r from-cyan-300 via-cyan-400 to-cyan-500 bg-clip-text text-transparent">
               Śledź postępy.
             </span>
             <span className="block text-white">Osiągaj więcej.</span>
           </h2>
-          <div className="mx-auto mt-4 h-[3px] w-40 rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-transparent lg:mx-0" />
+          <div className="mx-auto mt-4 h-[3px] w-40 rounded-full bg-gradient-to-r from-cyan-500 via-cyan-400 to-transparent lg:mx-0" />
         </div>
 
         {/* ── Kolumna środkowa: logo + karta ── */}
@@ -325,7 +325,7 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
               src={logoUrl}
               alt=""
               aria-hidden="true"
-              className="h-11 w-auto drop-shadow-[0_0_22px_rgba(139,92,246,0.55)] sm:h-14"
+              className="h-11 w-auto drop-shadow-[0_0_22px_rgba(6,182,212,0.55)] sm:h-14"
             />
             <div className="text-left">
               <h1 className="text-2xl font-extrabold leading-none tracking-tight text-white sm:text-4xl">
@@ -338,8 +338,8 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
           </div>
 
           {/* Karta */}
-          <div className="w-full max-w-[470px] rounded-[26px] border border-violet-400/30 bg-[#170b33]/70 p-1.5 shadow-[0_30px_90px_-30px_rgba(109,40,217,0.9)] backdrop-blur-2xl lg:max-w-[520px]">
-            <div className="rounded-[20px] bg-[#0b0419]/50 px-4 pb-5 pt-4 sm:px-6 sm:pb-6">
+          <div className="w-full max-w-[470px] rounded-[26px] border border-cyan-400/30 bg-[#0d1b38]/70 p-1.5 shadow-[0_30px_90px_-30px_rgba(8,145,178,0.9)] backdrop-blur-2xl lg:max-w-[520px]">
+            <div className="rounded-[20px] bg-[#070f24]/50 px-4 pb-5 pt-4 sm:px-6 sm:pb-6">
               {/* Przełącznik Zaloguj / Zarejestruj */}
               {view !== 'reset' && (
                 <div role="tablist" aria-label="Logowanie lub rejestracja" className="grid grid-cols-2 gap-1 rounded-2xl bg-black/30 p-1">
@@ -350,7 +350,7 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
                     onClick={() => switchView('login')}
                     className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all ${
                       isLogin
-                        ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-[0_10px_24px_-10px_rgba(139,92,246,1)]'
+                        ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-[0_10px_24px_-10px_rgba(6,182,212,1)]'
                         : 'text-slate-300 hover:bg-white/5 hover:text-white'
                     }`}
                   >
@@ -364,7 +364,7 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
                     onClick={() => switchView('register')}
                     className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all ${
                       isRegister
-                        ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-[0_10px_24px_-10px_rgba(139,92,246,1)]'
+                        ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-[0_10px_24px_-10px_rgba(6,182,212,1)]'
                         : 'text-slate-300 hover:bg-white/5 hover:text-white'
                     }`}
                   >
@@ -408,7 +408,7 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
                         onChange={e => setEmail(e.target.value)}
                         placeholder="twoj@email.com"
                         autoComplete="email"
-                        className="w-full rounded-xl border border-white/10 bg-white/[0.06] py-3.5 pl-11 pr-4 text-sm text-white placeholder:text-slate-500 transition-all focus:border-violet-400/60 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+                        className="w-full rounded-xl border border-white/10 bg-white/[0.06] py-3.5 pl-11 pr-4 text-sm text-white placeholder:text-slate-500 transition-all focus:border-cyan-400/60 focus:outline-none focus:ring-2 focus:ring-cyan-500/30"
                       />
                     </div>
                   </div>
@@ -426,7 +426,7 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
                         onChange={e => setPassword(e.target.value)}
                         placeholder="••••••••"
                         autoComplete="current-password"
-                        className="w-full rounded-xl border border-white/10 bg-white/[0.06] py-3.5 pl-11 pr-12 text-sm text-white placeholder:text-slate-500 transition-all focus:border-violet-400/60 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+                        className="w-full rounded-xl border border-white/10 bg-white/[0.06] py-3.5 pl-11 pr-12 text-sm text-white placeholder:text-slate-500 transition-all focus:border-cyan-400/60 focus:outline-none focus:ring-2 focus:ring-cyan-500/30"
                       />
                       <button
                         type="button"
@@ -442,7 +442,7 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
                   <button
                     type="button"
                     onClick={() => switchView('reset')}
-                    className="text-sm font-medium text-violet-400 transition-colors hover:text-violet-300"
+                    className="text-sm font-medium text-cyan-400 transition-colors hover:text-cyan-300"
                   >
                     Nie pamiętasz hasła?
                   </button>
@@ -450,7 +450,7 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="group flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-violet-700 py-3.5 text-sm font-semibold text-white shadow-[0_14px_34px_-14px_rgba(139,92,246,1)] transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="group flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 via-cyan-500 to-cyan-700 py-3.5 text-sm font-semibold text-white shadow-[0_14px_34px_-14px_rgba(6,182,212,1)] transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {loading ? (
                       <>
@@ -483,7 +483,7 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
                         onChange={e => setFullName(e.target.value)}
                         placeholder="Jan Kowalski"
                         autoComplete="name"
-                        className="w-full rounded-xl border border-white/10 bg-white/[0.06] py-3.5 pl-11 pr-4 text-sm text-white placeholder:text-slate-500 transition-all focus:border-violet-400/60 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+                        className="w-full rounded-xl border border-white/10 bg-white/[0.06] py-3.5 pl-11 pr-4 text-sm text-white placeholder:text-slate-500 transition-all focus:border-cyan-400/60 focus:outline-none focus:ring-2 focus:ring-cyan-500/30"
                       />
                     </div>
                   </div>
@@ -501,7 +501,7 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
                         onChange={e => setEmail(e.target.value)}
                         placeholder="twoj@email.com"
                         autoComplete="email"
-                        className="w-full rounded-xl border border-white/10 bg-white/[0.06] py-3.5 pl-11 pr-4 text-sm text-white placeholder:text-slate-500 transition-all focus:border-violet-400/60 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+                        className="w-full rounded-xl border border-white/10 bg-white/[0.06] py-3.5 pl-11 pr-4 text-sm text-white placeholder:text-slate-500 transition-all focus:border-cyan-400/60 focus:outline-none focus:ring-2 focus:ring-cyan-500/30"
                       />
                     </div>
                   </div>
@@ -519,7 +519,7 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
                         onChange={e => setPassword(e.target.value)}
                         placeholder="Minimum 6 znaków"
                         autoComplete="new-password"
-                        className="w-full rounded-xl border border-white/10 bg-white/[0.06] py-3.5 pl-11 pr-12 text-sm text-white placeholder:text-slate-500 transition-all focus:border-violet-400/60 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+                        className="w-full rounded-xl border border-white/10 bg-white/[0.06] py-3.5 pl-11 pr-12 text-sm text-white placeholder:text-slate-500 transition-all focus:border-cyan-400/60 focus:outline-none focus:ring-2 focus:ring-cyan-500/30"
                       />
                       <button
                         type="button"
@@ -569,7 +569,7 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
                         className={`w-full rounded-xl border bg-white/[0.06] py-3.5 pl-11 pr-4 text-sm text-white placeholder:text-slate-500 transition-all focus:outline-none focus:ring-2 ${
                           confirmPassword && confirmPassword !== password
                             ? 'border-red-500/50 focus:border-red-500/70 focus:ring-red-500/30'
-                            : 'border-white/10 focus:border-violet-400/60 focus:ring-violet-500/30'
+                            : 'border-white/10 focus:border-cyan-400/60 focus:ring-cyan-500/30'
                         }`}
                       />
                     </div>
@@ -581,7 +581,7 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="group flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-violet-700 py-3.5 text-sm font-semibold text-white shadow-[0_14px_34px_-14px_rgba(139,92,246,1)] transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="group flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 via-cyan-500 to-cyan-700 py-3.5 text-sm font-semibold text-white shadow-[0_14px_34px_-14px_rgba(6,182,212,1)] transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {loading ? (
                       <>
@@ -602,8 +602,8 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
               {view === 'reset' && (
                 <form onSubmit={handleReset} className="mt-5 space-y-4">
                   <div className="text-center">
-                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-violet-400/30 bg-violet-500/10">
-                      <LockIcon className="h-6 w-6 text-violet-300" />
+                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-cyan-400/30 bg-cyan-500/10">
+                      <LockIcon className="h-6 w-6 text-cyan-300" />
                     </div>
                     <h3 className="font-semibold text-white">Reset hasła</h3>
                     <p className="mt-1 text-xs text-slate-400">
@@ -624,7 +624,7 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
                         onChange={e => setEmail(e.target.value)}
                         placeholder="twoj@email.com"
                         autoComplete="email"
-                        className="w-full rounded-xl border border-white/10 bg-white/[0.06] py-3.5 pl-11 pr-4 text-sm text-white placeholder:text-slate-500 transition-all focus:border-violet-400/60 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+                        className="w-full rounded-xl border border-white/10 bg-white/[0.06] py-3.5 pl-11 pr-4 text-sm text-white placeholder:text-slate-500 transition-all focus:border-cyan-400/60 focus:outline-none focus:ring-2 focus:ring-cyan-500/30"
                       />
                     </div>
                   </div>
@@ -632,7 +632,7 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-violet-700 py-3.5 text-sm font-semibold text-white shadow-[0_14px_34px_-14px_rgba(139,92,246,1)] transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 via-cyan-500 to-cyan-700 py-3.5 text-sm font-semibold text-white shadow-[0_14px_34px_-14px_rgba(6,182,212,1)] transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {loading ? (
                       <>
@@ -671,7 +671,7 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
                     type="button"
                     onClick={() => handleOAuth('google')}
                     disabled={oauthProvider !== null}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-3 py-3 text-sm font-medium text-white transition-all hover:border-violet-400/40 hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-3 py-3 text-sm font-medium text-white transition-all hover:border-cyan-400/40 hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {oauthProvider === 'google'
                       ? <SpinnerIcon className="h-4 w-4 animate-spin" />
@@ -708,7 +708,7 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
                   <button
                     type="button"
                     onClick={() => switchView('login')}
-                    className="inline-flex items-center gap-1 font-semibold text-violet-400 transition-colors hover:text-violet-300"
+                    className="inline-flex items-center gap-1 font-semibold text-cyan-400 transition-colors hover:text-cyan-300"
                   >
                     Zaloguj się
                     <ArrowRightIcon className="h-3.5 w-3.5" />
@@ -720,7 +720,7 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
                   <button
                     type="button"
                     onClick={() => switchView('register')}
-                    className="inline-flex items-center gap-1 font-semibold text-violet-400 transition-colors hover:text-violet-300"
+                    className="inline-flex items-center gap-1 font-semibold text-cyan-400 transition-colors hover:text-cyan-300"
                   >
                     Zarejestruj się
                     <ArrowRightIcon className="h-3.5 w-3.5" />
@@ -735,7 +735,7 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
             <button
               type="button"
               onClick={onDemoLogin}
-              className="mt-4 w-full max-w-[470px] rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm text-slate-300 transition-all hover:border-violet-400/30 hover:bg-white/[0.07] hover:text-white lg:max-w-[520px]"
+              className="mt-4 w-full max-w-[470px] rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm text-slate-300 transition-all hover:border-cyan-400/30 hover:bg-white/[0.07] hover:text-white lg:max-w-[520px]"
             >
               Wypróbuj bez rejestracji (Demo)
             </button>
@@ -778,7 +778,7 @@ function Feature({
 }) {
   return (
     <div className="flex items-start gap-4">
-      <span className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/30 to-fuchsia-500/10 text-violet-200 shadow-lg shadow-violet-950/60">
+      <span className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl border border-cyan-400/25 bg-gradient-to-br from-cyan-500/30 to-cyan-400/10 text-cyan-200 shadow-lg shadow-cyan-950/60">
         {icon}
       </span>
       <div className="min-w-0">

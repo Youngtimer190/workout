@@ -141,7 +141,7 @@ export default function MobileMoreSheet({
       {/* Arkusz — uchwyt przyklejony u góry, treść przewijana osobno */}
       <div
         ref={sheetRef}
-        className={`absolute bottom-0 left-0 right-0 flex max-h-[88dvh] flex-col overflow-hidden rounded-t-3xl border-t border-violet-400/20 bg-[#150a2e]/97 shadow-[0_-24px_60px_-20px_rgba(0,0,0,0.9)] backdrop-blur-2xl ${
+        className={`absolute bottom-0 left-0 right-0 flex max-h-[88dvh] flex-col overflow-hidden rounded-t-3xl border-t border-cyan-400/20 bg-[#0c1733]/97 shadow-[0_-24px_60px_-20px_rgba(0,0,0,0.9)] backdrop-blur-2xl ${
           closing ? '' : 'animate-sheet-up'
         }`}
       >
@@ -168,8 +168,8 @@ export default function MobileMoreSheet({
 
           {/* Konto */}
           {user && (
-            <div className="mx-4 mt-2 flex items-center gap-3 rounded-2xl border border-violet-400/15 bg-white/[0.04] p-4">
-              <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-sm font-bold text-white shadow-[0_8px_20px_-10px_rgba(139,92,246,1)]">
+            <div className="mx-4 mt-2 flex items-center gap-3 rounded-2xl border border-cyan-400/15 bg-white/[0.04] p-4">
+              <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 text-sm font-bold text-white shadow-[0_8px_20px_-10px_rgba(6,182,212,1)]">
                 {initials}
               </span>
               <div className="min-w-0">
@@ -183,20 +183,20 @@ export default function MobileMoreSheet({
           <p className={sectionLabel}>Planowanie</p>
           <div className="space-y-1 px-4">
             <button onClick={() => go('templates')} className={rowClass}>
-              <DumbbellIcon className="h-[18px] w-[18px] flex-shrink-0 text-violet-300" />
+              <DumbbellIcon className="h-[18px] w-[18px] flex-shrink-0 text-cyan-300" />
               <span className="flex-1">Moje treningi</span>
               <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />
             </button>
             <button onClick={() => go('stats')} className={rowClass}>
-              <ChartIcon className="h-[18px] w-[18px] flex-shrink-0 text-violet-300" />
+              <ChartIcon className="h-[18px] w-[18px] flex-shrink-0 text-cyan-300" />
               <span className="flex-1">Statystyki</span>
               <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />
             </button>
             <button onClick={() => go('shares')} className={rowClass}>
-              <CalendarIcon className="h-[18px] w-[18px] flex-shrink-0 text-violet-300" />
+              <CalendarIcon className="h-[18px] w-[18px] flex-shrink-0 text-cyan-300" />
               <span className="flex-1">Udostępnienia</span>
               {pendingCount > 0 && (
-                <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-fuchsia-500 text-white text-[10px] font-bold flex items-center justify-center">
+                <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-cyan-400 text-white text-[10px] font-bold flex items-center justify-center">
                   {pendingCount > 9 ? '9+' : pendingCount}
                 </span>
               )}
@@ -230,7 +230,7 @@ export default function MobileMoreSheet({
 
           {/* Postęp */}
           <div className="relative mt-5 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.04] p-4">
-            <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-violet-500/20 blur-2xl" />
+            <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-cyan-500/20 blur-2xl" />
             <div className="relative flex items-center gap-3">
               <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-amber-400/25 bg-amber-400/15 text-amber-300">
                 <TrophyIcon className="h-5 w-5" />
@@ -244,7 +244,7 @@ export default function MobileMoreSheet({
             <div className="relative mt-3 flex items-center gap-3">
               <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-400 transition-all duration-700"
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-cyan-300 transition-all duration-700"
                   style={{ width: `${progress}%` }}
                 />
               </div>

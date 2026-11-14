@@ -25,7 +25,7 @@ body {
   text-size-adjust: 100%;
   /* Nie blokuj pionowego scrollu — Safari potrzebuje go do schowania paska */
   /* Ciemne tło bazowe — spójne z ekranem logowania (bez białego „mignięcia”) */
-  background-color: #0a0416;
+  background-color: #060d1f;
   color-scheme: dark;
 }
 
@@ -140,7 +140,7 @@ input[type="number"] {
     border-radius: 99px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(139, 92, 246, 0.55);
+    background: rgba(6, 182, 212, 0.55);
   }
   ::-webkit-scrollbar-corner {
     background: transparent;
@@ -346,7 +346,7 @@ input[type="number"] {
   z-index: 50;
   display: flex;
   flex-direction: column;
-  background: #0a0416;
+  background: #060d1f;
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 

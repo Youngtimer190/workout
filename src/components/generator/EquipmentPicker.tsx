@@ -120,12 +120,12 @@ export default function EquipmentPicker({ selected, onChange }: Props) {
     <div className="space-y-5">
 
       {/* Header info bar */}
-      <div className="flex items-center justify-between bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-200 rounded-2xl px-4 py-3">
+      <div className="flex items-center justify-between bg-gradient-to-r from-cyan-50 to-cyan-100 border border-cyan-200 rounded-2xl px-4 py-3">
         <div className="flex items-center gap-2">
-          <BackpackIcon className="h-5 w-5 text-violet-500" />
+          <BackpackIcon className="h-5 w-5 text-cyan-500" />
           <div>
-            <p className="text-sm font-semibold text-violet-800">Wybrany sprzęt</p>
-            <p className="text-xs text-violet-600">
+            <p className="text-sm font-semibold text-cyan-800">Wybrany sprzęt</p>
+            <p className="text-xs text-cyan-600">
               {count === 0
                 ? 'Brak — trening z masą ciała'
                 : `Wybrano: ${totalAvailable}`}
@@ -135,7 +135,7 @@ export default function EquipmentPicker({ selected, onChange }: Props) {
         <div className="flex gap-2">
           <button
             onClick={selectAll}
-            className="text-xs font-medium text-violet-600 hover:text-violet-800 bg-violet-100 hover:bg-violet-200 px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
+            className="text-xs font-medium text-cyan-600 hover:text-cyan-800 bg-cyan-100 hover:bg-cyan-200 px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
           >
             Zaznacz wszystko
           </button>
@@ -160,12 +160,12 @@ export default function EquipmentPicker({ selected, onChange }: Props) {
                 onClick={() => applyPreset(preset.items)}
                 className={`p-3 rounded-xl border-2 text-left transition-all duration-200 cursor-pointer ${
                   isActive
-                    ? 'border-violet-500 bg-violet-50 shadow-md shadow-violet-100'
-                    : 'border-slate-200 bg-white hover:border-violet-300 hover:bg-violet-50/50'
+                    ? 'border-cyan-500 bg-cyan-50 shadow-md shadow-cyan-100'
+                    : 'border-slate-200 bg-white hover:border-cyan-300 hover:bg-cyan-50/50'
                 }`}
               >
                 <div className="mb-1 text-slate-500">{preset.icon}</div>
-                <p className={`text-xs font-bold leading-tight ${isActive ? 'text-violet-700' : 'text-slate-700'}`}>
+                <p className={`text-xs font-bold leading-tight ${isActive ? 'text-cyan-700' : 'text-slate-700'}`}>
                   {preset.label}
                 </p>
                 <p className="text-xs text-slate-400 mt-0.5 leading-tight">{preset.desc}</p>
@@ -231,7 +231,7 @@ export default function EquipmentPicker({ selected, onChange }: Props) {
                       {/* Checkbox */}
                       <div className={`w-5 h-5 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-all ${
                         isSelected
-                          ? 'bg-violet-500 border-violet-500'
+                          ? 'bg-cyan-500 border-cyan-500'
                           : 'border-slate-300 bg-white'
                       }`}>
                         {isSelected && (

@@ -102,7 +102,7 @@ function ExerciseDetailModal({
                   {exercise.difficulty}
                 </span>
                 {isCustom && (
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white text-violet-700 inline-flex items-center gap-1">
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white text-cyan-700 inline-flex items-center gap-1">
                     <SparklesIcon className="h-3 w-3" />
                     Własne
                   </span>
@@ -155,7 +155,7 @@ function ExerciseDetailModal({
                 <div className="flex gap-2">
                   <button
                     onClick={onEdit}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-violet-200 bg-violet-50 text-violet-700 text-sm font-semibold hover:bg-violet-100 cursor-pointer transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-cyan-200 bg-cyan-50 text-cyan-700 text-sm font-semibold hover:bg-cyan-100 cursor-pointer transition-colors"
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -266,7 +266,7 @@ export default function ExerciseLibrary({
           </div>
           <button
             onClick={() => { setEditingExercise(null); setShowCreateModal(true); }}
-            className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 text-white text-sm font-semibold shadow-md shadow-indigo-200 hover:shadow-indigo-300 hover:scale-[1.02] transition-all cursor-pointer"
+            className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-700 text-white text-sm font-semibold shadow-md shadow-cyan-200 hover:shadow-cyan-300 hover:scale-[1.02] transition-all cursor-pointer"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
               <path d="M12 5v14M5 12h14" />
@@ -302,15 +302,15 @@ export default function ExerciseLibrary({
 
         {/* Custom exercises empty state */}
         {activeTab === 'custom' && customExercises.length === 0 && (
-          <div className="bg-white rounded-2xl border border-dashed border-violet-200 p-12 text-center">
-            <div className="mb-4 flex h-16 w-16 mx-auto items-center justify-center rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/30 to-fuchsia-500/10 text-violet-200"><DumbbellIcon className="h-8 w-8" /></div>
+          <div className="bg-white rounded-2xl border border-dashed border-cyan-200 p-12 text-center">
+            <div className="mb-4 flex h-16 w-16 mx-auto items-center justify-center rounded-2xl border border-cyan-400/25 bg-gradient-to-br from-cyan-500/30 to-cyan-400/10 text-cyan-200"><DumbbellIcon className="h-8 w-8" /></div>
             <h3 className="text-lg font-bold text-slate-700 mb-2">Brak własnych ćwiczeń</h3>
             <p className="text-slate-400 text-sm mb-6 max-w-xs mx-auto">
               Stwórz własne ćwiczenie dostosowane do Twoich potrzeb i preferencji treningowych.
             </p>
             <button
               onClick={() => { setEditingExercise(null); setShowCreateModal(true); }}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 text-white text-sm font-semibold shadow-md cursor-pointer hover:scale-[1.02] transition-all"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-700 text-white text-sm font-semibold shadow-md cursor-pointer hover:scale-[1.02] transition-all"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
                 <path d="M12 5v14M5 12h14" />
@@ -333,7 +333,7 @@ export default function ExerciseLibrary({
                 placeholder="Szukaj ćwiczenia lub grupy mięśniowej..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-300 focus:border-transparent"
               />
               {search && (
                 <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer">
@@ -352,7 +352,7 @@ export default function ExerciseLibrary({
                   onClick={() => setSelectedGroup(g)}
                   className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                     selectedGroup === g
-                      ? 'bg-violet-600 text-white shadow-sm'
+                      ? 'bg-cyan-600 text-white shadow-sm'
                       : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                   }`}
                 >
@@ -390,7 +390,7 @@ export default function ExerciseLibrary({
         {/* Results */}
         {filtered.length === 0 && !(activeTab === 'custom' && customExercises.length === 0) ? (
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-10 text-center">
-            <div className="mb-3 flex h-12 w-12 mx-auto items-center justify-center rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/30 to-fuchsia-500/10 text-violet-200"><SearchIcon className="h-6 w-6" /></div>
+            <div className="mb-3 flex h-12 w-12 mx-auto items-center justify-center rounded-2xl border border-cyan-400/25 bg-gradient-to-br from-cyan-500/30 to-cyan-400/10 text-cyan-200"><SearchIcon className="h-6 w-6" /></div>
             <p className="text-slate-500 font-medium">Brak wyników</p>
             <p className="text-slate-400 text-sm mt-1">Spróbuj innych kryteriów wyszukiwania</p>
           </div>
@@ -414,7 +414,7 @@ export default function ExerciseLibrary({
                           className="text-left w-full bg-white rounded-xl border border-slate-100 p-4 hover:border-slate-200 hover:shadow-md transition-all group cursor-pointer"
                         >
                           <div className="flex items-start justify-between gap-2">
-                            <p className="text-sm font-semibold text-slate-800 group-hover:text-violet-700 transition-colors leading-tight pr-8">
+                            <p className="text-sm font-semibold text-slate-800 group-hover:text-cyan-700 transition-colors leading-tight pr-8">
                               {ex.name}
                             </p>
                           </div>
@@ -424,7 +424,7 @@ export default function ExerciseLibrary({
                               {ex.difficulty}
                             </span>
                             {custom && (
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-600 inline-flex items-center gap-1">
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-cyan-100 text-cyan-600 inline-flex items-center gap-1">
                                 <SparklesIcon className="h-3 w-3" />
                                 Własne
                               </span>

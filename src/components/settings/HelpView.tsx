@@ -43,7 +43,7 @@ export default function HelpView({ onGoToSettings }: HelpViewProps) {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
-          <CircleHelpIcon className="h-6 w-6 text-violet-300" />
+          <CircleHelpIcon className="h-6 w-6 text-cyan-300" />
           Pomoc i wsparcie
         </h1>
         <p className="text-slate-400 text-sm mt-1">Najczęstsze pytania i skróty, które ułatwiają pracę</p>
@@ -54,7 +54,7 @@ export default function HelpView({ onGoToSettings }: HelpViewProps) {
         {FAQ.map(item => (
           <details
             key={item.q}
-            className="group bg-white rounded-2xl border border-violet-400/15 px-5 py-4 transition-colors hover:border-violet-400/30"
+            className="group bg-white rounded-2xl border border-cyan-400/15 px-5 py-4 transition-colors hover:border-cyan-400/30"
           >
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-white">
               {item.q}
@@ -70,7 +70,7 @@ export default function HelpView({ onGoToSettings }: HelpViewProps) {
       </section>
 
       {/* Skróty */}
-      <section className="bg-white rounded-2xl border border-violet-400/15 p-5">
+      <section className="bg-white rounded-2xl border border-cyan-400/15 p-5">
         <h2 className="text-base font-bold text-white mb-4">Skróty i najważniejsze akcje</h2>
         <dl className="space-y-3">
           {SHORTCUTS.map(([label, hint]) => (
@@ -83,7 +83,7 @@ export default function HelpView({ onGoToSettings }: HelpViewProps) {
       </section>
 
       {/* Kontakt */}
-      <section className="bg-white rounded-2xl border border-violet-400/15 p-5">
+      <section className="bg-white rounded-2xl border border-cyan-400/15 p-5">
         <h2 className="text-base font-bold text-white mb-2">Nie znalazłeś odpowiedzi?</h2>
         <p className="text-sm text-slate-400 mb-4">
           Napisz do nas — odpowiadamy zwykle w ciągu jednego dnia roboczego.
@@ -91,14 +91,14 @@ export default function HelpView({ onGoToSettings }: HelpViewProps) {
         <div className="flex flex-wrap items-center gap-3">
           <a
             href="mailto:kontakt@fitplanner.pl"
-            className="inline-flex items-center gap-2 rounded-xl border border-violet-400/30 bg-violet-500/10 px-4 py-2.5 text-sm font-semibold text-violet-200 transition-all hover:bg-violet-500/20"
+            className="inline-flex items-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-4 py-2.5 text-sm font-semibold text-cyan-200 transition-all hover:bg-cyan-500/20"
           >
             <MailIcon className="h-4 w-4" />
             kontakt@fitplanner.pl
           </a>
           <button
             onClick={onGoToSettings}
-            className="text-sm text-slate-400 underline underline-offset-4 transition-colors hover:text-violet-300"
+            className="text-sm text-slate-400 underline underline-offset-4 transition-colors hover:text-cyan-300"
           >
             Albo sprawdź ustawienia konta
           </button>

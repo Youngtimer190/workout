@@ -43,7 +43,7 @@ export async function fetchTemplates(userId: string): Promise<WorkoutTemplate[]>
     name: row.name,
     description: row.description ?? '',
     exercises: row.exercises ?? [],
-    color: row.color ?? 'bg-violet-500',
+    color: row.color ?? 'bg-cyan-500',
     category: normalizeTemplateCategory(row.category),
     createdAt: row.created_at,
     updatedAt: row.updated_at,

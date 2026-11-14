@@ -66,8 +66,8 @@ export default function TemplateCard({
     <article
       className={`group relative flex flex-col overflow-hidden rounded-2xl border transition-colors ${
         pinned
-          ? 'border-violet-400/40 bg-white/[0.05]'
-          : 'border-white/[0.07] bg-white/[0.03] hover:border-violet-400/25'
+          ? 'border-cyan-400/40 bg-white/[0.05]'
+          : 'border-white/[0.07] bg-white/[0.03] hover:border-cyan-400/25'
       }`}
     >
       {/* ── Nagłówek ── */}
@@ -105,14 +105,14 @@ export default function TemplateCard({
           {menuOpen && (
             <div
               role="menu"
-              className="absolute right-0 top-9 z-20 w-44 overflow-hidden rounded-xl border border-white/10 bg-[#1a0d38]/97 py-1 shadow-2xl backdrop-blur-xl"
+              className="absolute right-0 top-9 z-20 w-44 overflow-hidden rounded-xl border border-white/10 bg-[#0f1f42]/97 py-1 shadow-2xl backdrop-blur-xl"
             >
               <button
                 role="menuitem"
                 onClick={() => { setMenuOpen(false); onTogglePin(); }}
                 className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-xs font-semibold text-slate-200 transition-colors hover:bg-white/[0.07] cursor-pointer"
               >
-                <PinIcon className="h-3.5 w-3.5 flex-shrink-0 text-violet-300" />
+                <PinIcon className="h-3.5 w-3.5 flex-shrink-0 text-cyan-300" />
                 {pinned ? 'Odepnij' : 'Przypnij'}
               </button>
               <button
@@ -120,7 +120,7 @@ export default function TemplateCard({
                 onClick={() => { setMenuOpen(false); onEdit(); }}
                 className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-xs font-semibold text-slate-200 transition-colors hover:bg-white/[0.07] cursor-pointer"
               >
-                <PencilIcon className="h-3.5 w-3.5 flex-shrink-0 text-violet-300" />
+                <PencilIcon className="h-3.5 w-3.5 flex-shrink-0 text-cyan-300" />
                 Edytuj
               </button>
               <button
@@ -128,7 +128,7 @@ export default function TemplateCard({
                 onClick={() => { setMenuOpen(false); onDuplicate(); }}
                 className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-xs font-semibold text-slate-200 transition-colors hover:bg-white/[0.07] cursor-pointer"
               >
-                <CopyIcon className="h-3.5 w-3.5 flex-shrink-0 text-violet-300" />
+                <CopyIcon className="h-3.5 w-3.5 flex-shrink-0 text-cyan-300" />
                 Duplikuj
               </button>
               <button
@@ -169,7 +169,7 @@ export default function TemplateCard({
           <ul className="mt-3 space-y-1.5">
             {shown.map((ex, i) => (
               <li key={`${ex.id}-${i}`} className="flex items-baseline gap-2 text-xs text-slate-300">
-                <span className="mt-[6px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-violet-400/70" />
+                <span className="mt-[6px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-cyan-400/70" />
                 <span className="min-w-0 flex-1 truncate">{ex.name}</span>
                 {ex.muscleGroup === 'Cardio' ? (
                   ex.duration ? (
@@ -189,7 +189,7 @@ export default function TemplateCard({
           <button
             onClick={onToggleExpand}
             aria-expanded={expanded}
-            className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-violet-300 transition-colors hover:text-violet-200 cursor-pointer"
+            className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-cyan-300 transition-colors hover:text-cyan-200 cursor-pointer"
           >
             {expanded ? 'Zwiń listę' : `Pokaż wszystkie (${exercises.length})`}
             <ChevronDownIcon className={`h-3 w-3 transition-transform ${expanded ? 'rotate-180' : ''}`} />
@@ -224,12 +224,12 @@ export default function TemplateCard({
 
         {/* Stopka */}
         <div className="mt-auto flex items-center justify-between gap-2 border-t border-white/[0.07] pt-3">
-          <span className="truncate text-[11px] font-semibold px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-200">
+          <span className="truncate text-[11px] font-semibold px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-200">
             {normalizeTemplateCategory(template.category)}
           </span>
           <button
             onClick={onApply}
-            className="min-h-[40px] flex-shrink-0 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-2 text-xs font-semibold text-white shadow-[0_12px_28px_-14px_rgba(139,92,246,1)] transition-all hover:brightness-110 cursor-pointer"
+            className="min-h-[40px] flex-shrink-0 rounded-xl bg-gradient-to-r from-cyan-600 to-cyan-700 px-4 py-2 text-xs font-semibold text-white shadow-[0_12px_28px_-14px_rgba(6,182,212,1)] transition-all hover:brightness-110 cursor-pointer"
           >
             Zastosuj
           </button>

@@ -117,7 +117,7 @@ function NewPasswordScreen() {
 
   return (
     <div
-      className="bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 flex items-center justify-center"
+      className="bg-gradient-to-br from-slate-900 via-cyan-950 to-slate-900 flex items-center justify-center"
       style={{ minHeight: '100dvh', padding: '1rem' }}
     >
       <div className="w-full max-w-md">
@@ -126,7 +126,7 @@ function NewPasswordScreen() {
             src={logoUrl}
             alt=""
             aria-hidden="true"
-            className="w-16 h-16 mx-auto object-contain mb-4 drop-shadow-[0_0_22px_rgba(139,92,246,0.55)]"
+            className="w-16 h-16 mx-auto object-contain mb-4 drop-shadow-[0_0_22px_rgba(6,182,212,0.55)]"
           />
           <h1 className="text-3xl font-bold text-white tracking-tight">FitPlanner</h1>
         </div>
@@ -145,8 +145,8 @@ function NewPasswordScreen() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="text-center mb-2">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-violet-500/10 border border-violet-500/20 mb-3">
-                  <svg className="w-6 h-6 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-cyan-500/10 border border-cyan-500/20 mb-3">
+                  <svg className="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                   </svg>
                 </div>
@@ -171,7 +171,7 @@ function NewPasswordScreen() {
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     placeholder="Minimum 6 znaków"
-                    className="w-full px-4 py-3 pr-12 rounded-xl bg-slate-700/50 border border-slate-600/50 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all"
+                    className="w-full px-4 py-3 pr-12 rounded-xl bg-slate-700/50 border border-slate-600/50 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all"
                     autoComplete="new-password"
                   />
                   <button
@@ -210,7 +210,7 @@ function NewPasswordScreen() {
                   className={`w-full px-4 py-3 rounded-xl bg-slate-700/50 border text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 transition-all ${
                     confirm && confirm !== password
                       ? 'border-red-500/50 focus:ring-red-500/50'
-                      : 'border-slate-600/50 focus:ring-violet-500/50'
+                      : 'border-slate-600/50 focus:ring-cyan-500/50'
                   }`}
                   autoComplete="new-password"
                 />
@@ -222,7 +222,7 @@ function NewPasswordScreen() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold text-sm hover:from-violet-500 hover:to-indigo-500 disabled:opacity-50 transition-all shadow-lg shadow-violet-500/25 flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-cyan-700 text-white font-semibold text-sm hover:from-cyan-500 hover:to-cyan-600 disabled:opacity-50 transition-all shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
@@ -645,13 +645,13 @@ export default function App() {
 
   if (isSupabaseConfigured && !initialized) {
     return (
-      <div className="bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 flex items-center justify-center" style={{ minHeight: '100dvh' }}>
+      <div className="bg-gradient-to-br from-slate-900 via-cyan-950 to-slate-900 flex items-center justify-center" style={{ minHeight: '100dvh' }}>
         <div className="text-center">
           <img
             src={logoUrl}
             alt=""
             aria-hidden="true"
-            className="w-16 h-16 mx-auto object-contain mb-6 drop-shadow-[0_0_22px_rgba(139,92,246,0.55)]"
+            className="w-16 h-16 mx-auto object-contain mb-6 drop-shadow-[0_0_22px_rgba(6,182,212,0.55)]"
           />
           <div className="flex items-center gap-2 text-slate-400 justify-center">
             <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -692,10 +692,10 @@ export default function App() {
             {shareStore.pendingCount > 0 && (
               <button
                 onClick={() => handleViewChange('shares')}
-                className="mb-3 w-full bg-violet-500/10 border border-violet-500/20 rounded-xl px-4 py-3 flex items-center gap-3 text-left hover:bg-violet-500/15 active:bg-violet-500/20 transition-colors cursor-pointer"
+                className="mb-3 w-full bg-cyan-500/10 border border-cyan-500/20 rounded-xl px-4 py-3 flex items-center gap-3 text-left hover:bg-cyan-500/15 active:bg-cyan-500/20 transition-colors cursor-pointer"
               >
-                <span className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center flex-shrink-0">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-violet-500">
+                <span className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-cyan-500">
                     <circle cx="18" cy="5" r="3" />
                     <circle cx="6" cy="12" r="3" />
                     <circle cx="18" cy="19" r="3" />
@@ -704,14 +704,14 @@ export default function App() {
                   </svg>
                 </span>
                 <span className="flex-1 min-w-0">
-                  <span className="block text-violet-700 text-xs sm:text-sm font-bold">
+                  <span className="block text-cyan-700 text-xs sm:text-sm font-bold">
                     Masz {shareStore.pendingCount} {pluralShare(shareStore.pendingCount)} do akceptacji
                   </span>
-                  <span className="block text-violet-500 text-[11px] mt-0.5">
+                  <span className="block text-cyan-500 text-[11px] mt-0.5">
                     Kliknij, aby zobaczyć szczegóły
                   </span>
                 </span>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-violet-400 flex-shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-cyan-400 flex-shrink-0">
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
               </button>
@@ -817,12 +817,12 @@ export default function App() {
   };
 
   return (
-    <div className="app-theme relative min-h-screen bg-[#0a0416] text-slate-100">
+    <div className="app-theme relative min-h-screen bg-[#060d1f] text-slate-100">
       {/* Dekoracyjna poświat — spójna z tłem ekranu logowania.
           UWAGA: bez `relative` na `.main-content` poświat (positioned, z-index auto)
           wypchnęłaby treść na spód (kolejność malowania CSS). */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-        <div className="absolute inset-0 bg-[radial-gradient(70%_50%_at_50%_-10%,rgba(124,58,237,0.22),transparent_70%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(70%_50%_at_50%_-10%,rgba(8,145,178,0.22),transparent_70%)]" />
       </div>
 
       <div ref={topRef} style={{ position: 'absolute', top: 0, left: 0, height: 0, width: 0 }} />
@@ -842,7 +842,7 @@ export default function App() {
 
       <div className="main-content relative">
         {/* Top safe area bar with theme color - prevents frosted glass blur on PWA */}
-        <div className="h-safe bg-[#0a0416] sticky top-0 z-10" aria-hidden="true" />
+        <div className="h-safe bg-[#060d1f] sticky top-0 z-10" aria-hidden="true" />
 
         {/* Toast — komunikat po akcji (np. dodaniu ćwiczeń do planu) */}
         {toast && (
@@ -891,12 +891,12 @@ export default function App() {
         <CloudStatusBanner onRetry={retryCloud} retrying={cloudRetrying} />
 
         {syncing && isSupabaseConfigured && (
-          <div className="bg-violet-500/10 border-b border-violet-500/20 px-4 py-2 flex items-center gap-2">
-            <svg className="w-3.5 h-3.5 text-violet-400 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
+          <div className="bg-cyan-500/10 border-b border-cyan-500/20 px-4 py-2 flex items-center gap-2">
+            <svg className="w-3.5 h-3.5 text-cyan-400 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-            <p className="text-violet-400 text-xs font-medium">Synchronizowanie danych...</p>
+            <p className="text-cyan-400 text-xs font-medium">Synchronizowanie danych...</p>
           </div>
         )}
 

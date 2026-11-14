@@ -109,7 +109,7 @@ export default function AddExerciseModal({
           <div className="flex items-center gap-2 flex-shrink-0 ml-2">
             <button
               onClick={() => onRequestCreate?.()}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-violet-50 hover:bg-violet-100 text-violet-700 text-xs font-semibold transition-all cursor-pointer border border-violet-200"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-50 hover:bg-cyan-100 text-cyan-700 text-xs font-semibold transition-all cursor-pointer border border-cyan-200"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 flex-shrink-0">
                 <path d="M12 5v14M5 12h14" />
@@ -145,7 +145,7 @@ export default function AddExerciseModal({
                       placeholder="Szukaj ćwiczenia..."
                       value={search}
                       onChange={e => setSearch(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-transparent"
+                      className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-300 focus:border-transparent"
                     />
                   </div>
                 </div>
@@ -156,7 +156,7 @@ export default function AddExerciseModal({
                       key={g}
                       onClick={() => setSelectedGroup(g)}
                       className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                        selectedGroup === g ? 'bg-violet-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                        selectedGroup === g ? 'bg-cyan-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                       }`}
                     >
                       {g}
@@ -172,13 +172,13 @@ export default function AddExerciseModal({
                     const isConfirming = confirmDeleteId === ex.id;
                     return (
                       <div key={ex.id} className="rounded-xl overflow-hidden border border-slate-100">
-                        <div className={`w-full text-left transition-all ${isSelected ? 'border-violet-400 bg-violet-50' : 'bg-white hover:bg-slate-50'} ${isConfirming ? 'bg-red-50' : ''}`}>
+                        <div className={`w-full text-left transition-all ${isSelected ? 'border-cyan-400 bg-cyan-50' : 'bg-white hover:bg-slate-50'} ${isConfirming ? 'bg-red-50' : ''}`}>
                           <div className="flex items-stretch">
                             <button onClick={() => handleSelect(ex)} className="flex-1 text-left p-3 cursor-pointer min-w-0">
                               <div className="flex items-start justify-between gap-2">
                                 <p className="text-sm font-semibold text-slate-800 leading-tight truncate">{ex.name}</p>
                                 <div className="flex gap-1 flex-shrink-0">
-                                  {isCustom && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-600 inline-flex items-center"><SparklesIcon className="h-3 w-3" /></span>}
+                                  {isCustom && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-cyan-100 text-cyan-600 inline-flex items-center"><SparklesIcon className="h-3 w-3" /></span>}
                                   <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${difficultyColor(ex.difficulty)}`}>
                                     {ex.difficulty === 'Początkujący' ? 'P' : ex.difficulty === 'Średniozaawansowany' ? 'Ś' : 'Z'}
                                   </span>
@@ -225,7 +225,7 @@ export default function AddExerciseModal({
             {mobileStep === 'config' && selectedExercise && (
               <div className="flex flex-col h-full">
                 <div className="md:hidden flex items-center gap-2 px-4 py-3 border-b border-slate-100 flex-shrink-0">
-                  <button onClick={() => setMobileStep('list')} className="flex items-center gap-1.5 text-violet-600 text-sm font-semibold cursor-pointer">
+                  <button onClick={() => setMobileStep('list')} className="flex items-center gap-1.5 text-cyan-600 text-sm font-semibold cursor-pointer">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
                       <path d="M15 18l-6-6 6-6" />
                     </svg>
@@ -242,34 +242,34 @@ export default function AddExerciseModal({
                     {isCardio ? (
                       <div>
                         <label className="block text-xs font-semibold text-slate-600 mb-1.5">Czas (minuty)</label>
-                        <input type="number" min="1" value={duration} onChange={e => setDuration(e.target.value)} className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-300" />
+                        <input type="number" min="1" value={duration} onChange={e => setDuration(e.target.value)} className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-cyan-300" />
                       </div>
                     ) : (
                       <>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className="block text-xs font-semibold text-slate-600 mb-1.5">Serie</label>
-                            <input type="number" min="1" value={sets} onChange={e => setSets(e.target.value)} className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-center focus:outline-none focus:ring-2 focus:ring-violet-300" />
+                            <input type="number" min="1" value={sets} onChange={e => setSets(e.target.value)} className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-center focus:outline-none focus:ring-2 focus:ring-cyan-300" />
                           </div>
                           <div>
                             <label className="block text-xs font-semibold text-slate-600 mb-1.5">Powtórzenia</label>
-                            <input type="text" value={reps} onChange={e => setReps(e.target.value)} placeholder="np. 8-12" className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-center focus:outline-none focus:ring-2 focus:ring-violet-300" />
+                            <input type="text" value={reps} onChange={e => setReps(e.target.value)} placeholder="np. 8-12" className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-center focus:outline-none focus:ring-2 focus:ring-cyan-300" />
                           </div>
                         </div>
                         <div>
                           <label className="block text-xs font-semibold text-slate-600 mb-1.5">
                             {requiresDumbbells(selectedExercise) ? 'Ciężar (kg) — 2 x (każdy hantel)' : 'Ciężar (kg) — opcjonalnie'}
                           </label>
-                          <input type="number" min="0" step="0.5" placeholder="np. 60" value={weight} onChange={e => setWeight(e.target.value)} className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-300" />
+                          <input type="number" min="0" step="0.5" placeholder="np. 60" value={weight} onChange={e => setWeight(e.target.value)} className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-cyan-300" />
                         </div>
                       </>
                     )}
                     <div>
                       <label className="block text-xs font-semibold text-slate-600 mb-1.5">Notatki — opcjonalnie</label>
-                      <textarea rows={2} placeholder="np. Powolne opuszczanie..." value={notes} onChange={e => setNotes(e.target.value)} className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-300" />
+                      <textarea rows={2} placeholder="np. Powolne opuszczanie..." value={notes} onChange={e => setNotes(e.target.value)} className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-cyan-300" />
                     </div>
                   </div>
-                  <button onClick={handleAdd} className="mt-4 w-full py-3.5 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 text-white font-semibold text-sm shadow-md cursor-pointer">
+                  <button onClick={handleAdd} className="mt-4 w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-700 text-white font-semibold text-sm shadow-md cursor-pointer">
                     ＋ Dodaj do planu
                   </button>
                 </div>
@@ -291,13 +291,13 @@ export default function AddExerciseModal({
                     placeholder="Szukaj ćwiczenia..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-transparent"
+                    className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-300 focus:border-transparent"
                   />
                 </div>
               </div>
               <div className="px-4 pb-2 flex-shrink-0 flex flex-wrap gap-1.5">
                 {groups.map(g => (
-                  <button key={g} onClick={() => setSelectedGroup(g)} className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${selectedGroup === g ? 'bg-violet-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+                  <button key={g} onClick={() => setSelectedGroup(g)} className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${selectedGroup === g ? 'bg-cyan-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
                     {g}
                   </button>
                 ))}
@@ -311,13 +311,13 @@ export default function AddExerciseModal({
                   const isConfirming = confirmDeleteId === ex.id;
                   return (
                     <div key={ex.id} className="rounded-xl overflow-hidden border border-slate-100">
-                      <div className={`w-full text-left transition-all ${isSelected ? 'border-violet-400 bg-violet-50' : 'bg-white hover:bg-slate-50'} ${isConfirming ? 'bg-red-50' : ''}`}>
+                      <div className={`w-full text-left transition-all ${isSelected ? 'border-cyan-400 bg-cyan-50' : 'bg-white hover:bg-slate-50'} ${isConfirming ? 'bg-red-50' : ''}`}>
                         <div className="flex items-stretch">
                           <button onClick={() => handleSelect(ex)} className="flex-1 text-left p-3 cursor-pointer min-w-0">
                             <div className="flex items-start justify-between gap-2">
                               <p className="text-sm font-semibold text-slate-800 leading-tight truncate">{ex.name}</p>
                               <div className="flex gap-1 flex-shrink-0">
-                                {isCustom && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-600 inline-flex items-center"><SparklesIcon className="h-3 w-3" /></span>}
+                                {isCustom && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-cyan-100 text-cyan-600 inline-flex items-center"><SparklesIcon className="h-3 w-3" /></span>}
                                 <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${difficultyColor(ex.difficulty)}`}>
                                   {ex.difficulty === 'Początkujący' ? 'P' : ex.difficulty === 'Średniozaawansowany' ? 'Ś' : 'Z'}
                                 </span>
@@ -372,41 +372,41 @@ export default function AddExerciseModal({
                       {isCardio ? (
                         <div>
                           <label className="block text-xs font-semibold text-slate-600 mb-1.5">Czas (minuty)</label>
-                          <input type="number" min="1" value={duration} onChange={e => setDuration(e.target.value)} className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-300" />
+                          <input type="number" min="1" value={duration} onChange={e => setDuration(e.target.value)} className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-cyan-300" />
                         </div>
                       ) : (
                         <>
                           <div className="grid grid-cols-2 gap-3">
                             <div>
                               <label className="block text-xs font-semibold text-slate-600 mb-1.5">Serie</label>
-                              <input type="number" min="1" value={sets} onChange={e => setSets(e.target.value)} className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-center focus:outline-none focus:ring-2 focus:ring-violet-300" />
+                              <input type="number" min="1" value={sets} onChange={e => setSets(e.target.value)} className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-center focus:outline-none focus:ring-2 focus:ring-cyan-300" />
                             </div>
                             <div>
                               <label className="block text-xs font-semibold text-slate-600 mb-1.5">Powtórzenia</label>
-                              <input type="text" value={reps} onChange={e => setReps(e.target.value)} placeholder="np. 8-12" className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-center focus:outline-none focus:ring-2 focus:ring-violet-300" />
+                              <input type="text" value={reps} onChange={e => setReps(e.target.value)} placeholder="np. 8-12" className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-center focus:outline-none focus:ring-2 focus:ring-cyan-300" />
                             </div>
                           </div>
                           <div>
                             <label className="block text-xs font-semibold text-slate-600 mb-1.5">
                             {requiresDumbbells(selectedExercise) ? 'Ciężar (kg) — 2 x (każdy hantel)' : 'Ciężar (kg) — opcjonalnie'}
                           </label>
-                            <input type="number" min="0" step="0.5" placeholder="np. 60" value={weight} onChange={e => setWeight(e.target.value)} className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-300" />
+                            <input type="number" min="0" step="0.5" placeholder="np. 60" value={weight} onChange={e => setWeight(e.target.value)} className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-cyan-300" />
                           </div>
                         </>
                       )}
                       <div>
                         <label className="block text-xs font-semibold text-slate-600 mb-1.5">Notatki — opcjonalnie</label>
-                        <textarea rows={2} placeholder="np. Powolne opuszczanie..." value={notes} onChange={e => setNotes(e.target.value)} className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-300" />
+                        <textarea rows={2} placeholder="np. Powolne opuszczanie..." value={notes} onChange={e => setNotes(e.target.value)} className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-cyan-300" />
                       </div>
                     </div>
-                    <button onClick={handleAdd} className="mt-4 w-full py-3.5 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 text-white font-semibold text-sm shadow-md cursor-pointer">
+                    <button onClick={handleAdd} className="mt-4 w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-700 text-white font-semibold text-sm shadow-md cursor-pointer">
                       ＋ Dodaj do planu
                     </button>
                   </div>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-center p-8">
-                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/30 to-fuchsia-500/10 text-violet-200"><ArrowLeftIcon className="h-6 w-6" /></div>
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/25 bg-gradient-to-br from-cyan-500/30 to-cyan-400/10 text-cyan-200"><ArrowLeftIcon className="h-6 w-6" /></div>
                   <p className="text-slate-400 text-sm">Wybierz ćwiczenie z listy, aby skonfigurować szczegóły</p>
                 </div>
               )}

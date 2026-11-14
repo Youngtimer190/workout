@@ -12,22 +12,22 @@
    ════════════════════════════════════════════════════════════════════════════ */
 
 .app-theme {
-  --app-bg: #0a0416;
+  --app-bg: #060d1f;
   /* Powierzchnie */
-  --app-surface: rgba(23, 11, 51, 0.72);
+  --app-surface: rgba(9, 24, 48, 0.72);
   --app-surface-2: rgba(255, 255, 255, 0.045);
   --app-surface-3: rgba(255, 255, 255, 0.08);
   --app-surface-4: rgba(255, 255, 255, 0.13);
   /* Obramowania */
-  --app-border: rgba(167, 139, 250, 0.16);
-  --app-border-strong: rgba(167, 139, 250, 0.34);
+  --app-border: rgba(34, 211, 238, 0.16);
+  --app-border-strong: rgba(34, 211, 238, 0.34);
   /* Tekst */
   --app-text: #eef2ff;
   --app-text-soft: #cbd5e1;
   --app-text-muted: #94a3b8;
   --app-text-dim: #7f8ba3;
   /* Poświaty */
-  --app-glow: 0 24px 60px -28px rgba(109, 40, 217, 0.85);
+  --app-glow: 0 24px 60px -28px rgba(8, 145, 178, 0.85);
 }
 
 /* ── Neutralne powierzchnie ─────────────────────────────────────────────── */
@@ -74,19 +74,19 @@
 .app-theme .bg-emerald-200 { background-color: rgb(16 185 129 / 0.22); }
 .app-theme :is(.bg-sky-50, .bg-sky-100) { background-color: rgb(14 165 233 / 0.13); }
 .app-theme .bg-sky-200 { background-color: rgb(14 165 233 / 0.22); }
-.app-theme :is(.bg-indigo-50, .bg-indigo-100) { background-color: rgb(99 102 241 / 0.13); }
+.app-theme :is(.bg-indigo-50, .bg-indigo-100) { background-color: rgb(6 182 212 / 0.13); }
 .app-theme :is(.bg-blue-50, .bg-blue-100) { background-color: rgb(59 130 246 / 0.13); }
 .app-theme :is(.bg-green-50, .bg-green-100) { background-color: rgb(34 197 94 / 0.13); }
 .app-theme :is(.bg-orange-50, .bg-orange-100) { background-color: rgb(249 115 22 / 0.13); }
 .app-theme :is(.bg-pink-50, .bg-pink-100) { background-color: rgb(236 72 153 / 0.13); }
 .app-theme :is(.bg-teal-50, .bg-teal-100) { background-color: rgb(20 184 166 / 0.13); }
 .app-theme :is(.bg-yellow-50, .bg-yellow-100) { background-color: rgb(234 179 8 / 0.13); }
-.app-theme :is(.bg-violet-50, .bg-violet-100) { background-color: rgb(139 92 246 / 0.14); }
-.app-theme .bg-violet-200 { background-color: rgb(139 92 246 / 0.24); }
+.app-theme :is(.bg-cyan-50, .bg-cyan-100) { background-color: rgb(6 182 212 / 0.14); }
+.app-theme .bg-cyan-200 { background-color: rgb(6 182 212 / 0.24); }
 
 /* Warianty z przezroczystością */
-.app-theme .bg-violet-50\/50 { background-color: rgb(139 92 246 / 0.1); }
-.app-theme .bg-violet-100\/50 { background-color: rgb(139 92 246 / 0.16); }
+.app-theme .bg-cyan-50\/50 { background-color: rgb(6 182 212 / 0.1); }
+.app-theme .bg-cyan-100\/50 { background-color: rgb(6 182 212 / 0.16); }
 .app-theme .bg-emerald-50\/70 { background-color: rgb(16 185 129 / 0.11); }
 .app-theme .bg-emerald-50\/20 { background-color: rgb(16 185 129 / 0.1); }
 .app-theme .bg-slate-50\/50 { background-color: var(--app-surface-2); }
@@ -105,7 +105,7 @@
 .app-theme .text-emerald-800 { color: rgb(167 243 208); }
 .app-theme :is(.text-sky-600, .text-sky-700) { color: rgb(125 211 252); }
 .app-theme .text-sky-800 { color: rgb(186 230 253); }
-.app-theme :is(.text-indigo-600, .text-indigo-700) { color: rgb(165 180 252); }
+.app-theme .text-indigo-700 { color: rgb(103 232 249); }
 .app-theme :is(.text-blue-600, .text-blue-700) { color: rgb(147 197 253); }
 .app-theme :is(.text-green-600, .text-green-700) { color: rgb(134 239 172); }
 .app-theme :is(.text-orange-600, .text-orange-700) { color: rgb(253 186 116); }
@@ -113,9 +113,9 @@
 .app-theme .text-pink-700 { color: rgb(249 168 212); }
 .app-theme .text-teal-700 { color: rgb(94 234 212); }
 .app-theme .text-yellow-700 { color: rgb(253 224 71); }
-.app-theme .text-violet-500 { color: rgb(167 139 250); }
-.app-theme :is(.text-violet-600, .text-violet-700) { color: rgb(196 181 253); }
-.app-theme .text-violet-800 { color: rgb(221 214 254); }
+.app-theme .text-cyan-500 { color: rgb(34 211 238); }
+.app-theme :is(.text-cyan-600, .text-cyan-700) { color: rgb(103 232 249); }
+.app-theme .text-cyan-800 { color: rgb(165 243 252); }
 
 /* ── Obramowania akcentów ────────────────────────────────────────────────── */
 .app-theme :is(.border-red-100, .border-red-200) { border-color: rgb(248 113 113 / 0.32); }
@@ -134,9 +134,9 @@
 .app-theme .border-pink-300 { border-color: rgb(244 114 182 / 0.4); }
 .app-theme .border-teal-300 { border-color: rgb(45 212 191 / 0.4); }
 .app-theme .border-yellow-300 { border-color: rgb(250 204 21 / 0.4); }
-.app-theme .border-indigo-100 { border-color: rgb(129 140 248 / 0.32); }
-.app-theme :is(.border-violet-100, .border-violet-200) { border-color: rgb(167 139 250 / 0.3); }
-.app-theme .border-violet-300 { border-color: rgb(167 139 250 / 0.45); }
+.app-theme .border-indigo-100 { border-color: rgb(34 211 238 / 0.32); }
+.app-theme :is(.border-cyan-100, .border-cyan-200) { border-color: rgb(34 211 238 / 0.3); }
+.app-theme .border-cyan-300 { border-color: rgb(34 211 238 / 0.45); }
 
 /* ── Stany hover / active ────────────────────────────────────────────────── */
 .app-theme .hover\:bg-slate-50:hover,
@@ -164,39 +164,39 @@
 .app-theme .hover\:bg-sky-100:hover { background-color: rgb(14 165 233 / 0.22); }
 .app-theme .hover\:bg-sky-50:hover { background-color: rgb(14 165 233 / 0.18); }
 .app-theme .active\:bg-sky-100 { background-color: rgb(14 165 233 / 0.26); }
-.app-theme .hover\:bg-violet-50:hover { background-color: rgb(139 92 246 / 0.16); }
-.app-theme .hover\:bg-violet-100:hover { background-color: rgb(139 92 246 / 0.22); }
-.app-theme .active\:bg-violet-50,
-.app-theme .active\:bg-violet-100 { background-color: rgb(139 92 246 / 0.24); }
-.app-theme .active\:bg-violet-100\/50 { background-color: rgb(139 92 246 / 0.2); }
-.app-theme .active\:bg-violet-200 { background-color: rgb(139 92 246 / 0.28); }
-.app-theme .active\:bg-violet-800 { background-color: rgb(76 29 149); }
+.app-theme .hover\:bg-cyan-50:hover { background-color: rgb(6 182 212 / 0.16); }
+.app-theme .hover\:bg-cyan-100:hover { background-color: rgb(6 182 212 / 0.22); }
+.app-theme .active\:bg-cyan-50,
+.app-theme .active\:bg-cyan-100 { background-color: rgb(6 182 212 / 0.24); }
+.app-theme .active\:bg-cyan-100\/50 { background-color: rgb(6 182 212 / 0.2); }
+.app-theme .active\:bg-cyan-200 { background-color: rgb(6 182 212 / 0.28); }
+.app-theme .active\:bg-cyan-800 { background-color: rgb(14 116 144); }
 
-.app-theme .hover\:text-violet-700:hover,
-.app-theme .hover\:text-violet-800:hover,
-.app-theme .hover\:text-violet-50:hover { color: rgb(221 214 254); }
+.app-theme .hover\:text-cyan-700:hover,
+.app-theme .hover\:text-cyan-800:hover,
+.app-theme .hover\:text-cyan-50:hover { color: rgb(165 243 252); }
 .app-theme .hover\:text-amber-50:hover { color: rgb(252 211 77); }
 .app-theme .hover\:text-red-50:hover { color: rgb(252 165 165); }
 .app-theme .hover\:text-red-800:hover { color: rgb(254 202 202); }
-.app-theme .hover\:text-indigo-700:hover { color: rgb(199 210 254); }
-.app-theme .hover\:border-violet-300:hover { border-color: rgb(167 139 250 / 0.45); }
-.app-theme .hover\:border-violet-200:hover { border-color: rgb(167 139 250 / 0.35); }
+.app-theme .hover\:text-indigo-700:hover { color: rgb(165 243 252); }
+.app-theme .hover\:border-cyan-300:hover { border-color: rgb(34 211 238 / 0.45); }
+.app-theme .hover\:border-cyan-200:hover { border-color: rgb(34 211 238 / 0.35); }
 .app-theme .hover\:border-red-200:hover { border-color: rgb(248 113 113 / 0.4); }
 .app-theme .hover\:border-amber-300:hover { border-color: rgb(251 191 36 / 0.4); }
-.app-theme .group:hover .group-hover\:text-violet-700 { color: rgb(221 214 254); }
+.app-theme .group:hover .group-hover\:text-cyan-700 { color: rgb(165 243 252); }
 
 /* ── Pierścienie fokusu ──────────────────────────────────────────────────── */
-.app-theme .focus\:ring-violet-300 { --tw-ring-color: rgb(167 139 250 / 0.55); }
-.app-theme .focus\:ring-violet-50 { --tw-ring-color: rgb(167 139 250 / 0.45); }
+.app-theme .focus\:ring-cyan-300 { --tw-ring-color: rgb(34 211 238 / 0.55); }
+.app-theme .focus\:ring-cyan-50 { --tw-ring-color: rgb(34 211 238 / 0.45); }
 .app-theme .focus\:ring-red-50 { --tw-ring-color: rgb(248 113 113 / 0.45); }
 .app-theme .focus\:ring-green-50 { --tw-ring-color: rgb(74 222 128 / 0.45); }
-.app-theme .focus\:border-violet-50,
-.app-theme .focus\:border-violet-300 { border-color: rgb(167 139 250 / 0.55); }
+.app-theme .focus\:border-cyan-50,
+.app-theme .focus\:border-cyan-300 { border-color: rgb(34 211 238 / 0.55); }
 .app-theme .focus\:border-red-50 { border-color: rgb(248 113 113 / 0.55); }
 
 /* ── Kolorowe cienie → poświaty ──────────────────────────────────────────── */
-.app-theme :is(.shadow-indigo-200, .shadow-indigo-300, .shadow-violet-100, .shadow-violet-200) {
-  --tw-shadow-color: rgb(139 92 246 / 0.45);
+.app-theme :is(.shadow-cyan-100, .shadow-cyan-200, .shadow-cyan-300) {
+  --tw-shadow-color: rgb(6 182 212 / 0.45);
 }
 .app-theme :is(.shadow-emerald-100, .shadow-emerald-200) {
   --tw-shadow-color: rgb(16 185 129 / 0.4);
@@ -207,7 +207,7 @@
 
 /* ── Modale ─────────────────────────────────────────────────────────────────
    Panele okien modalnych używają klasy `bg-white`, która w motywie ciemnym
-   mapuje się na `--app-surface` (rgba(23, 11, 51, 0.72)). Przy tak niskiej
+   mapuje się na `--app-surface` (rgba(9, 24, 48, 0.72)). Przy tak niskiej
    nieprzezroczystości treść listy pod spodem prześwitywała przez panel —
    powstawał „duplikat” tekstu (np. opis dnia widoczny wewnątrz listy
    ćwiczeń). Modale dostają więc własne, znacznie mniej przezroczyste tło:
@@ -215,14 +215,14 @@
    (modal-sheet), więc wygląd jest spójny w całej aplikacji. */
 .app-theme .modal-sheet,
 .app-theme .modal-panel {
-  background-color: rgba(16, 6, 36, 0.965);
+  background-color: rgba(6, 16, 34, 0.965);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
 
 /* Przyciemnienie tła pod modalem — jeden wspólny styl dla wszystkich okien. */
 .app-theme .modal-overlay {
-  background-color: rgba(5, 2, 12, 0.74);
+  background-color: rgba(3, 8, 20, 0.74);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }

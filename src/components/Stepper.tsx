@@ -343,7 +343,7 @@ export default function Stepper({
     }
     return tone === 'amber'
       ? 'border-amber-200 bg-amber-50 text-amber-800'
-      : 'border-violet-200 bg-violet-50 text-violet-800';
+      : 'border-cyan-200 bg-cyan-50 text-cyan-800';
   })();
 
   // Rozmiary celów dotykowych:
@@ -401,7 +401,7 @@ export default function Stepper({
       }}
       className={`${btnSize} flex-shrink-0 rounded-xl border flex items-center justify-center transition-all active:scale-90 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
         direction === 1
-          ? 'border-violet-400/50 bg-violet-600 text-white shadow-sm shadow-violet-500/30 hover:bg-violet-500'
+          ? 'border-cyan-400/50 bg-cyan-600 text-white shadow-sm shadow-cyan-500/30 hover:bg-cyan-500'
           : 'border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200'
       }`}
       disabled={value === null && direction === -1}
@@ -455,7 +455,7 @@ export default function Stepper({
       className={`text-center rounded-lg border-2 bg-white focus:outline-none text-slate-800 ${
         mode === 'expanded' ? 'font-bold' : 'font-bold'
       } ${valueSizeClass} ${
-        tone === 'amber' ? 'border-amber-400' : 'border-violet-400'
+        tone === 'amber' ? 'border-amber-400' : 'border-cyan-400'
       }`}
     />
   ) : (

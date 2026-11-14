@@ -106,7 +106,7 @@ export default function SettingsView({ onGoToHelp }: SettingsViewProps) {
   };
 
   const inputClass =
-    'w-full rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm text-white placeholder:text-slate-500 transition-all focus:border-violet-400/60 focus:outline-none focus:ring-2 focus:ring-violet-500/30';
+    'w-full rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm text-white placeholder:text-slate-500 transition-all focus:border-cyan-400/60 focus:outline-none focus:ring-2 focus:ring-cyan-500/30';
 
   return (
     <div className="space-y-6">
@@ -116,9 +116,9 @@ export default function SettingsView({ onGoToHelp }: SettingsViewProps) {
       </div>
 
       {/* Profil */}
-      <section className="bg-white rounded-2xl border border-violet-400/15 p-5">
+      <section className="bg-white rounded-2xl border border-cyan-400/15 p-5">
         <h2 className="text-base font-bold text-white flex items-center gap-2 mb-4">
-          <UserIcon className="h-4 w-4 text-violet-300" />
+          <UserIcon className="h-4 w-4 text-cyan-300" />
           Profil
         </h2>
 
@@ -164,7 +164,7 @@ export default function SettingsView({ onGoToHelp }: SettingsViewProps) {
           <button
             type="submit"
             disabled={savingName || !isSupabaseConfigured}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_12px_30px_-14px_rgba(139,92,246,1)] hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-cyan-700 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_12px_30px_-14px_rgba(6,182,212,1)] hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {savingName ? 'Zapisywanie…' : 'Zapisz profil'}
           </button>
@@ -172,9 +172,9 @@ export default function SettingsView({ onGoToHelp }: SettingsViewProps) {
       </section>
 
       {/* Hasło */}
-      <section className="bg-white rounded-2xl border border-violet-400/15 p-5">
+      <section className="bg-white rounded-2xl border border-cyan-400/15 p-5">
         <h2 className="text-base font-bold text-white flex items-center gap-2 mb-4">
-          <LockIcon className="h-4 w-4 text-violet-300" />
+          <LockIcon className="h-4 w-4 text-cyan-300" />
           Hasło
         </h2>
 
@@ -220,7 +220,7 @@ export default function SettingsView({ onGoToHelp }: SettingsViewProps) {
           <button
             type="submit"
             disabled={savingPassword || !isSupabaseConfigured || !hasPasswordIdentity}
-            className="inline-flex items-center gap-2 rounded-xl border border-violet-400/30 bg-violet-500/10 px-4 py-2.5 text-sm font-semibold text-violet-200 transition-all hover:bg-violet-500/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="inline-flex items-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-4 py-2.5 text-sm font-semibold text-cyan-200 transition-all hover:bg-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {savingPassword ? 'Zmienianie…' : 'Zmień hasło'}
           </button>
@@ -256,7 +256,7 @@ export default function SettingsView({ onGoToHelp }: SettingsViewProps) {
 
       <button
         onClick={onGoToHelp}
-        className="text-sm text-slate-400 hover:text-violet-300 transition-colors underline underline-offset-4"
+        className="text-sm text-slate-400 hover:text-cyan-300 transition-colors underline underline-offset-4"
       >
         Potrzebujesz pomocy? Przejdź do „Pomoc i wsparcie”
       </button>

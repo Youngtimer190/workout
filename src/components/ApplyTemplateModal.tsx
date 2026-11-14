@@ -178,7 +178,7 @@ export default function ApplyTemplateModal({
                 <button
                   key={t.id}
                   onClick={() => { setSelectedTemplate(t); setStep('apply'); }}
-                  className="flex w-full cursor-pointer items-start gap-3 rounded-xl border-2 border-white/[0.07] p-3 text-left transition-all hover:border-violet-400/40 hover:bg-white/[0.05]"
+                  className="flex w-full cursor-pointer items-start gap-3 rounded-xl border-2 border-white/[0.07] p-3 text-left transition-all hover:border-cyan-400/40 hover:bg-white/[0.05]"
                 >
                   <span className={`h-10 w-10 flex-shrink-0 rounded-xl ${templateGradient(t.color)}`} aria-hidden="true" />
                   <span className="min-w-0 flex-1">
@@ -268,11 +268,11 @@ export default function ApplyTemplateModal({
                     aria-pressed={selected}
                     className={`rounded-xl border px-3 py-2.5 text-left transition-all cursor-pointer ${
                       selected
-                        ? 'border-violet-400/60 bg-violet-500/15'
-                        : 'border-white/[0.07] bg-white/[0.03] hover:border-violet-400/30 hover:bg-white/[0.06]'
+                        ? 'border-cyan-400/60 bg-cyan-500/15'
+                        : 'border-white/[0.07] bg-white/[0.03] hover:border-cyan-400/30 hover:bg-white/[0.06]'
                     }`}
                   >
-                    <span className={`block text-sm font-semibold ${selected ? 'text-violet-100' : 'text-slate-200'}`}>
+                    <span className={`block text-sm font-semibold ${selected ? 'text-cyan-100' : 'text-slate-200'}`}>
                       {day.name}
                     </span>
                     <span className="mt-0.5 block text-[11px] text-slate-400">
@@ -298,11 +298,11 @@ export default function ApplyTemplateModal({
                 aria-pressed={mode === 'append'}
                 className={`rounded-xl border px-3 py-2.5 text-left transition-all cursor-pointer ${
                   mode === 'append'
-                    ? 'border-violet-400/60 bg-violet-500/15'
+                    ? 'border-cyan-400/60 bg-cyan-500/15'
                     : 'border-white/[0.07] bg-white/[0.03] hover:bg-white/[0.06]'
                 }`}
               >
-                <span className={`block text-sm font-semibold ${mode === 'append' ? 'text-violet-100' : 'text-slate-200'}`}>
+                <span className={`block text-sm font-semibold ${mode === 'append' ? 'text-cyan-100' : 'text-slate-200'}`}>
                   Dopisz
                 </span>
                 <span className="mt-0.5 block text-[11px] text-slate-400">

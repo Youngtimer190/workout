@@ -10,9 +10,9 @@ interface Props {
 }
 
 const goalLabels: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  muscle_gain: { label: 'Budowa masy', color: 'from-violet-500 to-purple-600', icon: <DumbbellIcon className="h-4 w-4" /> },
+  muscle_gain: { label: 'Budowa masy', color: 'from-cyan-500 to-cyan-600', icon: <DumbbellIcon className="h-4 w-4" /> },
   fat_loss: { label: 'Redukcja', color: 'from-orange-500 to-red-600', icon: <FlameIcon className="h-4 w-4" /> },
-  strength: { label: 'Siła', color: 'from-blue-500 to-indigo-600', icon: <DumbbellIcon className="h-4 w-4" /> },
+  strength: { label: 'Siła', color: 'from-blue-500 to-sky-600', icon: <DumbbellIcon className="h-4 w-4" /> },
   endurance: { label: 'Wytrzymałość', color: 'from-emerald-500 to-teal-600', icon: <ActivityIcon className="h-4 w-4" /> },
   general_fitness: { label: 'Ogólna sprawność', color: 'from-amber-500 to-yellow-600', icon: <ZapIcon className="h-4 w-4" /> },
 };
@@ -133,14 +133,14 @@ function ExerciseRow({ ex, idx }: { ex: GeneratedPlan['days'][0]['exercises'][0]
         {trainerNote && (
           <div className="mt-1.5">
             {showFullNote ? (
-              <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-2 text-xs text-indigo-700 leading-relaxed">
+              <div className="bg-sky-50 border border-sky-100 rounded-lg p-2 text-xs text-sky-700 leading-relaxed">
                 <span className="font-semibold inline-flex items-center gap-1"><LightbulbIcon className="h-3.5 w-3.5" />Wskazówka trenera: </span>{trainerNote}
-                <button onClick={() => setShowFullNote(false)} className="ml-2 text-indigo-400 hover:text-indigo-600 underline cursor-pointer">zwiń</button>
+                <button onClick={() => setShowFullNote(false)} className="ml-2 text-sky-400 hover:text-sky-600 underline cursor-pointer">zwiń</button>
               </div>
             ) : (
               <button
                 onClick={() => setShowFullNote(true)}
-                className="text-xs text-indigo-500 hover:text-indigo-700 flex items-center gap-1 cursor-pointer"
+                className="text-xs text-sky-500 hover:text-sky-700 flex items-center gap-1 cursor-pointer"
               >
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -158,8 +158,8 @@ function ExerciseRow({ ex, idx }: { ex: GeneratedPlan['days'][0]['exercises'][0]
           <span className="bg-sky-50 text-sky-600 px-2 py-1 rounded-lg font-semibold text-xs">{ex.duration} min</span>
         ) : (
           <>
-            <span className="bg-violet-50 text-violet-700 px-2 py-1 rounded-lg font-bold text-xs">{ex.sets} serie</span>
-            <span className="bg-indigo-50 text-indigo-600 px-2 py-1 rounded-lg font-medium text-xs">{ex.reps} powt.</span>
+            <span className="bg-cyan-50 text-cyan-700 px-2 py-1 rounded-lg font-bold text-xs">{ex.sets} serie</span>
+            <span className="bg-sky-50 text-sky-600 px-2 py-1 rounded-lg font-medium text-xs">{ex.reps} powt.</span>
           </>
         )}
         {ex.restTime ? (
@@ -237,7 +237,7 @@ export default function GeneratorStep3({ plan, onApply, onRegenerate }: Props) {
       {/* Tygodniowy przegląd */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-base font-bold text-slate-800 inline-flex items-center gap-2"><CalendarIcon className="h-4 w-4 text-violet-500" />Plan tygodniowy</h3>
+          <h3 className="text-base font-bold text-slate-800 inline-flex items-center gap-2"><CalendarIcon className="h-4 w-4 text-cyan-500" />Plan tygodniowy</h3>
           <span className="text-xs text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
             {trainingDays.length} treningów · {7 - trainingDays.length} odpoczynku
           </span>
@@ -251,7 +251,7 @@ export default function GeneratorStep3({ plan, onApply, onRegenerate }: Props) {
 
       {/* Szczegóły treningów */}
       <div>
-        <h3 className="text-base font-bold text-slate-800 mb-4 inline-flex items-center gap-2"><ClipboardIcon className="h-4 w-4 text-violet-500" />Szczegóły treningów</h3>
+        <h3 className="text-base font-bold text-slate-800 mb-4 inline-flex items-center gap-2"><ClipboardIcon className="h-4 w-4 text-cyan-500" />Szczegóły treningów</h3>
         <div className="space-y-4">
           {trainingDays.map(day => {
             const label = getDayLabel(day);
@@ -312,7 +312,7 @@ export default function GeneratorStep3({ plan, onApply, onRegenerate }: Props) {
       <div className="flex flex-col sm:flex-row gap-3 pt-2 sticky bottom-0 bg-slate-50/95 backdrop-blur-sm py-4 -mx-1 px-1 border-t border-slate-200">
         <button
           onClick={onRegenerate}
-          className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl border-2 border-slate-200 bg-white text-slate-700 font-semibold text-sm hover:border-violet-300 hover:shadow-md transition-all duration-200 cursor-pointer"
+          className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl border-2 border-slate-200 bg-white text-slate-700 font-semibold text-sm hover:border-cyan-300 hover:shadow-md transition-all duration-200 cursor-pointer"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -321,7 +321,7 @@ export default function GeneratorStep3({ plan, onApply, onRegenerate }: Props) {
         </button>
         <button
           onClick={onApply}
-          className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-violet-500 to-indigo-600 text-white font-bold text-sm shadow-lg shadow-indigo-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+          className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-cyan-700 text-white font-bold text-sm shadow-lg shadow-cyan-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
