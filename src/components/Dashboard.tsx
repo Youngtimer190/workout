@@ -69,10 +69,11 @@ export default function Dashboard({ days, stats, onGoToPlanner, onGoToDay }: Das
       sub: 'w tym tygodniu',
     },
     {
-      label: 'Treningi w miesiącu',
+      // Nazwa miesiąca w jednej linii z etykietą — „Treningi w miesiącu: listopad”
+      // czyta się lepiej niż podzielone na „Treningi w miesiącu” + „w listopad”.
+      label: monthLabel ? `Treningi w miesiącu: ${monthLabel}` : 'Treningi w miesiącu',
       value: monthWorkouts,
       icon: <TrophyIcon />,
-      sub: monthLabel ? `w ${monthLabel}` : undefined,
     },
     {
       label: 'Ćwiczysz już',
