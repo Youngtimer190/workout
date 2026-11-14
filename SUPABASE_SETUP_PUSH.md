@@ -77,6 +77,33 @@ klucz publiczny jest z definicji jawny.
 5. Zablokuj telefon i poczekaj, aż minie przerwa — powinno przyjść
    powiadomienie „Czas!”.
 
+## Kto dzwoni — podział obowiązków
+
+To jest najważniejsza rzecz do zrozumienia: **dźwięk w przeglądarce i
+powiadomienie systemowe to dwa różne alarmy, z których każdy działa w innym
+momencie.**
+
+| Stan telefonu | Dźwięk lokalny (dzwonek) | Powiadomienie push |
+|---|---|---|
+| Ekran włączony, aplikacja na wierzchu | gra natychmiast | **wyciszone** (aplikacja anuluje je, gdy sama zagrała dzwonek) |
+| Ekran włączony, przełączono się do innej aplikacji | **milczy** — system usypia kartę | gra |
+| Ekran zgaszony lub zablokowany | **milczy** — strona jest zamrożona | gra |
+| Telefon wyłączony | milczy | gra (po włączeniu — push czeka w kolejce) |
+
+Dlaczego dzwonek milczy przy zablokowanym ekranie? Bo przeglądarka wstrzymuje
+wykonanie JavaScriptu, gdy strona jest w tle — nie ma wtedy kodu, który
+zagrałby dźwięk. To ograniczenie platformy, nie błąd aplikacji. Dlatego
+**powiadomienie systemowe jest jedynym pewnym alarmem przy zablokowanym
+ekranie** — ono dociera do systemu, który działa niezależnie od aplikacji.
+
+Dodatkowo opcja „Nie gasz ekranu” (domyślnie włączona) sprawia, że telefon
+**sam nie wygasza ekranu** w trakcie przerwy — wtedy strona w ogóle nie
+zostaje zamrożona i dzwonek gra normalnie.
+
+Opóźnienie powiadomienia: **2–3 s** od końca przerwy (serwer budzi się w tle
+i potrzebuje chwili na szyfrowanie oraz wysyłkę). Przy aplikacji na wierzchu
+nie jest to zauważalne — dzwonek lokalny gra wtedy natychmiast.
+
 ## Ograniczenia (warto wiedzieć)
 
 | Temat | Stan |

@@ -36,6 +36,18 @@ const MAX_DELAY_MS = 120_000;
 /** Ile harmonogramów trzymamy dla jednego użytkownika. */
 const MAX_SCHEDULES_PER_USER = 20;
 
+/**
+ * Ile czekamy po terminie, zanim wyślemy powiadomienie.
+ *
+ * To okno na anulowanie: gdy aplikacja jest na wierzchu, gra lokalny
+ * dzwonek i w tym samym momencie prosi serwer o anulowanie powiadomienia.
+ * Bez tej przerwy użytkownik dostałby dzwonek ORAZ powiadomienie.
+ *
+ * Gdy telefon jest zablokowany, nikt nie anuluje — powiadomienie wychodzi
+ * (z opóźnieniem 1,8 s, którego nikt nie zauważy).
+ */
+const SEND_GRACE_MS = 1800;
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -184,6 +196,18 @@ Deno.serve(async req => {
     EdgeRuntime.waitUntil(
       (async () => {
         await sleep(Math.max(0, endsAt - Date.now()));
+
+        // Krótkie okno „grace period" przed wysyłką.
+        //
+        // Gdy aplikacja jest na wierzchu, gra lokalny dzwonek i w tym
+        // samym momencie prosi serwer o anulowanie powiadomienia. Bez
+        // tego oczekiwania serwer zdążyłby wysłać push w tej samej
+        // chwili — użytkownik dostałby dzwonek ORAZ powiadomienie
+        // (podwójny alarm). 1,8 s wystarczy, żeby anulowanie dotarło.
+        //
+        // Gdy telefon jest zablokowany, strona jest zamrożona i nie ma
+        // kto anulować — wtedy powiadomienie wychodzi normalnie.
+        await sleep(SEND_GRACE_MS);
 
         // Sprawdzamy, czy użytkownik zdążył anulować przerwę.
         const { data: row } = await admin
