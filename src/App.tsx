@@ -301,7 +301,7 @@ export default function App() {
      Timer jest globalny (moduł-singleton), ale pilnuje dwóch rzeczy:
      • po załadowaniu aplikacji wznawia odliczanie (przerwa zapisana
        w localStorage przetrwała odświeżenie strony),
-     • odzyskuje „nie gaszenie ekranu”, gdy użytkownik wraca na kartę
+     • odzyskuje „nie wygaszanie ekranu”, gdy użytkownik wraca na kartę
        (przeglądarka zwalnia Wake Lock przy każdym przejściu w tło).
      Dodatkowo rejestrujemy service workera — potrzebny do odbierania
      powiadomień push o końcu przerwy. */

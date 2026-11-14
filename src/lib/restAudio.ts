@@ -38,7 +38,7 @@ function wakeLockSupported(): boolean {
 }
 
 /**
- * Prosi system o niegaszenie ekranu.
+ * Prosi system o niewygaszanie ekranu.
  *
  * Musi być wywołane z gestu użytkownika (tak wymaga przeglądarka) —
  * dlatego wywołujemy to przy starcie timera, nie w tle.

@@ -422,7 +422,7 @@ export function useRestTimerSettings(): {
  * Wywoływane raz, przy montowaniu aplikacji — pilnuje, żeby przerwa
  * zapisana w localStorage zaczęła się odliczać od razu po odświeżeniu.
  *
- * Przy okazji odzyskuje „nie gaszenie ekranu”: po przeładowaniu strony
+ * Przy okazji odzyskuje „nie wygaszanie ekranu": po przeładowaniu strony
  * przeglądarka nie pamięta wcześniejszego Wake Locka, a ekran wygasłby
  * tak samo jak przed zmianą.
  */

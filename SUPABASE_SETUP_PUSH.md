@@ -96,7 +96,7 @@ zagrałby dźwięk. To ograniczenie platformy, nie błąd aplikacji. Dlatego
 **powiadomienie systemowe jest jedynym pewnym alarmem przy zablokowanym
 ekranie** — ono dociera do systemu, który działa niezależnie od aplikacji.
 
-Dodatkowo opcja „Nie gasz ekranu” (domyślnie włączona) sprawia, że telefon
+Dodatkowo opcja „Nie wygaszaj ekranu” (domyślnie włączona) sprawia, że telefon
 **sam nie wygasza ekranu** w trakcie przerwy — wtedy strona w ogóle nie
 zostaje zamrożona i dzwonek gra normalnie.
 

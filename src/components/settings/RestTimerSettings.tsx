@@ -220,7 +220,7 @@ export default function RestTimerSettingsView({
           'Android',
         )}
         {toggleSwitch(
-          'Nie gasz ekranu',
+          'Nie wygaszaj ekranu',
           'Telefon nie wygasza ekranu w trakcie przerwy, więc odliczanie działa zawsze.',
           settings.keepScreenOn,
           v => update({ keepScreenOn: v }),
@@ -247,7 +247,7 @@ export default function RestTimerSettingsView({
           <li className="flex gap-2.5">
             <span className="text-cyan-400 flex-shrink-0">•</span>
             <span>
-              Przy włączonej opcji <strong className="text-slate-300">Nie gasz ekranu</strong>{' '}
+              Przy włączonej opcji <strong className="text-slate-300">Nie wygaszaj ekranu</strong>{' '}
               telefon nie usypia aplikacji, więc odliczanie i dźwięk działają zawsze.
             </span>
           </li>
