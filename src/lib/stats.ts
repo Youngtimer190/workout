@@ -3,10 +3,14 @@
  *
  * Definicje (ustalone razem z użytkownikiem):
  *
- *  • **Zaliczony trening (dzień)** — dzień ma ćwiczenia i w każdym
- *    ćwiczeniu jest przynajmniej jedna seria oznaczona jako wykonana.
- *  • **Zaliczony tydzień** — tydzień ma przynajmniej jeden dzień treningowy
- *    i każdy dzień treningowy jest zaliczony.
+ *  • **Zaliczony trening (dzień)** — dzień ma ćwiczenia i ma **choćby jedną
+ *    ukończoną serię**. Liczymy to, co się ZROBIŁO, a nie to, co było
+ *    zaplanowane: dopisanie jednego ćwiczenia w piątek nie może zabrać
+ *    passy za cztery zrobione dni.
+ *  • **Zaliczony tydzień** — tydzień ma przynajmniej jeden **wykonany
+ *    dzień**. Dzień z samym cardio bez zapisu (dane sprzed wprowadzenia
+ *    oznaczenia cardio) nie jest wykonany, ale też nie blokuje tygodnia —
+ *    nie da się go zmierzyć, więc nie karamy użytkownika za brak danych.
  *  • **Wolumen** — suma `waga × powtórzenia` z **tylko zaliczonych serii**.
  *    Waga hantli jest podwajana (20 kg na hantlę = 40 kg), a w ćwiczeniach
  *    jednostronnych nie (tam waga dotyczy jednej strony). Serie bez zapisanych
@@ -38,7 +42,12 @@ export function isExerciseDone(exercise: Exercise): boolean {
 }
 
 /**
- * Czy ćwiczenie **blokuje** zaliczenie dnia (a przez to tygodnia).
+ * Czy ćwiczenie **blokuje** zaliczenie dnia.
+ *
+ * Uwaga: po zmianie reguły (liczymy to, co się ZROBIŁO, a nie to, co
+ * zaplanowano) funkcja nie jest już potrzebna — dzień uznajemy za zaliczony,
+ * gdy ma choćby jedną ukończoną serię. Zostawiona dla zgodności
+ * z wcześniejszymi wersjami i jako opis reguły.
  *
  * • Ćwiczenie siłowe — blokuje, dopóki nie ma zaliczonej serii.
  * • Cardio z zapisem (nowy model: jedna „seria” = wykonane minuty) —
@@ -64,53 +73,68 @@ export function cardioMinutes(exercise: Exercise): number {
 }
 
 /**
- * Czy dzień treningowy ma zaliczoną serię (na potrzeby licznika
- * „Treningi w miesiącu”).
+ * Czy dzień treningowy uznajemy za wykonany.
  *
- * **Cardio jest pomijane** — ćwiczenia cardio nie mają w ogóle serii
- * (tracker pokazuje dla nich tylko licznik minut), więc nigdy nie miałyby
- * zaliczonej serii i blokowałyby każdy taki dzień.
+ * **Nowa zasada: liczymy to, co się ZROBIŁO, a nie to, co zaplanowano.**
  *
- * Dzień z samym cardio **nie jest** uznawany za zaliczone: brak serii =
- * brak dowodu, że trening się odbył.
+ * Dawniej dzień liczył się tylko wtedy, gdy zrobione były WSZYSTKIE jego
+ * ćwiczenia. To było niesprawiedliwe i karło za rzeczy, na które
+ * użytkownik nie miał wpływu: wystarczyło dopisać jedno ćwiczenie
+ * (np. w piątek) i cały dzień przepadał — a wraz z nim cały tydzień
+ * i passa.
+ *
+ * Teraz dzień jest wykonany, gdy ma **choćby jedną ukończoną serię**.
+ * To, ile zostało do zrobienia, widać w innych miejscach (wolumen,
+ * liczba dni, minuty cardio).
+ *
+ * Dzień z samym cardio **bez** oznaczenia nadal nie jest uznawany za
+ * wykonany — brak serii = brak dowodu, że trening się odbył.
  */
 export function isDayCompleted(day: WorkoutDay): boolean {
   const exercises = day.exercises ?? [];
   if (exercises.length === 0) return false;
 
-  // Coś, czego się nie zrobiło (np. nieznaczone cardio) → dzień nie jest zaliczony.
-  if (exercises.some(exerciseBlocksCompletion)) return false;
-
-  // Musi być COKOLWIEK zaliczonego — sam zaplanowany cardio bez oznaczenia
-  // nie jest dowodem, że trening się odbył.
   return exercises.some(isExerciseDone);
+}
+
+/**
+ * Dzień, którego **nie da się zmierzyć**: same cardio bez zapisu.
+ *
+ * To dane sprzed wprowadzenia oznaczenia cardio — aplikacja nie wie, czy
+ * taki trening się odbył. Nie karamy użytkownika za brak danych (tak samo
+ * jak w pierwotnej wersji reguły).
+ */
+function isUnmeasurableCardioDay(day: WorkoutDay): boolean {
+  const exercises = day.exercises ?? [];
+  if (exercises.length === 0) return false;
+  return exercises.every(
+    ex => isCardioExercise(ex) && (ex.setLogs ?? []).length === 0
+  );
 }
 
 /**
  * Czy tydzień wchodzi do passy („ćwiczysz już”).
  *
- * Dzień bez ćwiczeń (odpoczynek) nie jest brany pod uwagę — inaczej tydzień
- * z samymi dniami wolnymi byłby „zaliczony” bez żadnego treningu.
+ * **Nowa zasada: liczymy to, co się ZROBIŁO, a nie to, co zaplanowano.**
  *
- * **Cardio nie blokuje passy.** Ćwiczenia cardio nie mają serii (tracker
- * pokazuje dla nich wyłącznie czas trwania), więc przy starym warunku
- * („każde ćwiczenie musi mieć zaliczoną serię”) każdy tydzień z cardio
- * byłby uznawany za nietreningowy i passa przerywała się na nim.
+ * Tydzień jest zaliczony, gdy ma **choćby jeden wykonany dzień**.
+ * Dawniej wymagaliśmy, żeby WSZYSTKIE zaplanowane dni treningowe były
+ * w 100% wykonane — przez to jedno dopisane ćwiczenie (np. w piątek)
+ * unieważniało cztery zrobione dni i zerwało passę. Werdykt nie powinien
+ * zależeć od planu, tylko od tego, co faktycznie się odbyło.
  *
- * Dzień z samym cardio traktujemy jako odtreningowany — aplikacja nie ma
- * stanu „cardio zrobione”, więc nie możemy tego wykluczyć, a użytkownik
- * od tej reguły oczekuje passy.
+ * Dzień bez ćwiczeń (odpoczynek) nie jest brany pod uwagę — inaczej
+ * tydzień z samymi dniami wolnymi byłby „zaliczony” bez żadnego treningu.
+ *
+ * Dzień z samym cardio bez oznaczenia nie jest uznawany za wykonany
+ * (brak serii = brak dowodu, że trening się odbył) — ale nie blokuje
+ * przy tym tygodnia: wystarczy, że innego dnia coś zrobiłeś.
  */
 export function isWeekCompleted(days: WorkoutDay[]): boolean {
   const trainingDays = days.filter(d => d.exercises && d.exercises.length > 0);
   if (trainingDays.length === 0) return false;
 
-  return trainingDays.every(day => {
-    const exercises = day.exercises ?? [];
-    // Cardio z danych sprzed wersji (bez zapisu) nie blokuje — nie da się
-    // go zmierzyć, więc nie karamy użytkownika za brak danych.
-    return !exercises.some(exerciseBlocksCompletion);
-  });
+  return trainingDays.some(day => isDayCompleted(day) || isUnmeasurableCardioDay(day));
 }
 
 /** Czy ćwiczenie jest wykonywane hantlami (waga dotyczy jednej hantli). */

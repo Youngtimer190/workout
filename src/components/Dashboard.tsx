@@ -1,5 +1,5 @@
 import { WorkoutDay } from '../types';
-import { formatNumberPL, formatVolumePL, WorkoutStats } from '../lib/stats';
+import { formatNumberPL, formatVolumePL, isDayCompleted, WorkoutStats } from '../lib/stats';
 import { muscleGroupBgColors } from '../data/exercises';
 import {
   ChartIcon,
@@ -51,6 +51,16 @@ export default function Dashboard({ days, stats, onGoToPlanner, onGoToDay }: Das
   const totalCardioMinutes = stats?.totalCardioMinutes ?? 0;
   const monthLabel = stats?.monthLabel ?? '';
 
+  /**
+   * Wykonane dni w bieżącym tygodniu (z planu zaplanowanych dni treningowych).
+   *
+   * Passa mówi „ćwiczyłeś co tydzień”, ale sama nie mówi, ile NAPRAWDĘ
+   * zrobiłeś. Ten podpis uzupełnia tę informację — bez niego wyglądałoby,
+   * że tydzień z jednym treningiem jest taki sam jak tydzień pełny.
+   */
+  const weekTrainingDays = days.filter(d => (d.exercises?.length ?? 0) > 0).length;
+  const weekCompletedDays = days.filter(isDayCompleted).length;
+
   const statCards = [
     {
       label: 'Dni treningowe',
@@ -69,6 +79,7 @@ export default function Dashboard({ days, stats, onGoToPlanner, onGoToDay }: Das
       value: streakWeeks,
       icon: <FlameIcon />,
       sub: 'tygodni z rzędu',
+      extra: weekTrainingDays > 0 ? `w tym tygodniu ${weekCompletedDays} z ${weekTrainingDays} dni` : undefined,
     },
     {
       label: 'Wolumen - 7 dni (kg)',
@@ -119,6 +130,9 @@ export default function Dashboard({ days, stats, onGoToPlanner, onGoToDay }: Das
             <p className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-none">{stat.value}</p>
             <p className="text-xs sm:text-sm text-slate-400 mt-1">{stat.label}</p>
             {stat.sub && <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">{stat.sub}</p>}
+            {stat.extra && (
+              <p className="text-[11px] sm:text-xs text-violet-300/80 mt-0.5">{stat.extra}</p>
+            )}
           </div>
         ))}
       </div>
