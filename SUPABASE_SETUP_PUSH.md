@@ -100,6 +100,27 @@ Dodatkowo opcja „Nie wygaszaj ekranu” (domyślnie włączona) sprawia, że t
 **sam nie wygasza ekranu** w trakcie przerwy — wtedy strona w ogóle nie
 zostaje zamrożona i dzwonek gra normalnie.
 
+### Dzwonek a Twoja muzykka
+
+Dzwonek odtwarzamy przez **Web Audio**, a nie przez element `<audio>`. To
+istotna różnica:
+
+| Sposób odtwarzania | Sesja audio | Efekt na muzykę |
+|---|---|---|
+| `<audio>` (element multimedialny) | `playback` — **wyłączna** | **pauzuje Spotify** na czas dźwięku |
+| **Web Audio** (`AudioContext`) | `ambient` — miesza się | **muzyka gra dalej** |
+
+Dodatkowo tam, gdzie przeglądarka zna Audio Session API (iOS 16.4+, Chrome
+157+), ustawiamy sesję na **`transient`** — semantyka krótkiego
+dźwięku-powiadomienia: wgrywa się na muzykę zamiast ją wstrzymywać.
+
+Dzięki temu **dzwonek nie zabiera Ci muzyki** — ani na końcu przerwy, ani
+(tym bardziej) przy każdym starcie timera.
+
+Koszt tej decyzji: na iPhone dzwonek **nie zagra w trybie cichym**
+(przełącznik boczny) i **nie zagra w tle** — obie rzeczy obsługuje
+powiadomienie systemowe.
+
 Opóźnienie powiadomienia: **2–3 s** od końca przerwy (serwer budzi się w tle
 i potrzebuje chwili na szyfrowanie oraz wysyłkę). Przy aplikacji na wierzchu
 nie jest to zauważalne — dzwonek lokalny gra wtedy natychmiast.

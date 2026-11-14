@@ -21,7 +21,7 @@ import CloudStatusBanner from './components/CloudStatusBanner';
 import RestTimerBar from './components/RestTimerBar';
 import { getCloudState, subscribeCloud, CloudState } from './lib/cloudStatus';
 import { toUserMessage } from './lib/errorMessages';
-import { bindBellUnlockOnFirstGesture, bindWakeLockRecovery } from './lib/restAudio';
+import { bindBellPrepareOnFirstGesture, bindWakeLockRecovery } from './lib/restAudio';
 import { registerServiceWorker } from './lib/pushClient';
 import { resumeRestTimerTicking, useRestTimer } from './store/restTimerStore';
 import { useWorkoutStore } from './store/workoutStore';
@@ -308,7 +308,7 @@ export default function App() {
   useEffect(() => {
     resumeRestTimerTicking();
     const unbind = bindWakeLockRecovery();
-    const unbindBell = bindBellUnlockOnFirstGesture();
+    const unbindBell = bindBellPrepareOnFirstGesture();
     void registerServiceWorker();
     return () => {
       unbind();

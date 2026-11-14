@@ -208,7 +208,7 @@ export default function RestTimerSettingsView({
         )}
         {toggleSwitch(
           'Dźwięk',
-          'Dzwonek na koniec przerwy. Na iPhone działa tylko przy włączonym przełączniku dźwięku.',
+          'Dzwonek na koniec przerwy. Wgrywa się na Twoją muzykę, zamiast ją przerywać.',
           settings.soundEnabled,
           v => update({ soundEnabled: v }),
         )}

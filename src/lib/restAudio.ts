@@ -1,13 +1,27 @@
 /**
  * Dźwięk, wibracje i utrzymanie ekranu włączonego — dla timera odpoczynku.
  *
- * Dlaczego `<audio>` z plikiem, a nie Web Audio?
- * Na iOS Web Audio (AudioContext) jest traktowane jako dźwięk „ambient” —
- * system wycisza go, gdy aplikacja nie jest na wierzchu (WebKit bug 198277).
- * Plik odtwarzany przez `<audio>` w standalone PWA gra dalej w tle
- * (iOS 15.4+). Dlatego alarm budujemy na elemencie `<audio>`.
+ * ── Dlaczego Web Audio, a nie `<audio>`? ───────────────────────────────────
+ * Element `<audio>` domyślnie zajmuje sesję audio typu **playback**, czyli
+ * **wyłączną** — telefon wstrzymuje wtedy Twoją muzykę (Spotify) na czas
+ * odtwarzania. Do tego samo odtworzenie „na próbę” (bezgłośne) przejmowało
+ * focus przy KAŻDYM starcie timera, czyli muzyka zatrzymywała się co
+ * serię.
  *
- * Dlaczego Wake Lock, a nie biblioteka no-sleep.js?
+ * Web Audio (`AudioContext`) domyślnie działa w sesji **ambient**, czyli
+ * **miesza się** z innym dźwiękiem i nie zabiera nikomu focusu.
+ *
+ * Koszt: na iOS Web Audio jest wyciszany przełącznikiem bocznym (tryb
+ * cichy) i jest wstrzymywany w tle. To świadoma decyzja — za cenę
+ * „dzwonek w tle” płacimy tym, że **nie zaburzamy muzyki**. Alarm przy
+ * zablokowanym ekranie i tak robi powiadomienie systemowe (push).
+ *
+ * Dodatkowo, gdzie przeglądarka zna Audio Session API (Safari/iOS 16.4+,
+ * Chrome 157+), ustawiamy sesję na **transient** — to semantyka
+ * „krótkiego dźwięku-powiadomienia”: wgrywa się na muzykę zamiast ją
+ * pauzować.
+ *
+ * ── Dlaczego Wake Lock, a nie biblioteka no-sleep.js? ──────────────────────
  * Wake Lock API jest w przeglądarkach od 2020 r. (Chrome 84), Safari 16.4,
  * Firefox 126. Biblioteka dodałaby zależność i plik wideo, a my potrzebujemy
  * tylko ~30 linii kodu. Gdy ekran nie gaśnie sam, strona nie jest
@@ -102,60 +116,206 @@ export function bindWakeLockRecovery(): () => void {
   return () => document.removeEventListener('visibilitychange', onVisibility);
 }
 
-/* ── Dźwięk ──────────────────────────────────────────────────────────────── */
+/* ── Sesja audio ─────────────────────────────────────────────────────────── */
 
-/** Element odtwarzający — jeden na całą aplikację. */
-let bellElement: HTMLAudioElement | null = null;
-let bellUnlocked = false;
-
-function getBell(): HTMLAudioElement | null {
-  if (typeof window === 'undefined' || typeof Audio === 'undefined') return null;
-  if (!bellElement) {
-    bellElement = new Audio(bellUrl);
-    bellElement.preload = 'auto';
-    bellElement.volume = 1;
-  }
-  return bellElement;
+interface AudioSessionLike {
+  type: string;
+  state?: string;
 }
 
 /**
- * „Odblokowuje” dźwięk — przeglądarki wymagają gestu użytkownika.
+ * Ustawia typ sesji audio na „transient”.
  *
- * Wywołujemy to przy starcie timera (jest gestem), więc późniejszy alarm
- * zadziała nawet bez kolejnego dotknięcia.
+ * „Transient” to semantyka krótkiego dźwięku-powiadomienia: wgrywa się na
+ * to, co już gra, zamiast wstrzymywać inne odtwarzanie. Dzięki temu
+ * dzwonek nie zatrzymuje Spotify.
  *
- * Używamy `volume = 0`, a nie `muted` — na iOS to odtwarzanie (nawet
- * bezgłośne) tworzy sesję audio, dzięki czemu aplikacja może grać dalej
- * w tle. Samo `muted` nie zawsze ją tworzy.
+ * API jest świeże (Safari/iOS 16.4+, Chrome 157+), więc sprawdzamy
+ * jego obecność i ignorujemy brak.
  */
-export function unlockBell(): void {
-  if (bellUnlocked) return;
-  const el = getBell();
-  if (!el) return;
+function configureTransientSession(): void {
+  if (typeof navigator === 'undefined') return;
+  const session = (navigator as Navigator & { audioSession?: AudioSessionLike }).audioSession;
+  if (!session) return;
+  try {
+    session.type = 'transient';
+  } catch {
+    /* sesja mogła być już aktywna — zostawiamy, co było */
+  }
+}
+
+/* ── Dźwięk ──────────────────────────────────────────────────────────────── */
+
+type AudioContextCtor = new () => AudioContext;
+
+let audioContext: AudioContext | null = null;
+let bellBuffer: AudioBuffer | null = null;
+let bellPrepared = false;
+/** Trwające przygotowanie dźwięku — chroni przed podwójnym dekodowaniem. */
+let preparePromise: Promise<void> | null = null;
+
+/** Element `<audio>` — tylko awaryjnie, gdy Web Audio nie zadziała. */
+let fallbackElement: HTMLAudioElement | null = null;
+
+function getAudioContextCtor(): AudioContextCtor | null {
+  if (typeof window === 'undefined') return null;
+  const w = window as unknown as { AudioContext?: AudioContextCtor; webkitAudioContext?: AudioContextCtor };
+  return w.AudioContext ?? w.webkitAudioContext ?? null;
+}
+
+/** Zamienia `data:` URI na surowe bajty (bez dodatkowego żądania sieciowego). */
+function dataUriToArrayBuffer(dataUri: string): ArrayBuffer | null {
+  const comma = dataUri.indexOf(',');
+  if (comma < 0) return null;
+  const meta = dataUri.slice(0, comma);
+  const payload = dataUri.slice(comma + 1);
 
   try {
-    el.volume = 0;
-    const p = el.play();
-    if (p && typeof p.then === 'function') {
-      p.then(() => {
-        el.pause();
-        el.currentTime = 0;
-        el.volume = 1;
-        bellUnlocked = true;
-      }).catch(() => {
-        el.volume = 1;
-      });
-    } else {
-      el.volume = 1;
-      bellUnlocked = true;
+    if (meta.includes(';base64')) {
+      const binary = atob(payload);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return bytes.buffer;
     }
+    return new TextEncoder().encode(decodeURIComponent(payload)).buffer;
+  } catch {
+    return null;
+  }
+}
+
+/** Pobiera bajty pliku dźwiękowego (build → data URI, dev → adres URL). */
+async function loadBellBytes(): Promise<ArrayBuffer | null> {
+  if (bellUrl.startsWith('data:')) return dataUriToArrayBuffer(bellUrl);
+
+  try {
+    const res = await fetch(bellUrl);
+    return await res.arrayBuffer();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Przygotowuje dźwięk — wołane z gestu użytkownika.
+ *
+ * Przeglądarki wymagają gestu, żeby pozwolić na odtwarzanie. Tworzymy
+ * kontekst Web Audio i dekodujemy plik; od tej chwili dzwonek może zagrać
+ * w dowolnej chwili, bez kolejnego dotknięcia.
+ *
+ * Web Audio nie potrzebuje „odblokowującego” bezgłośnego odtwarzania —
+ * a to właśnie ono przejmowało focus audio i zatrzymywało muzykę
+ * przy każdym starcie timera.
+ */
+export function prepareBell(): Promise<void> {
+  // Dwa wywołania w tej samej chwili (start timera + pierwszy gest) nie
+  // mogą dekodować pliku dwa razy — dlatego trzymamy jedną operację.
+  if (preparePromise) return preparePromise;
+
+  preparePromise = prepareBellInternal().finally(() => {
+    preparePromise = null;
+  });
+  return preparePromise;
+}
+
+async function prepareBellInternal(): Promise<void> {
+  configureTransientSession();
+
+  const Ctor = getAudioContextCtor();
+  if (!Ctor) return;
+
+  try {
+    if (!audioContext) {
+      audioContext = new Ctor();
+    }
+
+    // Wzbudzenie kontekstu odpalamyśmy BEZ oczekiwania na wynik.
+    // `resume()` w kontekście bez aktywacji użytkownika może się nigdy
+    // nie rozstrzygnąć — a czekanie na niego blokowałooby dekodowanie
+    // pliku, czyli dzwonek nigdy by nie zagrał.
+    if (audioContext.state === 'suspended') {
+      void audioContext.resume().catch(() => {});
+    }
+
+    // Dekodowanie działa nawet na wstrzymanym kontekście.
+    if (!bellBuffer) {
+      const bytes = await loadBellBytes();
+      if (!bytes) return;
+      bellBuffer = await audioContext.decodeAudioData(bytes);
+    }
+
+    bellPrepared = true;
   } catch {
     /* przeglądarka odmówiła — alarm po prostu nie zagra */
   }
 }
 
+/** Odgrywa dzwonek z gotowego bufora. */
+function playBellFromBuffer(): void {
+  if (!audioContext || !bellBuffer) return;
+  try {
+    const source = audioContext.createBufferSource();
+    source.buffer = bellBuffer;
+    source.connect(audioContext.destination);
+    source.start();
+  } catch {
+    /* ignorujemy — dźwięk jest dodatkiem, nie jedynym sygnałem */
+  }
+}
+
+/** Awaryjnie: zwykły element `<audio>` (gdy Web Audio zawiedzie). */
+function playBellViaElement(): void {
+  try {
+    if (!fallbackElement && typeof Audio !== 'undefined') {
+      fallbackElement = new Audio(bellUrl);
+      fallbackElement.preload = 'auto';
+    }
+    if (!fallbackElement) return;
+    fallbackElement.volume = 1;
+    fallbackElement.currentTime = 0;
+    const p = fallbackElement.play();
+    if (p && typeof p.catch === 'function') p.catch(() => {});
+  } catch {
+    /* ignorujemy */
+  }
+}
+
+/** Odgrywa dzwonek końca przerwy. */
+export function playBell(): void {
+  if (!audioContext || !bellBuffer) {
+    // Nie mamy jeszcze bufora (np. przerwa zaczęła się przed przeładowaniem
+    // strony) — przygotowujemy i próbujemy jeszcze raz.
+    if (!bellPrepared) {
+      void prepareBell().then(() => {
+        if (bellBuffer) playBellFromBuffer();
+      });
+      return;
+    }
+    playBellViaElement();
+    return;
+  }
+
+  if (audioContext.state !== 'running') {
+    // Kontekst wstrzymany (np. aplikacja była w tle) — wzbudzamy go.
+    // Nie czekamy w nieskończoność: jeśli przeglądarka odmówi, próbujemy
+    // awaryjnie przez element <audio>.
+    let resumed = false;
+    void audioContext
+      .resume()
+      .then(() => {
+        resumed = true;
+        playBellFromBuffer();
+      })
+      .catch(() => {
+        if (!resumed) playBellViaElement();
+      });
+    return;
+  }
+
+  playBellFromBuffer();
+}
+
 /**
- * Odblokowuje dźwięk przy PIERWSZYM geście w aplikacji.
+ * Przygotowuje dźwięk przy PIERWSZYM geście w aplikacji.
  *
  * Dzięki temu alarm zadziała także wtedy, gdy przerwa zaczęła się
  * przed przeładowaniem strony (albo gdy użytkownik sam ustawił czas
@@ -163,11 +323,11 @@ export function unlockBell(): void {
  *
  * Zwraca funkcję sprzątającą (usuwa nasłuch).
  */
-export function bindBellUnlockOnFirstGesture(): () => void {
-  if (bellUnlocked) return () => {};
+export function bindBellPrepareOnFirstGesture(): () => void {
+  if (bellPrepared) return () => {};
 
   const onGesture = () => {
-    unlockBell();
+    void prepareBell();
     window.removeEventListener('pointerdown', onGesture);
     window.removeEventListener('keydown', onGesture);
   };
@@ -179,20 +339,6 @@ export function bindBellUnlockOnFirstGesture(): () => void {
     window.removeEventListener('pointerdown', onGesture);
     window.removeEventListener('keydown', onGesture);
   };
-}
-
-/** Odgrywa dzwonek końca przerwy. */
-export function playBell(): void {
-  const el = getBell();
-  if (!el) return;
-  try {
-    el.volume = 1;
-    el.currentTime = 0;
-    const p = el.play();
-    if (p && typeof p.catch === 'function') p.catch(() => {});
-  } catch {
-    /* ignorujemy — dźwięk jest dodatkiem, nie jedynym sygnałem */
-  }
 }
 
 /* ── Wibracje ────────────────────────────────────────────────────────────── */

@@ -3,8 +3,8 @@ import { clampDuration, DEFAULT_REST_MS } from '../lib/restTimer';
 import {
   acquireWakeLock,
   playBell,
+  prepareBell,
   releaseWakeLock,
-  unlockBell,
   vibrateDone,
   vibrateTick,
 } from '../lib/restAudio';
@@ -288,9 +288,11 @@ export function startRestTimer(durationMs: number): void {
   const duration = clampDuration(durationMs);
   const now = Date.now();
 
-  // Dźwięk odblokowujemy przy starcie — to gest użytkownika, więc
+  // Dźwięk przygotowujemy przy starcie — to gest użytkownika, więc
   // przeglądarka pozwoli zagrać później, bez kolejnego dotknięcia.
-  if (settings.soundEnabled) unlockBell();
+  // Web Audio nie potrzebuje bezgłośnego „odblokowania”, które przejmowało
+  // focus audio i zatrzymywało muzykę użytkownika.
+  if (settings.soundEnabled) void prepareBell();
 
   setState({
     endsAt: now + duration,
