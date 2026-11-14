@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react';
 import { clampDuration, DEFAULT_REST_MS } from '../lib/restTimer';
 import {
   acquireWakeLock,
+  cancelPendingBell,
   playBell,
   prepareBell,
   releaseWakeLock,
@@ -288,6 +289,10 @@ export function startRestTimer(durationMs: number): void {
   const duration = clampDuration(durationMs);
   const now = Date.now();
 
+  // Nowa przerwa → żaden dzwonek z poprzedniej nie może się jeszcze odezwać
+  // (np. z przerwy zakończonej, gdy aplikacja była w tle).
+  cancelPendingBell();
+
   // Dźwięk przygotowujemy przy starcie — to gest użytkownika, więc
   // przeglądarka pozwoli zagrać później, bez kolejnego dotknięcia.
   // Web Audio nie potrzebuje bezgłośnego „odblokowania”, które przejmowało
@@ -365,6 +370,8 @@ export function addRestTimerSeconds(seconds: number): void {
 export function stopRestTimer(): void {
   stopTicking();
   void releaseWakeLock();
+  // Anulujemy też oczekujący dzwonek — zatrzymana przerwa nie zadzwoni.
+  cancelPendingBell();
   if (state.pushScheduleId) void cancelRestTimerPush(state.pushScheduleId);
   setState({
     endsAt: null,

@@ -153,6 +153,18 @@ let bellBuffer: AudioBuffer | null = null;
 let bellPrepared = false;
 /** Trwające przygotowanie dźwięku — chroni przed podwójnym dekodowaniem. */
 let preparePromise: Promise<void> | null = null;
+/**
+ * Token alarmu — zmiana unieważnia oczekujące odtworzenie dzwonka.
+ *
+ * Bez niego dzwonek z przerwy zakończonej w tle zadzwoniłby w losowym
+ * momencie (przy najbliższym dotknięciu, gdy iOS wreszcie pozwoli na
+ * wznowienie sesji audio).
+ */
+let bellToken = 0;
+/** Odliczany czas „świeżości” oczekującego odtworzenia. */
+let pendingPlayTimer: number | null = null;
+/** Ile czekamy na wzbudzenie kontekstu, zanim dzwonek „wygaśnie”. */
+const BELL_FRESH_MS = 2500;
 
 /** Element `<audio>` — tylko awaryjnie, gdy Web Audio nie zadziała. */
 let fallbackElement: HTMLAudioElement | null = null;
@@ -281,37 +293,70 @@ function playBellViaElement(): void {
 
 /** Odgrywa dzwonek końca przerwy. */
 export function playBell(): void {
-  if (!audioContext || !bellBuffer) {
-    // Nie mamy jeszcze bufora (np. przerwa zaczęła się przed przeładowaniem
-    // strony) — przygotowujemy i próbujemy jeszcze raz.
-    if (!bellPrepared) {
-      void prepareBell().then(() => {
-        if (bellBuffer) playBellFromBuffer();
-      });
-      return;
-    }
-    playBellViaElement();
+  const token = ++bellToken;
+
+  // 1. Kontekst gotowy i działający — gramy od razu.
+  if (audioContext && bellBuffer && audioContext.state === 'running') {
+    playBellFromBuffer();
     return;
   }
 
-  if (audioContext.state !== 'running') {
-    // Kontekst wstrzymany (np. aplikacja była w tle) — wzbudzamy go.
-    // Nie czekamy w nieskończoność: jeśli przeglądarka odmówi, próbujemy
-    // awaryjnie przez element <audio>.
-    let resumed = false;
+  // 2. Kontekst istnieje, ale jest wstrzymany (aplikacja była w tle albo
+  //    ekran zgaszony). Wzbudzamy go — ale tylko „na świeżo”:
+  //
+  //    Na iOS `resume()` czeka na aktywację użytkownika i rozstrzyga się
+  //    dopiero przy najbliższym dotknięciu. Bez zabezpieczenia dzwonek
+  //    zakończonej przerwy zadzwoniłby w losowym momencie — np. przy
+  //    zaznaczaniu kolejnej serii, wiele minut później. Dlatego:
+  //      • odtworzenie działa tylko w ciągu BELL_FRESH_MS od alarmu,
+  //      • każdy nowy alarm (albo anulowanie) unieważnia oczekujący.
+  if (audioContext && bellBuffer) {
+    const timer = window.setTimeout(() => {
+      if (pendingPlayTimer === timer) pendingPlayTimer = null;
+      // Dzwonek „wygasł” — nie odezwie się w żadnym późniejszym momencie.
+      if (token === bellToken) bellToken++;
+    }, BELL_FRESH_MS);
+    pendingPlayTimer = timer;
+
     void audioContext
       .resume()
       .then(() => {
-        resumed = true;
+        if (pendingPlayTimer === timer) {
+          window.clearTimeout(timer);
+          pendingPlayTimer = null;
+        }
+        if (token !== bellToken) return; // alarm nieaktualny
         playBellFromBuffer();
       })
       .catch(() => {
-        if (!resumed) playBellViaElement();
+        if (pendingPlayTimer === timer) {
+          window.clearTimeout(timer);
+          pendingPlayTimer = null;
+        }
       });
     return;
   }
 
-  playBellFromBuffer();
+  // 3. Jeszcze nic nie mamy — przygotowujemy i gramy zaraz po tym.
+  void prepareBell().then(() => {
+    if (token !== bellToken) return;
+    if (bellBuffer && audioContext) playBellFromBuffer();
+    else playBellViaElement();
+  });
+}
+
+/**
+ * Unieważnia oczekujące odtworzenie dzwonka.
+ *
+ * Wywoływane przy starcie nowej przerwy i przy jej zatrzymaniu — od
+ * tej chwili dzwonek z poprzedniej, zakończonej przerwy już nie zagra.
+ */
+export function cancelPendingBell(): void {
+  bellToken++;
+  if (pendingPlayTimer != null) {
+    window.clearTimeout(pendingPlayTimer);
+    pendingPlayTimer = null;
+  }
 }
 
 /**

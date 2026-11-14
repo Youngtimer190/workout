@@ -121,6 +121,12 @@ Koszt tej decyzji: na iPhone dzwonek **nie zagra w trybie cichym**
 (przełącznik boczny) i **nie zagra w tle** — obie rzeczy obsługuje
 powiadomienie systemowe.
 
+Jeśli przerwa skończy się, gdy aplikacja jest w tle, dzwonek **nie zadzwoni
+przypadkiem później** (np. przy zaznaczaniu kolejnej serii). Oczekujące
+odtworzenie wygasa po 2,5 s — a każda nowa przerwa je unieważnia. Dźwięk
+rozlega się tylko wtedy, gdy zdążysz dotknąć ekranu tuż po zakończeniu
+przerwy.
+
 Opóźnienie powiadomienia: **2–3 s** od końca przerwy (serwer budzi się w tle
 i potrzebuje chwili na szyfrowanie oraz wysyłkę). Przy aplikacji na wierzchu
 nie jest to zauważalne — dzwonek lokalny gra wtedy natychmiast.
