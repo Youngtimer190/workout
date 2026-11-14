@@ -3,6 +3,7 @@ import { useAuthStore } from '../../store/authStore';
 import { getEnabledOAuthProviders } from '../../lib/supabase';
 import authBgUrl from '../../assets/auth-bg.jpg';
 import logoUrl from '../../assets/fitplanner-logo.png';
+import { toUserMessage } from '../../lib/errorMessages';
 type AuthView = 'login' | 'register' | 'reset';
 type OAuthProvider = 'google';
 
@@ -239,7 +240,7 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
     if (error) {
       if (error.message.includes('Invalid login')) setError('Nieprawidłowy email lub hasło.');
       else if (error.message.includes('Email not confirmed')) setError('Najpierw potwierdź adres email — sprawdź swoją skrzynkę pocztową.');
-      else setError(error.message);
+      else setError(toUserMessage(error, 'Logowanie nie powiodło się. Spróbuj ponownie.'));
     }
   };
 
@@ -253,7 +254,7 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
     const { error, needsConfirmation } = await signUp(email, password, fullName);
     if (error) {
       if (error.message.includes('already registered')) setError('Ten email jest już zarejestrowany.');
-      else setError(error.message);
+      else setError(toUserMessage(error, 'Nie udało się założyć konta. Spróbuj ponownie.'));
     } else if (needsConfirmation) {
       setSuccessMsg(`Konto zostało utworzone! Wysłaliśmy link potwierdzający na adres ${email}. Kliknij w link w emailu, aby aktywować konto.`);
       setView('login');
@@ -268,7 +269,7 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
     clearMessages();
     if (!email) { setError('Podaj adres email.'); return; }
     const { error } = await resetPassword(email);
-    if (error) setError(error.message);
+    if (error) setError(toUserMessage(error, 'Nie udało się wysłać linku do resetowania hasła.'));
     else setSuccessMsg('Link do resetowania hasła został wysłany na podany adres email.');
   };
 
@@ -279,7 +280,7 @@ export default function AuthScreen({ onDemoLogin }: AuthScreenProps) {
     setOauthProvider(null);
     if (error) {
       setError(
-        error.message ||
+        toUserMessage(error, '') ||
         'Logowanie przez Google nie jest skonfigurowane. Użyj logowania emailem i hasłem.'
       );
     }

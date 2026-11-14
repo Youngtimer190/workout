@@ -17,6 +17,7 @@ import {
   ShareResponse,
 } from '../lib/shareService';
 import { isSupabaseConfigured } from '../lib/supabase';
+import { toUserMessage } from '../lib/errorMessages';
 
 /** Identyfikator użytkownika demo — nie jest UUID, więc nie ma konta w bazie. */
 const DEMO_USER_ID = 'demo';
@@ -49,7 +50,7 @@ export function useShareStore(userId?: string) {
     const result = await fetchShares(userId);
     setIncoming(result.incoming);
     setOutgoing(result.outgoing);
-    setError(result.error ? result.error.message : null);
+    setError(result.error ? toUserMessage(result.error, 'Nie udało się pobrać udostępnień.') : null);
     setLastRefreshedAt(Date.now());
     if (!silent) setLoading(false);
   }, [userId]);

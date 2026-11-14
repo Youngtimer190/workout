@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react';
 import { WorkoutDay } from '../types';
 import { mondayOfWeekKey, formatWeekLabel } from '../store/weekStore';
 import { useKeyboardInset } from '../hooks/useKeyboardInset';
+import { toUserMessage } from '../lib/errorMessages';
 
 /** Prosty walidator e-mail — ten sam warunek, który pilnuje baza (CHECK constraint). */
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -106,13 +107,13 @@ export default function ShareWorkoutModal({
     try {
       const result = await onSend(trimmed.toLowerCase());
       if (result.error) {
-        setError(result.error.message);
+        setError(toUserMessage(result.error, 'Nie udało się udostępnić treningu.'));
       } else {
         // Ten sam komunikat niezależnie od tego, czy konto odbiorcy istnieje.
         setSent(true);
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Nie udało się udostępnić treningu.');
+      setError(toUserMessage(err, 'Nie udało się udostępnić treningu.'));
     } finally {
       setSending(false);
     }

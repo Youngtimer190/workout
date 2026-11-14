@@ -12,6 +12,7 @@ import {
 import { fetchWeekPlan } from '../lib/syncService';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { useKeyboardInset } from '../hooks/useKeyboardInset';
+import { toUserMessage } from '../lib/errorMessages';
 
 interface CopyWorkoutModalProps {
   userId?: string;
@@ -134,8 +135,7 @@ export default function CopyWorkoutModal({ userId, onCopy, onClose }: CopyWorkou
     try {
       await onCopy(sourceExercises, targetDateStr);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Nie udało się skopiować treningu.';
-      setError(message);
+      setError(toUserMessage(err, 'Nie udało się skopiować treningu.'));
     } finally {
       // Po powodzeniu rodzic zamknie modal — ustawienie stanu jest wtedy bezcelowe.
       setCopying(false);

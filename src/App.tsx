@@ -18,6 +18,7 @@ import DemoBanner from './components/auth/DemoBanner';
 import { UndoRemoveBar } from './components/WorkoutPlanner';
 import CloudStatusBanner from './components/CloudStatusBanner';
 import { getCloudState, subscribeCloud, CloudState } from './lib/cloudStatus';
+import { toUserMessage } from './lib/errorMessages';
 import { useWorkoutStore } from './store/workoutStore';
 import { useAuthStore } from './store/authStore';
 import { useShareStore } from './store/shareStore';
@@ -110,7 +111,7 @@ function NewPasswordScreen() {
     if (password.length < 6) { setError('Hasło musi mieć co najmniej 6 znaków.'); return; }
     if (password !== confirm) { setError('Hasła nie są zgodne.'); return; }
     const { error } = await updatePassword(password);
-    if (error) setError(error.message);
+    if (error) setError(toUserMessage(error, 'Nie udało się wysłać linku do resetowania hasła.'));
     else setSuccess(true);
   };
 

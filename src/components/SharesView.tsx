@@ -20,6 +20,7 @@ import {
   pluralWorkout,
 } from '../lib/format';
 import { useArchivedShares } from '../store/archivedSharesStore';
+import { toUserMessage } from '../lib/errorMessages';
 
 interface SharesViewProps {
   incoming: SharedWorkout[];
@@ -189,7 +190,7 @@ export default function SharesView({
     try {
       const result = await onDecline(share);
       if (result.error) {
-        setActionError(result.error.message);
+        setActionError(toUserMessage(result.error, 'Nie udało się odrzucić udostępnienia.'));
       } else {
         onNotify?.(true, `Odrzucono udostępnienie od ${share.owner_name || share.owner_email}.`);
       }
@@ -204,7 +205,7 @@ export default function SharesView({
     try {
       const result = await onCancel(shareId);
       if (result.error) {
-        setActionError(result.error.message);
+        setActionError(toUserMessage(result.error, 'Nie udało się anulować udostępnienia.'));
       } else {
         onNotify?.(true, 'Udostępnienie anulowane.');
       }

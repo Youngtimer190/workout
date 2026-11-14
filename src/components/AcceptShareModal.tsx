@@ -12,6 +12,7 @@ import {
   pluralSet,
   toLocalDateStr,
 } from '../lib/format';
+import { toUserMessage } from '../lib/errorMessages';
 
 const MONTHS_SHORT = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru'];
 
@@ -129,12 +130,12 @@ export default function AcceptShareModal({
     try {
       const result = await onAccept(targetDateStr);
       if (result.error) {
-        setError(result.error.message);
+        setError(toUserMessage(result.error, 'Nie udało się dodać treningu.'));
       } else {
         setAcceptedTo(targetDateStr);
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Nie udało się dodać treningu.');
+      setError(toUserMessage(err, 'Nie udało się dodać treningu.'));
     } finally {
       setBusy(null);
     }
@@ -147,12 +148,12 @@ export default function AcceptShareModal({
     try {
       const result = await onDecline();
       if (result.error) {
-        setError(result.error.message);
+        setError(toUserMessage(result.error, 'Nie udało się odrzucić udostępnienia.'));
       } else {
         onClose();
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Nie udało się odrzucić udostępnienia.');
+      setError(toUserMessage(err, 'Nie udało się odrzucić udostępnienia.'));
     } finally {
       setBusy(null);
     }

@@ -3,6 +3,7 @@ import { useAuthStore } from '../../store/authStore';
 import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 import DeleteAccountModal from '../auth/DeleteAccountModal';
 import { LockIcon, MailIcon, TrashIcon, UserIcon } from '../icons';
+import { toUserMessage } from '../../lib/errorMessages';
 
 interface SettingsViewProps {
   onGoToHelp: () => void;
@@ -44,7 +45,7 @@ export default function SettingsView({ onGoToHelp }: SettingsViewProps) {
       const { error } = await supabase.auth.updateUser({
         data: { full_name: displayName.trim() },
       });
-      if (error) setNameMsg({ ok: false, text: error.message });
+      if (error) setNameMsg({ ok: false, text: toUserMessage(error, 'Nie udało się zmienić nazwy.') });
       else setNameMsg({ ok: true, text: 'Nazwa zapisana.' });
     } catch {
       setNameMsg({ ok: false, text: 'Nie udało się zapisać nazwy.' });
@@ -90,7 +91,7 @@ export default function SettingsView({ onGoToHelp }: SettingsViewProps) {
       // 2) Ustawienie NOWEGO hasła
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) {
-        setPasswordMsg({ ok: false, text: error.message });
+        setPasswordMsg({ ok: false, text: toUserMessage(error, 'Nie udało się zmienić hasła.') });
         return;
       }
 
