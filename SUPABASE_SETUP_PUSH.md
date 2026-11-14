@@ -6,6 +6,11 @@ albo ekran wygasnie. Push dociera nawet do zablokowanego ekranu.
 
 ## Co trzeba zrobić (jednorazowo)
 
+> **Stan na 14.11.2026: wdrożone ✓** — funkcja jest na serwerze, sekrety VAPID
+> ustawione, tabele i polityki RLS utworzone. Poniższe kroki zostały wykonane;
+> komendy zostają w instrukcji, gdybyś kiedyś musiał(a) to powtórzyć
+> (np. po migracji projektu).
+
 ### 1. Tabele w bazie
 
 W konsoli Supabase (**Dashboard → SQL Editor**) wklej i wykonaj:
@@ -19,6 +24,11 @@ albo wklej zawartość pliku `SUPABASE_SETUP_PUSH.sql` i naciśnij **Run**.
 Powstaną dwie tabele: `push_subscriptions` i `push_schedules`, obie z RLS
 (tylko własne wiersze).
 
+> Alternatywa przez CLI (to samo, co zostało wykonane):
+> ```bash
+> supabase db query --file supabase/migrations/20261114120000_push_notifications.sql --remote --yes
+> ```
+
 ### 2. Edge Function
 
 Potrzebny jest [Supabase CLI](https://supabase.com/docs/guides/cli):
@@ -30,13 +40,22 @@ supabase link --project-ref mktkwysqcaafmjfkxqty
 supabase functions deploy rest-timer-push
 ```
 
+> **Uwaga:** komendy uruchamiaj **z katalogu głównego repozytorium**
+> (tam, gdzie jest folder `supabase/`). CLI szuka funkcji względem bieżącego
+> katalogu — uruchomione z `supabase/functions/` szuka ścieżki
+> `supabase/functions/supabase/functions/…` i kończy się błędem
+> „Entrypoint path does not exist".
+>
+> Ostrzeżenie „Docker is not running” jest nieszkodliwe — Docker jest
+> potrzebny tylko do lokalnego developmentu, nie do wdrożenia w chmurze.
+
 ### 3. Klucze VAPID jako sekrety
 
 Klucze są już wygenerowane i zapisane w `supabase/functions/.env`
 (plik **nie jest** w repo — jest w `.gitignore`).
 
 ```bash
-supabase secrets set --env-file supabase/functions/.env
+supabase secrets set --env-file supabase/functions/.env --yes
 ```
 
 albo ręcznie:

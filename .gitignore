@@ -11,6 +11,9 @@ node_modules/
 # Sekrety Edge Functions (VAPID_PRIVATE_KEY) — lokalna kopia do `secrets set`.
 supabase/functions/.env
 
+# Stan CLI Supabase (link do projektu, cache) — lokalny, nie commitujemy.
+supabase/.temp/
+
 # Uwaga: `dist/` celowo NIE jest ignorowany — na GitHubie trzymamy gotowy
 # build, bo to on jest wdrażany na Vercelu. Przed commitem zbuduj projekt:
 #   npm run build
