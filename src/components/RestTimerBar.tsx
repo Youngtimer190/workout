@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { formatDuration, progressRatio, remainingMs } from '../lib/restTimer';
 import {
   addRestTimerSeconds,
@@ -25,15 +25,6 @@ const FINISHED_AUTO_HIDE_MS = 9000;
 
 export default function RestTimerBar() {
   const timer = useRestTimer();
-  const [now, setNow] = useState(() => Date.now());
-
-  // Odliczany czas nie jest stanem Reacta — liczymy go z `endsAt`,
-  // żeby przeglądarka spowalniająca timery w tle nie psuła licznika.
-  useEffect(() => {
-    if (timer.endsAt == null) return;
-    const id = window.setInterval(() => setNow(Date.now()), 250);
-    return () => window.clearInterval(id);
-  }, [timer.endsAt]);
 
   // Stan „Czas!” znika sam po kilku sekundach.
   useEffect(() => {
@@ -47,8 +38,10 @@ export default function RestTimerBar() {
 
   if (!active && !finished) return null;
 
-  const left = remainingMs(timer.endsAt, now);
-  const ratio = progressRatio(timer.startedAt, timer.endsAt, now);
+  // Czas pochodzi ze sklepu (odświeżany raz na sekundę) — dzięki temu
+  // licznik jest zawsze zgodny z pierścieniem postępu.
+  const left = remainingMs(timer.endsAt, timer.now);
+  const ratio = progressRatio(timer.startedAt, timer.endsAt, timer.now);
 
   // Ostatnie 10 sekund — kolor ostrzegawczy.
   const ending = active && left <= 10_000;

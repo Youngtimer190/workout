@@ -170,8 +170,11 @@ export default function SetTracker({
   const [showTimerSheet, setShowTimerSheet] = useState(false);
   const restTimer = useRestTimer();
   const { settings: restSettings } = useRestTimerSettings();
-  const restRunning = restTimer.endsAt != null && !restTimer.paused;
-  const restLeft = remainingMs(restTimer.endsAt, Date.now());
+  const restActive = restTimer.endsAt != null;
+  const restPaused = restTimer.paused;
+  // Czas bierzemy ze sklepu (odświeżany raz na sekundę) — `Date.now()`
+  // w renderze zamroziłby wartość do następnej zmiany stanu.
+  const restLeft = remainingMs(restTimer.endsAt, restTimer.now);
 
   /**
    * Szablon kolumn trackera na telefonie.
@@ -482,18 +485,21 @@ export default function SetTracker({
           </span>
 
           {/* Chip timera odpoczynku — dotknięcie otwiera wybór czasu.
-              Gdy przerwa trwa, pokazuje ile zostało. */}
+              Gdy przerwa trwa, pokazuje ile zostało (licznik żyje, bo
+              stan timera odświeża się raz na sekundę). */}
           <button
             onClick={() => setShowTimerSheet(true)}
-            aria-label={restRunning ? 'Zmień czas przerwy' : 'Ustaw czas przerwy'}
+            aria-label={restActive ? 'Zmień czas przerwy' : 'Ustaw czas przerwy'}
             className={`flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold transition-colors active:scale-95 cursor-pointer ${
-              restRunning
-                ? 'bg-cyan-500 text-white'
+              restActive
+                ? restPaused
+                  ? 'bg-amber-500 text-white'
+                  : 'bg-cyan-500 text-white'
                 : 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100'
             }`}
           >
             <TimerIcon className="h-3 w-3 flex-shrink-0" />
-            {restRunning
+            {restActive
               ? formatDuration(restLeft)
               : formatDuration(restSettings.defaultDurationMs)}
           </button>

@@ -55,6 +55,14 @@ export interface RestTimerState {
   finishedAt: number | null;
   /** Identyfikator zaplanowanego powiadomienia (push) — do anulowania. */
   pushScheduleId: string | null;
+  /**
+   * Aktualny czas (ms) — odświeżany raz na sekundę, gdy timer działa.
+   *
+   * Komponenty liczą z tego pozostały czas, zamiast wołać `Date.now()`
+   * w trakcie renderu (wartość z renderu by się zamroziła do następnej
+   * zmiany stanu, a stan zmienia się tylko przy start/pauzie/koniecu).
+   */
+  now: number;
 }
 
 const SETTINGS_KEY = 'fitplanner-rest-timer';
@@ -77,6 +85,7 @@ const INITIAL_STATE: RestTimerState = {
   pausedRemainingMs: null,
   finishedAt: null,
   pushScheduleId: null,
+  now: Date.now(),
 };
 
 /* ── Ustawienia ──────────────────────────────────────────────────────────── */
@@ -140,6 +149,7 @@ function loadState(): RestTimerState {
       pausedRemainingMs: null,
       finishedAt: null,
       pushScheduleId: null,
+      now: Date.now(),
     };
   } catch {
     return { ...INITIAL_STATE };
@@ -173,6 +183,7 @@ let state: RestTimerState = typeof localStorage !== 'undefined' ? loadState() : 
 const listeners = new Set<() => void>();
 let tickTimer: number | null = null;
 let lastTickSecond: number | null = null;
+let lastVibrateSecond: number | null = null;
 
 function emit() {
   listeners.forEach(l => {
@@ -184,9 +195,16 @@ function emit() {
   });
 }
 
-function setState(patch: Partial<RestTimerState>) {
+/**
+ * Aktualizuje stan i powiadamia słuchaczy.
+ *
+ * `persist = false` pomija zapis do localStorage — używane przy odświeżaniu
+ * zegara (raz na sekundę), bo zapisywanie do localStorage jest synchroniczne
+ * i potrafi przyciąć klatki na słabym telefonie.
+ */
+function setState(patch: Partial<RestTimerState>, persist = true) {
   state = { ...state, ...patch };
-  saveState(state);
+  if (persist) saveState(state);
   emit();
 }
 
@@ -207,6 +225,7 @@ function stopTicking() {
   window.clearInterval(tickTimer);
   tickTimer = null;
   lastTickSecond = null;
+  lastVibrateSecond = null;
 }
 
 /** Sprawdza, czy przerwa się skończyła (i ogłasza koniec). */
@@ -216,11 +235,19 @@ function tick() {
   const now = Date.now();
   const left = state.endsAt - now;
 
+  // Odświeżamy czas w stanie RAZ na sekundę — tyle wystarczy do
+  // wyświetlania liczby, a komponenty nie renderują się w kółko.
+  const second = Math.floor(now / 1000);
+  if (second !== lastTickSecond) {
+    lastTickSecond = second;
+    setState({ now }, false);
+  }
+
   // Delikatne wibracje w ostatnich 3 sekundach — sygnał „zaraz koniec”
-  // bez patrzenia w telefon (Android).
+  // bez patrzenia w telefon (Android). Raz na sekundę.
   const secondsLeft = Math.ceil(left / 1000);
-  if (secondsLeft <= 3 && secondsLeft > 0 && secondsLeft !== lastTickSecond) {
-    lastTickSecond = secondsLeft;
+  if (secondsLeft <= 3 && secondsLeft > 0 && secondsLeft !== lastVibrateSecond) {
+    lastVibrateSecond = secondsLeft;
     if (settings.vibrationEnabled) vibrateTick();
   }
 
