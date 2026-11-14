@@ -61,29 +61,29 @@ export default function Dashboard({ days, stats, onGoToPlanner, onGoToDay }: Das
   const weekTrainingDays = days.filter(d => (d.exercises?.length ?? 0) > 0).length;
   const weekCompletedDays = days.filter(isDayCompleted).length;
 
+  /**
+   * Kafelki statystyk — jeden wspólny wzór:
+   * duża liczba, pod nią nazwa z dwukropkiem („Treningi w miesiącu: listopad”).
+   */
   const statCards = [
     {
-      label: 'Dni treningowe',
+      label: 'Dni treningowe: ten tydzień',
       value: trainingDays,
       icon: <DumbbellIcon />,
-      sub: 'w tym tygodniu',
     },
     {
-      // Nazwa miesiąca w jednej linii z etykietą — „Treningi w miesiącu: listopad”
-      // czyta się lepiej niż podzielone na „Treningi w miesiącu” + „w listopad”.
       label: monthLabel ? `Treningi w miesiącu: ${monthLabel}` : 'Treningi w miesiącu',
       value: monthWorkouts,
       icon: <TrophyIcon />,
     },
     {
-      label: 'Ćwiczysz już',
+      label: 'Ćwiczysz już: tygodnie z rzędu',
       value: streakWeeks,
       icon: <FlameIcon />,
-      sub: 'tygodni z rzędu',
       extra: weekTrainingDays > 0 ? `w tym tygodniu ${weekCompletedDays} z ${weekTrainingDays} dni` : undefined,
     },
     {
-      label: 'Wolumen - 7 dni (kg)',
+      label: 'Wolumen: 7 dni (kg)',
       value: formatNumberPL(weekVolume),
       icon: <ChartIcon />,
       sub: totalCardioMinutes > 0
