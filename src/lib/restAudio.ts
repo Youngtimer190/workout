@@ -291,7 +291,19 @@ function playBellViaElement(): void {
   }
 }
 
-/** Odgrywa dzwonek końca przerwy. */
+/**
+ * Czy dzwonek na pewno zagra (kontekst gotowy i działający).
+ *
+ * Używamy tego, żeby wiedzieć, kiedy można spokojnie anulować powiadomienie
+ * systemowe — jeśli dzwonek jest gotowy, alarm odbierze on, a nie push.
+ */
+export function canPlayBell(): boolean {
+  return !!audioContext && !!bellBuffer && audioContext.state === 'running';
+}
+
+/**
+ * Odgrywa dzwonek końca przerwy.
+ */
 export function playBell(): void {
   const token = ++bellToken;
 

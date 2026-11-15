@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react';
 import { clampDuration, DEFAULT_REST_MS } from '../lib/restTimer';
 import {
   acquireWakeLock,
+  canPlayBell,
   cancelPendingBell,
   playBell,
   prepareBell,
@@ -252,8 +253,42 @@ function tick() {
     if (settings.vibrationEnabled) vibrateTick();
   }
 
+  // Tuż przed końcem przerwy zgłaszamy serwerowi, że alarm odbierze
+  // LOKALNY dzwonek — i prosimy o rezygnację z powiadomienia systemowego.
+  //
+  // Robimy to z wyprzedzeniem (a nie w momencie zakończenia), żeby serwer
+  // nie musiał czekać długiego „okna” na anulowanie. Dzięki temu
+  // powiadomienie na ZABLOKOWANYM telefonie (gdzie nikt nie anuluje)
+  // przychodzi o ~1,2 s wcześniej.
+  //
+  // Warunek: dzwonek musi być gotowy — inaczej wyciszylibyśmy push,
+  // a alarm i tak by nie zagrał.
+  if (
+    state.pushScheduleId &&
+    left > 0 &&
+    left <= PUSH_SELF_ALARM_LEAD_MS &&
+    !pushSelfAlarmSignalled &&
+    canPlayBell()
+  ) {
+    pushSelfAlarmSignalled = true;
+    void cancelRestTimerPush(state.pushScheduleId);
+  }
+
   if (left <= 0) finish();
 }
+
+/**
+ * Ile wcześniej (przed końcem przerwy) zgłaszamy serwerowi, że alarm
+ * odbierze lokalny dzwonek.
+ *
+ * Dzięki temu powiadomienie systemowe nie dubluje się z dzwonkiem, a serwer
+ * nie musi czekać długiego „okna” na anulowanie — czyli powiadomienie
+ * na zablokowanym telefonie przychodzi szybciej.
+ */
+const PUSH_SELF_ALARM_LEAD_MS = 700;
+
+/** Czy zgłosiliśmy już serwerowi, że alarm odbierze dzwonek. */
+let pushSelfAlarmSignalled = false;
 
 /**
  * Ile opóźnienia tolerujemy przy ogłaszaniu końca przerwy.
@@ -314,6 +349,7 @@ export function startRestTimer(durationMs: number): void {
   // Nowa przerwa → żaden dzwonek z poprzedniej nie może się jeszcze odezwać
   // (np. z przerwy zakończonej, gdy aplikacja była w tle).
   cancelPendingBell();
+  pushSelfAlarmSignalled = false;
 
   // Dźwięk przygotowujemy przy starcie — to gest użytkownika, więc
   // przeglądarka pozwoli zagrać później, bez kolejnego dotknięcia.

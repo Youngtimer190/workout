@@ -44,9 +44,14 @@ const MAX_SCHEDULES_PER_USER = 20;
  * Bez tej przerwy użytkownik dostałby dzwonek ORAZ powiadomienie.
  *
  * Gdy telefon jest zablokowany, nikt nie anuluje — powiadomienie wychodzi
- * (z opóźnieniem 1,8 s, którego nikt nie zauważy).
+ * (z opóźnieniem 0,6 s, którego nikt nie zauważy).
+ *
+ * Klient zgłasza anulowanie **z wyprzedzeniem** (tuż przed końcem przerwy,
+ * gdy wiadomo, że dzwonek na pewno zagra), więc okno nie musi być długie —
+ * a każda milisekunda tutaj jest milisekundą opóźnienia powiadomienia
+ * na zablokowanym telefonie.
  */
-const SEND_GRACE_MS = 1800;
+const SEND_GRACE_MS = 600;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -145,11 +150,28 @@ Deno.serve(async req => {
     const id = String(body.id ?? '');
     if (!id) return json({ error: 'Brak identyfikatora.' }, 400);
 
+    const { data: existing } = await admin
+      .from('push_schedules')
+      .select('ends_at, cancelled')
+      .eq('id', id)
+      .maybeSingle();
+
     await admin
       .from('push_schedules')
       .update({ cancelled: true })
       .eq('id', id)
       .eq('user_id', userId);
+
+    // Kiedy dotarło anulowanie względem końca przerwy — to decyduje,
+    // ile musi trwać „okno" przed wysyłką powiadomienia.
+    const endsAtMs = existing?.ends_at ? new Date(existing.ends_at).getTime() : null;
+    console.log(
+      JSON.stringify({
+        zdarzenie: 'anulowanie_doszedlo',
+        wzgledem_konca_ms: endsAtMs ? Date.now() - endsAtMs : null,
+        juz_anulowane: existing?.cancelled ?? null,
+      }),
+    );
 
     return json({ ok: true });
   }
@@ -196,6 +218,7 @@ Deno.serve(async req => {
     EdgeRuntime.waitUntil(
       (async () => {
         await sleep(Math.max(0, endsAt - Date.now()));
+        const wokeAt = Date.now();
 
         // Krótkie okno „grace period" przed wysyłką.
         //
@@ -203,11 +226,12 @@ Deno.serve(async req => {
         // samym momencie prosi serwer o anulowanie powiadomienia. Bez
         // tego oczekiwania serwer zdążyłby wysłać push w tej samej
         // chwili — użytkownik dostałby dzwonek ORAZ powiadomienie
-        // (podwójny alarm). 1,8 s wystarczy, żeby anulowanie dotarło.
+        // (podwójny alarm).
         //
         // Gdy telefon jest zablokowany, strona jest zamrożona i nie ma
         // kto anulować — wtedy powiadomienie wychodzi normalnie.
         await sleep(SEND_GRACE_MS);
+        const afterGrace = Date.now();
 
         // Sprawdzamy, czy użytkownik zdążył anulować przerwę.
         const { data: row } = await admin
@@ -215,8 +239,18 @@ Deno.serve(async req => {
           .select('cancelled')
           .eq('id', scheduleId)
           .maybeSingle();
+        const checkedAt = Date.now();
 
-        if (!row || (row as { cancelled: boolean }).cancelled) return;
+        if (!row || (row as { cancelled: boolean }).cancelled) {
+          console.log(
+            JSON.stringify({
+              zdarzenie: 'powiadomienie_anulowane',
+              opoznienie_ms: wokeAt - endsAt,
+              lacznie_ms: checkedAt - endsAt,
+            }),
+          );
+          return;
+        }
 
         const { data: subs } = await admin
           .from('push_subscriptions')
@@ -250,10 +284,35 @@ Deno.serve(async req => {
           }
         }
 
+        const sentAt = Date.now();
+
         await admin
           .from('push_schedules')
-          .update({ sent_at: new Date().toISOString() })
+          .update({
+            sent_at: new Date().toISOString(),
+            timing: {
+              budzik_ms: wokeAt - endsAt,
+              okno_ms: afterGrace - wokeAt,
+              odczyt_ms: checkedAt - afterGrace,
+              wysylka_ms: sentAt - checkedAt,
+              lacznie_ms: sentAt - endsAt,
+            },
+          })
           .eq('id', scheduleId);
+
+        // Rozliczenie czasu — pozwala zobaczyć, gdzie znikają milisekundy
+        // między końcem przerwy a powiadomieniem na telefonie.
+        console.log(
+          JSON.stringify({
+            zdarzenie: 'powiadomienie_wyslane',
+            budzik_ms: wokeAt - endsAt,        // opóźnienie przebudzenia
+            okno_ms: afterGrace - wokeAt,      // „grace period"
+            odczyt_ms: checkedAt - afterGrace, // odczyt flagi anulowania
+            wysylka_ms: sentAt - checkedAt,    // szyfrowanie + APNs
+            lacznie_ms: sentAt - endsAt,       // od końca przerwy do wysłania
+            subskrypcji: subscriptions.length,
+          }),
+        );
       })(),
     );
 

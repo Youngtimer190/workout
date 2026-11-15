@@ -133,9 +133,21 @@ wierzchu). Jeśli przerwa minęła, gdy telefon był zablokowany, jej alarmem
 było **powiadomienie systemowe** — lokalny dzwonek tylko by przeszkadzał
 przy powrocie do aplikacji.
 
-Opóźnienie powiadomienia: **2–3 s** od końca przerwy (serwer budzi się w tle
-i potrzebuje chwili na szyfrowanie oraz wysyłkę). Przy aplikacji na wierzchu
-nie jest to zauważalne — dzwonek lokalny gra wtedy natychmiast.
+Opóźnienie powiadomienia: **~1 s po stronie serwera** (przebudzenie 0 ms +
+okno 0,6 s + odczyt bazy i szyfrowanie ~0,4 s) plus **dostarczenie APNs →
+iPhone** (1–2 s, poza naszą kontrolą). W praktyce powiadomienie przychodzi
+**2,5–3,5 s** po końcu przerwy.
+
+Żeby okno „na anulowanie" nie musiało być długie, klient zgłasza serwerowi
+**z wyprzedzeniem** (ok. 0,5–0,7 s przed końcem przerwy), że alarm odbierze
+lokalny dzwonek — ale tylko wtedy, gdy dzwonek jest na pewno gotowy do
+zagrania. Dzięki temu powiadomienie nie dubluje się z dzwonkiem, a
+powiadomienie na zablokowanym telefonie (gdzie nikt nie anuluje) wychodzi
+najszybciej, jak się da.
+
+Rozliczenie czasu (przebudzenie / okno / odczyt / wysyłka) zapisywane jest w
+kolumnie `timing` tabeli `push_schedules` — można sprawdzić, gdzie znikają
+milisekundy.
 
 ## Ograniczenia (warto wiedzieć)
 
