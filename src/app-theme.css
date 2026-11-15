@@ -96,6 +96,14 @@
 .app-theme .bg-sky-50\/50 { background-color: rgb(14 165 233 / 0.1); }
 .app-theme .bg-orange-50\/50 { background-color: rgb(249 115 22 / 0.1); }
 
+/* ── Gradienty ──────────────────────────────────────────────────────────────
+   UWAGA: `background-color` NIE działa dla gradientu — Tailwind buduje go
+   z zmiennych `--tw-gradient-from` / `--tw-gradient-to`. Bez przemapowania
+   tych zmiennych jasny gradient (np. `from-cyan-50 to-cyan-100`) zostaje
+   jasny, a tekst przemapowany wyżej na jasny — i robi się niewidoczny. */
+.app-theme .from-cyan-50 { --tw-gradient-from: rgb(6 182 212 / 0.2); }
+.app-theme .to-cyan-100 { --tw-gradient-to: rgb(6 182 212 / 0.07); }
+
 /* ── Teksty akcentów ─────────────────────────────────────────────────────── */
 .app-theme :is(.text-red-600, .text-red-700) { color: rgb(252 165 165); }
 .app-theme .text-red-800 { color: rgb(254 202 202); }
