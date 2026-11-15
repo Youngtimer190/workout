@@ -503,6 +503,7 @@ export const exerciseLibrary: Exercise[] = [
     restTime: 60,
     notes: 'Supinuj nadgarstek podczas ugięcia — kciuk na zewnątrz. Trzymaj łokieć nieruchomo. Powolna ekscentryka (3 sek) dla większej stymulacji.',
     requiredEquipment: ['dumbbells'],
+    isUnilateral: true,
   },
   {
     id: 'biceps-3',
@@ -1354,6 +1355,7 @@ export const exerciseLibrary: Exercise[] = [
     restTime: 60,
     notes: 'Górna część ramienia równoległa do podłogi przez cały ruch. Prostuj tylko od łokcia — ramię nieruchome. Zaciśnij triceps na 1 sekundę w górze.',
     requiredEquipment: ['dumbbells'],
+    isUnilateral: true,
   },
   {
     id: 'triceps-11',
@@ -2186,6 +2188,7 @@ export const exerciseLibrary: Exercise[] = [
     restTime: 75,
     notes: 'Oprzyj się o ławkę pod skosem ~45°. Ręce zwisają swobodnie w dół. Uginaj powoli. Rozciągnięcie na dole ruchu jest kluczowe — nie skracaj zakresu.',
     requiredEquipment: ['dumbbells', 'bench'],
+    isUnilateral: true,
   },
 
   // ═══════════════════════════════════════════════════════
