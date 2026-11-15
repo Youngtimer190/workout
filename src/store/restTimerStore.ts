@@ -301,6 +301,15 @@ const PUSH_SELF_ALARM_LEAD_MS = 700;
 let pushSelfAlarmSignalled = false;
 
 /**
+ * Numer generacji harmonogramu push.
+ *
+ * Chroni przed wyścigiem: odpowiedź serwera na żądanie harmonogramu może
+ * przyjść po tym, jak zaczęła się kolejna przerwa. Bez generacji stary
+ * identyfikator nadpisałby nowy i przerwa przestałaby być anulowana.
+ */
+let pushScheduleGeneration = 0;
+
+/**
  * Ile opóźnienia tolerujemy przy ogłaszaniu końca przerwy.
  *
  * Gdy przerwa kończy się, a użytkownik PATRZY na ekran, zegar odchodzi
@@ -366,9 +375,18 @@ export function startRestTimer(durationMs: number, label?: string | null): void 
   cancelPendingBell();
   pushSelfAlarmSignalled = false;
 
+  // Poprzednia przerwa została ZASTĄPIONA nową — jej powiadomienie
+  // systemowe nie może już dotrzeć. Bez tego użytkownik dostawałby alarm
+  // po anulowaniu timera: stary harmonogram zostawał na serwerze, a jego
+  // identyfikator ginął w sklepie (zastępowała go nowa przerwa).
+  const previousPushId = state.pushScheduleId;
+  if (previousPushId) {
+    void cancelRestTimerPush(previousPushId);
+  }
+
   // Dźwięk przygotowujemy przy starcie — to gest użytkownika, więc
   // przeglądarka pozwoli zagrać później, bez kolejnego dotknięcia.
-  // Web Audio nie potrzebuje bezgłośnego „odblokowania”, które przejmowało
+  // Web Audio nie potrzebuje bezgłośnego „odblokowania", które przejmowało
   // focus audio i zatrzymywało muzykę użytkownika.
   if (settings.soundEnabled) void prepareBell();
 
@@ -391,10 +409,20 @@ export function startRestTimer(durationMs: number, label?: string | null): void 
 
   // Powiadomienie systemowe jako zabezpieczenie na wypadek uśpienia apki.
   if (settings.pushEnabled) {
+    const generation = ++pushScheduleGeneration;
     void scheduleRestTimerPush(now + duration).then(id => {
-      if (id && state.endsAt != null) {
-        setState({ pushScheduleId: id });
+      // Odpowiedź serwera mogła przyjść PO tym, jak zaczęła się kolejna
+      // przerwa albo gdy ta już się zakończyła — wtedy ten identyfikator
+      // już niczego nie dotyczy i nie wolno go zapamiętać.
+      if (!id || generation !== pushScheduleGeneration) return;
+
+      if (state.endsAt == null) {
+        // Przerwa zdążyła się zakończyć — anulujemy, żeby push nie przyszedł.
+        void cancelRestTimerPush(id);
+        return;
       }
+
+      setState({ pushScheduleId: id });
     });
   }
 }

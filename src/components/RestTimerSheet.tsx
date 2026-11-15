@@ -209,11 +209,25 @@ export default function RestTimerSheet({ initialDurationMs, mode = 'start', onCl
           </div>
         </div>
 
-        {/* Akcja */}
-        <div className="border-t border-slate-100 px-4 py-3 flex-shrink-0">
+        {/* Akcja — stopka wg wzorca pozostałych modali aplikacji:
+            tło, górna linia, dwa przyciski obok siebie (Anuluj + akcja)
+            oraz odstęp na home indicator iPhone'a. */}
+        <div
+          className="px-4 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2 flex-shrink-0"
+          // Home indicator iPhone — przyciski nie mogą pod niego wchodzić
+          style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
+        >
+          <button
+            onClick={onClose}
+            className="px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold text-slate-600 bg-white border border-slate-200 active:bg-slate-50 cursor-pointer"
+            style={{ WebkitTapHighlightColor: 'transparent' }}
+          >
+            Anuluj
+          </button>
           <button
             onClick={handleStart}
-            className="w-full rounded-xl bg-gradient-to-r from-cyan-600 to-cyan-700 py-3.5 text-sm font-bold text-white shadow-lg shadow-cyan-600/25 transition-all hover:brightness-110 active:scale-[0.99] cursor-pointer"
+            className="px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-cyan-500 to-cyan-700 transition-all hover:brightness-110 active:opacity-80 cursor-pointer"
+            style={{ WebkitTapHighlightColor: 'transparent' }}
           >
             {mode === 'adjust' ? 'Zmień czas przerwy' : 'Start przerwy'}
           </button>
