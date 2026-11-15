@@ -6,12 +6,21 @@ import {
   parseDuration,
   REST_PRESETS,
 } from '../lib/restTimer';
-import { startRestTimer } from '../store/restTimerStore';
+import {
+  setRestTimerRemaining,
+  startRestTimer,
+  updateRestTimerSettings,
+} from '../store/restTimerStore';
 import { useKeyboardInset } from '../hooks/useKeyboardInset';
 
 interface RestTimerSheetProps {
   /** Czas podświetlony na starcie (ms). */
   initialDurationMs: number;
+  /**
+   * „start" — żadna przerwa nie trwa: wybrany czas startuje nową przerwę.
+   * „adjust" — przerwa już trwa: wybrany czas zmienia ile zostało.
+   */
+  mode?: 'start' | 'adjust';
   onClose: () => void;
 }
 
@@ -23,7 +32,7 @@ interface RestTimerSheetProps {
  *  2. regulacja krokami ±15 s,
  *  3. wpisanie własnej wartości („90”, „1:30”, „2:00”).
  */
-export default function RestTimerSheet({ initialDurationMs, onClose }: RestTimerSheetProps) {
+export default function RestTimerSheet({ initialDurationMs, mode = 'start', onClose }: RestTimerSheetProps) {
   const [durationMs, setDurationMs] = useState(initialDurationMs);
   const [manual, setManual] = useState('');
   const [manualError, setManualError] = useState(false);
@@ -63,7 +72,14 @@ export default function RestTimerSheet({ initialDurationMs, onClose }: RestTimer
   };
 
   const handleStart = () => {
-    startRestTimer(durationMs);
+    if (mode === 'adjust') {
+      // Przerwa już trwa — zmieniamy tylko ile zostało.
+      setRestTimerRemaining(durationMs);
+    } else {
+      // Nowa przerwa: zapisujemy czas jako domyślny i startujemy.
+      updateRestTimerSettings({ defaultDurationMs: durationMs });
+      startRestTimer(durationMs);
+    }
     onClose();
   };
 
@@ -199,7 +215,7 @@ export default function RestTimerSheet({ initialDurationMs, onClose }: RestTimer
             onClick={handleStart}
             className="w-full rounded-xl bg-gradient-to-r from-cyan-600 to-cyan-700 py-3.5 text-sm font-bold text-white shadow-lg shadow-cyan-600/25 transition-all hover:brightness-110 active:scale-[0.99] cursor-pointer"
           >
-            Start przerwy
+            {mode === 'adjust' ? 'Zmień czas przerwy' : 'Start przerwy'}
           </button>
         </div>
       </div>

@@ -419,9 +419,39 @@ export function addRestTimerSeconds(seconds: number): void {
   const next = Math.max(0, left + seconds * 1000);
   setState({
     endsAt: now + next,
-    durationMs: Math.max(state.durationMs, next),
+    // Przy wydłużeniu rośnie całkowity czas przerwy, przy skróceniu maleje.
+    durationMs: seconds >= 0 ? Math.max(state.durationMs, next) : next,
   });
   ensureTicking();
+}
+
+/**
+ * Ustawia pozostały czas TRWAJĄCEJ przerwy (np. wybrany preset).
+ *
+ * Używane przez panel czasu, gdy przerwa już trwa — zamiast nadpisywać
+ * ją nową, zmieniamy tylko ile zostało.
+ */
+export function setRestTimerRemaining(durationMs: number): void {
+  if (state.endsAt == null) return;
+  const duration = clampDuration(durationMs);
+  const now = Date.now();
+  setState({
+    endsAt: now + duration,
+    durationMs: duration,
+    startedAt: now,
+    paused: false,
+    pausedRemainingMs: null,
+  });
+  ensureTicking();
+}
+
+/**
+ * Zmienia DOMYŚLNY czas przerwy (używane przez przyciski ± przy trackingu,
+ * gdy żadna przerwa nie trwa).
+ */
+export function changeDefaultRestSeconds(seconds: number): void {
+  const next = clampDuration(settings.defaultDurationMs + seconds * 1000);
+  setSettings({ defaultDurationMs: next });
 }
 
 /** Kończy przerwę przedwcześnie (anulowanie przez użytkownika). */

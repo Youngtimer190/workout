@@ -67,10 +67,21 @@ export default function RestTimerBar() {
 
   return (
     <div
-      role="status"
-      aria-live="polite"
       className="fixed left-1/2 z-50 -translate-x-1/2 bottom-[104px] md:bottom-6 w-[calc(100%-2rem)] max-w-sm animate-fade-up"
     >
+      {/* Strefa „żywa" TYLKO dla zmian stanu (start/koniec przerwy).
+          Licznik odliczający musi mieć aria-live="off" — inaczej czytnik
+          ekranowy ogłaszałby „1:30, 1:29, 1:28…" co sekundę. */}
+      <span className="sr-only" role="status" aria-live="polite">
+        {finished
+          ? 'Przerwa zakończona. Możesz zacząć kolejną serię.'
+          : timer.paused
+            ? 'Przerwa wstrzymana.'
+            : active
+              ? 'Przerwa trwa.'
+              : ''}
+      </span>
+
       <div
         className={`flex items-center gap-3 rounded-2xl border px-3 py-2.5 shadow-2xl backdrop-blur-xl ${
           finished
@@ -104,6 +115,8 @@ export default function RestTimerBar() {
             />
           </svg>
           <span
+            aria-live="off"
+            aria-label={finished ? 'Przerwa zakończona' : `Pozostało ${formatDuration(left)}`}
             className={`absolute inset-0 flex items-center justify-center text-[13px] font-extrabold tabular-nums ${
               finished ? 'text-emerald-300' : 'text-white'
             }`}

@@ -4,13 +4,14 @@ import { CheckIcon, TimerIcon } from './icons';
 import { buildCardioLog, CARDIO_DEFAULT_MINUTES } from '../lib/cardio';
 import Stepper from './Stepper';
 import RestTimerSheet from './RestTimerSheet';
+import RestTimerControl from './RestTimerControl';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import {
   startDefaultRestTimer,
   useRestTimer,
   useRestTimerSettings,
 } from '../store/restTimerStore';
-import { formatDuration, remainingMs } from '../lib/restTimer';
+import { remainingMs } from '../lib/restTimer';
 
 interface SetTrackerProps {
   exercise?: Exercise;
@@ -151,6 +152,12 @@ export default function SetTracker({
   const isDumbbell = !!exercise?.requiredEquipment?.includes('dumbbells');
   const isUnilateral = !!exercise?.isUnilateral;
 
+  /** Ustawienia timera — m.in. czy przerwa startuje sama po zaznaczeniu serii. */
+  const { settings: restSettings } = useRestTimerSettings();
+  const restTimer = useRestTimer();
+  const restTimerActive = restTimer.endsAt != null;
+  const restTimerLeft = remainingMs(restTimer.endsAt, restTimer.now);
+
   // Telefon: komórka ma tylko ~56 px, więc przyciski ± pojawiają się
   // dopiero po dotknięciu wartości. Przy okazji chowamy kolumnę „Plan”,
   // żeby zwolnić miejsce na większe przyciski.
@@ -168,13 +175,6 @@ export default function SetTracker({
 
   /* ── Timer odpoczynku ─────────────────────────────────────────────────── */
   const [showTimerSheet, setShowTimerSheet] = useState(false);
-  const restTimer = useRestTimer();
-  const { settings: restSettings } = useRestTimerSettings();
-  const restActive = restTimer.endsAt != null;
-  const restPaused = restTimer.paused;
-  // Czas bierzemy ze sklepu (odświeżany raz na sekundę) — `Date.now()`
-  // w renderze zamroziłby wartość do następnej zmiany stanu.
-  const restLeft = remainingMs(restTimer.endsAt, restTimer.now);
 
   /**
    * Szablon kolumn trackera na telefonie.
@@ -484,27 +484,13 @@ export default function SetTracker({
             {completedSets}/{localLogs.length}
           </span>
 
-          {/* Chip timera odpoczynku — dotknięcie otwiera wybór czasu.
-              Gdy przerwa trwa, pokazuje ile zostało (licznik żyje, bo
-              stan timera odświeża się raz na sekundę). */}
-          <button
-            onClick={() => setShowTimerSheet(true)}
-            aria-label={restActive ? 'Zmień czas przerwy' : 'Ustaw czas przerwy'}
-            className={`flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold transition-colors active:scale-95 cursor-pointer ${
-              restActive
-                ? restPaused
-                  ? 'bg-amber-500 text-white'
-                  : 'bg-cyan-500 text-white'
-                : 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100'
-            }`}
-          >
-            <TimerIcon className="h-3 w-3 flex-shrink-0" />
-            {restActive
-              ? formatDuration(restLeft)
-              : formatDuration(restSettings.defaultDurationMs)}
-          </button>
+          {/* Sterowanie przerwą: [−] czas [+] — te same wymiary co w stepperze */}
+          <RestTimerControl onOpenPicker={() => setShowTimerSheet(true)} />
         </div>
-        {totalVolume > 0 && (
+
+        {/* Wolumen jest niżej w wierszu statystyk — na wąskim ekranie
+            ustępujemy mu miejsca, żeby przyciski ± zostały wygodne. */}
+        {totalVolume > 0 && !useStrip && (
           <span className="text-[10px] font-semibold text-slate-500 flex-shrink-0">
             <span className="text-cyan-700 font-bold">{totalVolume.toLocaleString()} kg</span> obj.
           </span>
@@ -732,7 +718,8 @@ export default function SetTracker({
       {/* Panel wyboru czasu przerwy */}
       {showTimerSheet && (
         <RestTimerSheet
-          initialDurationMs={restSettings.defaultDurationMs}
+          initialDurationMs={restTimerActive ? restTimerLeft : restSettings.defaultDurationMs}
+          mode={restTimerActive ? 'adjust' : 'start'}
           onClose={() => setShowTimerSheet(false)}
         />
       )}
