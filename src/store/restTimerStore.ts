@@ -58,6 +58,13 @@ export interface RestTimerState {
   /** Identyfikator zaplanowanego powiadomienia (push) — do anulowania. */
   pushScheduleId: string | null;
   /**
+   * Po której serii jest przerwa (nazwa ćwiczenia).
+   *
+   * Pasek timera jest globalny, więc bez tego użytkownik nie wie, po czym
+   * odpoczywa — a to najczęstsze pytanie przy kilku ćwiczeniach pod rząd.
+   */
+  restLabel: string | null;
+  /**
    * Aktualny czas (ms) — odświeżany raz na sekundę, gdy timer działa.
    *
    * Komponenty liczą z tego pozostały czas, zamiast wołać `Date.now()`
@@ -87,6 +94,7 @@ const INITIAL_STATE: RestTimerState = {
   pausedRemainingMs: null,
   finishedAt: null,
   pushScheduleId: null,
+  restLabel: null,
   now: Date.now(),
 };
 
@@ -151,6 +159,7 @@ function loadState(): RestTimerState {
       pausedRemainingMs: null,
       finishedAt: null,
       pushScheduleId: null,
+      restLabel: typeof p.restLabel === 'string' ? p.restLabel : null,
       now: Date.now(),
     };
   } catch {
@@ -169,6 +178,7 @@ function saveState(state: RestTimerState) {
           endsAt: state.endsAt,
           startedAt: state.startedAt,
           durationMs: state.durationMs,
+          restLabel: state.restLabel,
         }),
       );
     }
@@ -341,8 +351,13 @@ function finish() {
 
 /* ── Akcje ───────────────────────────────────────────────────────────────── */
 
-/** Startuje przerwę o podanym czasie. */
-export function startRestTimer(durationMs: number): void {
+/**
+ * Startuje przerwę o podanym czasie.
+ *
+ * `label` to nazwa ćwiczenia, po którym jest przerwa — pokazuje ją pasek
+ * („po: Przysiad"), bo sam timer jest globalny.
+ */
+export function startRestTimer(durationMs: number, label?: string | null): void {
   const duration = clampDuration(durationMs);
   const now = Date.now();
 
@@ -365,6 +380,7 @@ export function startRestTimer(durationMs: number): void {
     pausedRemainingMs: null,
     finishedAt: null,
     pushScheduleId: null,
+    restLabel: label ?? null,
   });
 
   ensureTicking();
@@ -384,8 +400,8 @@ export function startRestTimer(durationMs: number): void {
 }
 
 /** Startuje przerwę z domyślnym czasem. */
-export function startDefaultRestTimer(): void {
-  startRestTimer(settings.defaultDurationMs);
+export function startDefaultRestTimer(label?: string | null): void {
+  startRestTimer(settings.defaultDurationMs, label);
 }
 
 /** Wstrzymuje przerwę. */

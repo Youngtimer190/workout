@@ -196,7 +196,8 @@ export default function SetTracker({
 
     // Przerwa między seriami startuje po zakończeniu serii — to naturalny
     // moment odpoczynku, więc użytkownik nie musi o timerze pamiętać.
-    if (willBeDone && restSettings.autoStart) startDefaultRestTimer();
+    // Nazwę ćwiczenia przekazujemy, żeby pasek pokazywał, po czym przerwa.
+    if (willBeDone && restSettings.autoStart) startDefaultRestTimer(exercise?.name ?? null);
   };
 
   /** Dodaje kolejną serię na końcu listy (poza zaplanowaną liczbą). */
