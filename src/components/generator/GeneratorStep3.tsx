@@ -28,11 +28,33 @@ const levelLabels: Record<string, string> = {
   advanced: 'Zaawansowany',
 };
 
+/**
+ * Prefiks notatki trenera.
+ *
+ * Obecna wersja zapisuje samo „TRENER:", ale STARE plany (zapisane w chmurze
+ * jeszcze przed zmianą) mają prefiks ze znaczkiem U+1F4A1. Obsługujemy oba,
+ * żeby stare plany nadal wyglądały dobrze — znak jest tu zapisany jako kod
+ * Unicode, więc w kodzie źródłowym nie ma znaków emoji.
+ */
+const TRENER_PREFIXY = ['TRENER:', '\u{1F4A1} TRENER:'];
+
+/** Zwraca treść notatki trenera (bez prefiksu) albo null. */
+function extractTrainerNote(notes?: string | null): string | null {
+  if (!notes) return null;
+  for (const prefiks of TRENER_PREFIXY) {
+    const idx = notes.indexOf(prefiks);
+    if (idx !== -1) return notes.substring(idx + prefiks.length).trim() || null;
+  }
+  return null;
+}
+
 // Skraca notatki trenera do pierwszego zdania w podglądzie
 function shortNote(note?: string): string | null {
   if (!note) return null;
-  const trainerIdx = note.indexOf('💡 TRENER:');
-  if (trainerIdx !== -1) return note.substring(0, trainerIdx).trim() || null;
+  for (const prefiks of TRENER_PREFIXY) {
+    const trainerIdx = note.indexOf(prefiks);
+    if (trainerIdx !== -1) return note.substring(0, trainerIdx).trim() || null;
+  }
   const firstSentence = note.split('.')[0];
   return firstSentence.length > 80 ? firstSentence.substring(0, 80) + '…' : firstSentence;
 }
@@ -95,7 +117,7 @@ function DayCard({ day }: { day: WorkoutDay }) {
 
 function ExerciseRow({ ex, idx }: { ex: GeneratedPlan['days'][0]['exercises'][0]; idx: number }) {
   const [showFullNote, setShowFullNote] = useState(false);
-  const trainerNote = ex.notes?.includes('💡 TRENER:') ? ex.notes.split('💡 TRENER:')[1]?.trim() : null;
+  const trainerNote = extractTrainerNote(ex.notes);
   const mainNote = shortNote(ex.notes);
   const isWarmup = ex.name.includes('Rozgrzewka');
 

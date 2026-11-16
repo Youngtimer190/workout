@@ -1,14 +1,21 @@
 import { WorkoutDay } from '../types';
-import { formatNumberPL, formatVolumePL, isDayCompleted, WorkoutStats } from '../lib/stats';
+import {
+  DashboardHistory,
+  formatNumberPL,
+  formatVolumePL,
+  isDayCompleted,
+  WorkoutStats,
+} from '../lib/stats';
 import { muscleGroupBgColors } from '../data/exercises';
+import { pluralPl } from '../lib/format';
+import StatCard from './StatCard';
 import WeekPlanPanel from './WeekPlanPanel';
 import {
+  CalendarIcon,
   ChartIcon,
   DumbbellIcon,
   FlameIcon,
   MoonIcon,
-  SparklesIcon,
-  TrophyIcon,
 } from './icons';
 
 interface DashboardProps {
@@ -17,6 +24,10 @@ interface DashboardProps {
   weekKey?: string | null;
   /** Statystyki z historii tygodni (treningi w miesiącu, passa, wolumen). */
   stats?: WorkoutStats;
+  /** Historia do porównań i mini-wykresów w górnej sekcji. */
+  history?: DashboardHistory;
+  /** Imię użytkownika — do powitania. */
+  displayName?: string | null;
   onGoToPlanner: () => void;
   onGoToDay?: (dayIndex: number) => void;
 }
@@ -24,11 +35,29 @@ interface DashboardProps {
 const today = new Date().getDay();
 const todayIndex = today === 0 ? 6 : today - 1;
 
+/** Pełna data po polsku, np. „poniedziałek, 16 listopada 2026". */
+function formatTodayPL(date: Date): string {
+  const s = new Intl.DateTimeFormat('pl-PL', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(date);
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 /* ── Ikony (spójne z ekranem logowania) ─────────────────────────────────── */
 
-export default function Dashboard({ days, weekKey, stats, onGoToPlanner, onGoToDay }: DashboardProps) {
+export default function Dashboard({
+  days,
+  weekKey,
+  stats,
+  history,
+  displayName,
+  onGoToPlanner,
+  onGoToDay,
+}: DashboardProps) {
   const totalExercises = days.reduce((acc, d) => acc + (d.exercises?.length ?? 0), 0);
-  const trainingDays = days.filter(d => !d.isRestDay && (d.exercises?.length ?? 0) > 0).length;
 
   // Tydzień zawsze ma 7 dni (patrz `normalizeWeekDays`), ale gdyby jednak
   // któregoś brakowało, nie wywalamy aplikacji — pokazujemy pusty dzień.
@@ -54,90 +83,144 @@ export default function Dashboard({ days, weekKey, stats, onGoToPlanner, onGoToD
   const totalCardioMinutes = stats?.totalCardioMinutes ?? 0;
   const monthLabel = stats?.monthLabel ?? '';
 
-  /**
-   * Wykonane dni w bieżącym tygodniu (z planu zaplanowanych dni treningowych).
-   *
-   * Passa mówi „ćwiczyłeś co tydzień”, ale sama nie mówi, ile NAPRAWDĘ
-   * zrobiłeś. Ten podpis uzupełnia tę informację — bez niego wyglądałoby,
-   * że tydzień z jednym treningiem jest taki sam jak tydzień pełny.
-   */
-  const weekTrainingDays = days.filter(d => (d.exercises?.length ?? 0) > 0).length;
-  const weekCompletedDays = days.filter(isDayCompleted).length;
+  /* ── Powitanie i podpis ────────────────────────────────────────────────── */
 
-  /**
-   * Kafelki statystyk — jeden wspólny wzór:
-   * duża liczba, pod nią nazwa z dwukropkiem („Treningi w miesiącu: listopad”).
-   */
-  const statCards = [
+  const imie = (displayName ?? '').trim().split(/\s+/)[0] ?? '';
+  const powitanie = imie ? `Witaj, ${imie}` : 'Witaj!';
+
+  const maPlan = totalExercises > 0;
+  const dzisJuzTrenowano = isDayCompleted(days[todayIndex] ?? emptyDay);
+  const podpis = !maPlan
+    ? 'Twój plan jest pusty — zacznij od jednego ćwiczenia.'
+    : !dzisJuzTrenowano && (days[todayIndex]?.exercises?.length ?? 0) > 0
+    ? 'Zacznij dziś od jednej serii — każda się liczy.'
+    : 'Regularność buduje formę. Trenuj konsekwentnie!';
+
+  const etykietaCTA = maPlan ? 'Edytuj plan' : 'Zaplanuj trening';
+
+  /* ── Karty statystyk ──────────────────────────────────────────────────────
+     Każda karta ma: ikonę + etykietę, wartość, podpis oraz porównanie
+     z poprzednim okresem i mini-wykres. */
+
+  const hist = history;
+
+  /** Zmiana względem poprzedniego okresu (liczba albo procent). */
+  const zmiana = (obecna: number, poprzednia: number, procent: boolean): number | null => {
+    if (procent) {
+      if (poprzednia <= 0) return null;
+      return Math.round(((obecna - poprzednia) / poprzednia) * 100);
+    }
+    return obecna - poprzednia;
+  };
+
+  const karty = [
     {
-      label: 'Dni treningowe: ten tydzień',
-      value: trainingDays,
-      icon: <DumbbellIcon />,
+      ikona: <CalendarIcon className="h-4 w-4" />,
+      etykieta: 'Treningi w tym miesiącu',
+      wartosc: monthWorkouts,
+      podpis: monthLabel,
+      delta: {
+        change: hist ? zmiana(hist.monthWorkouts, hist.previousMonth.workouts, false) : null,
+        hasBaseline: hist?.previousMonth.exists ?? false,
+        period: 'poprzedni miesiąc',
+      },
+      seria: hist?.series.workouts,
     },
     {
-      label: monthLabel ? `Treningi w miesiącu: ${monthLabel}` : 'Treningi w miesiącu',
-      value: monthWorkouts,
-      icon: <TrophyIcon />,
+      ikona: <DumbbellIcon className="h-4 w-4" />,
+      etykieta: 'Wykonane ćwiczenia',
+      wartosc: hist?.weekExercises ?? 0,
+      podpis: 'w tym tygodniu',
+      delta: {
+        change: hist ? zmiana(hist.weekExercises, hist.previousWeek.exercises, false) : null,
+        hasBaseline: hist?.previousWeek.exists ?? false,
+        period: 'poprzedni tydzień',
+      },
+      seria: hist?.series.exercises,
+      wyróżniona: true,
     },
     {
-      label: 'Ćwiczysz już: tygodnie z rzędu',
-      value: streakWeeks,
-      icon: <FlameIcon />,
-      extra: weekTrainingDays > 0 ? `w tym tygodniu ${weekCompletedDays} z ${weekTrainingDays} dni` : undefined,
+      ikona: <FlameIcon className="h-4 w-4" />,
+      etykieta: 'Dni z rzędu',
+      wartosc: hist?.dailyStreak ?? 0,
+      jednostka: ` ${pluralPl(hist?.dailyStreak ?? 0, 'dzień', 'dni', 'dni')}`,
+      podpis: `${pluralPl(streakWeeks, 'tydzień', 'tygodnie', 'tygodni')} z rzędu`,
+      seria: hist?.series.streak,
+      typSerii: 'line' as const,
     },
     {
-      label: 'Wolumen: 7 dni (kg)',
-      value: formatNumberPL(weekVolume),
-      icon: <ChartIcon />,
-      sub: totalCardioMinutes > 0
+      ikona: <ChartIcon className="h-4 w-4" />,
+      etykieta: 'Objętość treningowa',
+      wartosc: formatNumberPL(weekVolume),
+      jednostka: ' kg',
+      podpis: totalCardioMinutes > 0
         ? `Łącznie: ${formatVolumePL(totalVolume)} · ${formatNumberPL(totalCardioMinutes)} min cardio`
         : `Łącznie: ${formatVolumePL(totalVolume)}`,
+      delta: {
+        change: hist ? zmiana(weekVolume, hist.previousWeek.volume, true) : null,
+        hasBaseline: hist?.previousWeek.exists ?? false,
+        period: 'poprzedni tydzień',
+        percent: true,
+        unit: 'kg',
+      },
+      seria: hist?.series.volume,
     },
   ];
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            Witaj!
-            <SparklesIcon className="h-6 w-6 text-cyan-300" />
+      {/* Header
+          Poziomy układ (chip z datą obok tytułu) włącza się dopiero od
+          `lg` — przy mniejszych szerokościach panel boczny zjada miejsce
+          i tytuł zawijałby się na cztery linie. */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
+            {powitanie}
           </h1>
-          <p className="text-slate-400 text-sm mt-1">Oto przegląd Twojego planu treningowego</p>
+          <p className="mt-1 text-sm text-slate-400">{podpis}</p>
         </div>
-        <button
-          onClick={onGoToPlanner}
-          className="group inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 via-cyan-500 to-cyan-700 text-white text-sm font-semibold shadow-[0_14px_34px_-14px_rgba(6,182,212,1)] hover:brightness-110 transition-all cursor-pointer self-start sm:self-auto"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          Edytuj plan
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 transition-transform group-hover:translate-x-1">
-            <path d="M5 12h14" />
-            <path d="m13 6 6 6-6 6" />
-          </svg>
-        </button>
+        <div className="flex shrink-0 flex-col items-stretch gap-2 sm:flex-row sm:items-center lg:justify-end">
+          {/* Data dzisiejsza — chip z ikoną kalendarza */}
+          <span className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-[11px] font-medium text-slate-300 sm:text-xs">
+            <CalendarIcon className="h-3.5 w-3.5 flex-shrink-0 text-cyan-300" />
+            <span className="truncate">{formatTodayPL(new Date())}</span>
+          </span>
+          <button
+            onClick={onGoToPlanner}
+            className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 via-cyan-500 to-cyan-700 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_34px_-14px_rgba(6,182,212,1)] transition-all hover:brightness-110 active:opacity-90 cursor-pointer"
+          >
+            {maPlan ? (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            ) : (
+              <CalendarIcon className="h-4 w-4" />
+            )}
+            {etykietaCTA}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 transition-transform group-hover:translate-x-1">
+              <path d="M5 12h14" />
+              <path d="m13 6 6 6-6 6" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {statCards.map(stat => (
-          <div
-            key={stat.label}
-            className="bg-white rounded-2xl p-4 border border-cyan-400/15 hover:border-cyan-400/30 transition-colors flex flex-col"
-          >
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-400/25 bg-gradient-to-br from-cyan-500/30 to-cyan-400/10 text-cyan-200 mb-3">
-              {stat.icon}
-            </div>
-            <p className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-none">{stat.value}</p>
-            <p className="text-xs sm:text-sm text-slate-400 mt-1">{stat.label}</p>
-            {stat.sub && <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">{stat.sub}</p>}
-            {stat.extra && (
-              <p className="text-[11px] sm:text-xs text-cyan-300/80 mt-0.5">{stat.extra}</p>
-            )}
-          </div>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {karty.map(k => (
+          <StatCard
+            key={k.etykieta}
+            icon={k.ikona}
+            label={k.etykieta}
+            value={k.wartosc}
+            suffix={k.jednostka}
+            sub={k.podpis}
+            delta={k.delta}
+            series={k.seria}
+            seriesType={k.typSerii}
+            highlighted={k.wyróżniona}
+          />
         ))}
       </div>
 

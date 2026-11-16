@@ -709,6 +709,8 @@ export default function App() {
           days={days}
           weekKey={weekKey}
           stats={workoutStats.stats}
+          history={workoutStats.history}
+          displayName={user?.user_metadata?.full_name || user?.email?.split('@')[0] || null}
           onGoToPlanner={() => handleViewChange('planner')}
           onGoToDay={handleGoToDay}
         />

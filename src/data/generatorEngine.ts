@@ -376,8 +376,8 @@ function getVolumeParams(goal: TrainingGoal, level: FitnessLevel): VolumeParams 
         restIsolation:          120,
         setsCore:               3,
         repsCore:               '8-12',
-        trainerNoteCompound:    '⚡ SIŁA: Pełna regeneracja CNS między seriami — nie skracaj przerw. Ekscentryka 3–4 sek, koncentryka maksymalnie eksplozywna. Gdy nie możesz utrzymać techniki — zakończ serię.',
-        trainerNoteIsolation:   '⚡ SIŁA: Izolacje jako profilaktyka — nie do upadku. Utrzymaj technikę, zamiast zwiększać ciężar.',
+        trainerNoteCompound:    'SIŁA: Pełna regeneracja CNS między seriami — nie skracaj przerw. Ekscentryka 3–4 sek, koncentryka maksymalnie eksplozywna. Gdy nie możesz utrzymać techniki — zakończ serię.',
+        trainerNoteIsolation:   'SIŁA: Izolacje jako profilaktyka — nie do upadku. Utrzymaj technikę, zamiast zwiększać ciężar.',
       };
 
     case 'muscle_gain':
@@ -393,8 +393,8 @@ function getVolumeParams(goal: TrainingGoal, level: FitnessLevel): VolumeParams 
         restIsolation:          60,
         setsCore:               3,
         repsCore:               '15-20',
-        trainerNoteCompound:    '💪 HIPERTROFIA: Ekscentryka 2–3 sek. Ostatnia seria do technicznego upadku (nie bólowego). Zwiększ ciężar gdy robisz górny zakres we WSZYSTKICH seriach. Mechanic drop set gdy dostępny partner.',
-        trainerNoteIsolation:   '💪 HIPERTROFIA: Poczuj mięsień — mind-muscle connection. Szczyt zacisku 1 sek. Powolna ekscentryka. Krew w mięśniu to znak dobrego treningu.',
+        trainerNoteCompound:    'HIPERTROFIA: Ekscentryka 2–3 sek. Ostatnia seria do technicznego upadku (nie bólowego). Zwiększ ciężar gdy robisz górny zakres we WSZYSTKICH seriach. Mechanic drop set gdy dostępny partner.',
+        trainerNoteIsolation:   'HIPERTROFIA: Poczuj mięsień — mind-muscle connection. Szczyt zacisku 1 sek. Powolna ekscentryka. Krew w mięśniu to znak dobrego treningu.',
       };
 
     case 'fat_loss':
@@ -410,8 +410,8 @@ function getVolumeParams(goal: TrainingGoal, level: FitnessLevel): VolumeParams 
         restIsolation:          isAdv ? 30 : 45,
         setsCore:               isAdv ? 4 : 3,
         repsCore:               isAdv ? '25-30' : '20-25',
-        trainerNoteCompound:    '🔥 REDUKCJA: Krótkie przerwy utrzymują metabolizm na wysokim poziomie. Ciągłe napięcie — bez odpoczynku w górnym/dolnym punkcie. Supersety antagonistów tam gdzie możliwe (klatka+plecy, biceps+triceps).',
-        trainerNoteIsolation:   '🔥 REDUKCJA: Wysoka objętość, niskie przerwy. Drop sets na ostatniej serii. Mięśnie zachowane = więcej spalanych kalorii 24/7.',
+        trainerNoteCompound:    'REDUKCJA: Krótkie przerwy utrzymują metabolizm na wysokim poziomie. Ciągłe napięcie — bez odpoczynku w górnym/dolnym punkcie. Supersety antagonistów tam gdzie możliwe (klatka+plecy, biceps+triceps).',
+        trainerNoteIsolation:   'REDUKCJA: Wysoka objętość, niskie przerwy. Drop sets na ostatniej serii. Mięśnie zachowane = więcej spalanych kalorii 24/7.',
       };
 
     case 'endurance':
@@ -427,8 +427,8 @@ function getVolumeParams(goal: TrainingGoal, level: FitnessLevel): VolumeParams 
         restIsolation:          isAdv ? 20 : 30,
         setsCore:               isAdv ? 5 : 4,
         repsCore:               isAdv ? '30-50 sek' : '25-40 sek',
-        trainerNoteCompound:    '🏃 WYTRZYMAŁOŚĆ: Ciągłe tempo przez cały zakres powtórzeń — bez zatrzymywania. Oddychaj rytmicznie. Cel to adaptacja metaboliczna, nie maksymalna siła. Nawodnienie kluczowe.',
-        trainerNoteIsolation:   '🏃 WYTRZYMAŁOŚĆ: Minimalne przerwy między ćwiczeniami — obwód gdy możliwe. Mięśnie muszą tolerować zakwasy i kontynuować pracę.',
+        trainerNoteCompound:    'WYTRZYMAŁOŚĆ: Ciągłe tempo przez cały zakres powtórzeń — bez zatrzymywania. Oddychaj rytmicznie. Cel to adaptacja metaboliczna, nie maksymalna siła. Nawodnienie kluczowe.',
+        trainerNoteIsolation:   'WYTRZYMAŁOŚĆ: Minimalne przerwy między ćwiczeniami — obwód gdy możliwe. Mięśnie muszą tolerować zakwasy i kontynuować pracę.',
       };
 
     case 'general_fitness':
@@ -445,8 +445,8 @@ function getVolumeParams(goal: TrainingGoal, level: FitnessLevel): VolumeParams 
         restIsolation:          60,
         setsCore:               3,
         repsCore:               '15-20',
-        trainerNoteCompound:    '⚡ SPRAWNOŚĆ: Technika ponad ciężar — zawsze. Pełen zakres ruchu. Stopniowo zwiększaj obciążenie gdy ćwiczenie staje się komfortowe.',
-        trainerNoteIsolation:   '⚡ SPRAWNOŚĆ: Skup się na czuciu mięśnia, nie na poruszaniu ciężaru. Kontrolowane tempo w obie strony.',
+        trainerNoteCompound:    'SPRAWNOŚĆ: Technika ponad ciężar — zawsze. Pełen zakres ruchu. Stopniowo zwiększaj obciążenie gdy ćwiczenie staje się komfortowe.',
+        trainerNoteIsolation:   'SPRAWNOŚĆ: Skup się na czuciu mięśnia, nie na poruszaniu ciężaru. Kontrolowane tempo w obie strony.',
       };
   }
 }
@@ -721,7 +721,7 @@ function buildWarmup(splitDay: SplitDay, dayIndex: number, equipmentList: Equipm
 
   return {
     id: `warmup-${dayIndex}-${Date.now()}`,
-    name: '🔥 Rozgrzewka specyficzna',
+    name: 'Rozgrzewka specyficzna',
     muscleGroup: 'Cardio',
     difficulty: 'Początkujący',
     description: 'Aktywacja układu nerwowo-mięśniowego, rozgrzanie stawów i przygotowanie ciała do wysiłku. Dobrze przeprowadzona rozgrzewka zwiększa siłę o 5–10% i redukuje ryzyko kontuzji.',
@@ -1012,7 +1012,7 @@ function buildWorkoutDay(
         sets: vp.setsCore,
         reps: vp.repsCore,
         restTime: 45,
-        notes: `${coreEx.notes || 'Napnij brzuch jak przed uderzeniem przez cały ruch.'}\n\n🎯 Core trenuj z pełną koncentracją — to fundament każdego ruchu siłowego.`,
+        notes: `${coreEx.notes || 'Napnij brzuch jak przed uderzeniem przez cały ruch.'}\n\nCore trenuj z pełną koncentracją — to fundament każdego ruchu siłowego.`,
       });
     }
   }
@@ -1079,12 +1079,12 @@ function buildWorkoutDay(
       const duration = goal === 'fat_loss' ? 20 : goal === 'endurance' ? 30 : 15;
       const cardioNote =
         goal === 'fat_loss'
-          ? '🔥 REDUKCJA: Intensywne tempo (75–85% max HR). HIIT: 30 sek praca / 90 sek odpoczynek × 8 rund. Efekt EPOC spala kalorie przez 24h po treningu.'
+          ? 'REDUKCJA: Intensywne tempo (75–85% max HR). HIIT: 30 sek praca / 90 sek odpoczynek × 8 rund. Efekt EPOC spala kalorie przez 24h po treningu.'
           : goal === 'endurance'
-          ? '🏃 WYTRZYMAŁOŚĆ: Umiarkowane tempo (65–70% max HR) — możesz rozmawiać zdaniami. Rozwijasz pojemność tlenową i gęstość mitochondriów.'
+          ? 'WYTRZYMAŁOŚĆ: Umiarkowane tempo (65–70% max HR) — możesz rozmawiać zdaniami. Rozwijasz pojemność tlenową i gęstość mitochondriów.'
           : goal === 'strength'
-          ? '⚡ AKTYWNA REGENERACJA: Niska intensywność — nie przeciążaj CNS po ciężkim treningu siłowym. Cel: przepływ krwi i regeneracja.'
-          : '⚡ AKTYWNA REGENERACJA: Umiarkowane tempo, utrzymuje metabolizm i korzystnie wpływa na regenerację mięśni.';
+          ? 'AKTYWNA REGENERACJA: Niska intensywność — nie przeciążaj CNS po ciężkim treningu siłowym. Cel: przepływ krwi i regeneracja.'
+          : 'AKTYWNA REGENERACJA: Umiarkowane tempo, utrzymuje metabolizm i korzystnie wpływa na regenerację mięśni.';
 
       exercises.push({
         ...cardio,
@@ -1134,15 +1134,15 @@ function getPlanMeta(prefs: GeneratorPreferences, totalSets: number) {
 
   const descriptions: Record<TrainingGoal, string> = {
     muscle_gain:
-      `Plan hipertroficzny zaprojektowany wg zasad Evidence-Based Training. Objętość ${totalSets} serii/tydzień mieści się w optymalnym oknie hipertrofii (10–20 serii/partię/tydzień wg Krieger, 2010). Zakresy 6–12 powt. przy 70–80% 1RM z mechanic tension i metabolic stress jako głównymi czynnikami wzrostu (Schoenfeld, 2010). Przerwy 90–120 sek balansują między GH/IGF-1 a regeneracją fosfokreatyny.\n\n📋 Kluczowe zasady: progresywne przeciążenie co tydzień (+2.5kg lub +1 powt.), minimum 7h snu, białko 1.6–2.2g/kg BM, surplus kaloryczny 200–300 kcal.`,
+      `Plan hipertroficzny zaprojektowany wg zasad Evidence-Based Training. Objętość ${totalSets} serii/tydzień mieści się w optymalnym oknie hipertrofii (10–20 serii/partię/tydzień wg Krieger, 2010). Zakresy 6–12 powt. przy 70–80% 1RM z mechanic tension i metabolic stress jako głównymi czynnikami wzrostu (Schoenfeld, 2010). Przerwy 90–120 sek balansują między GH/IGF-1 a regeneracją fosfokreatyny.\n\nKluczowe zasady: progresywne przeciążenie co tydzień (+2.5kg lub +1 powt.), minimum 7h snu, białko 1.6–2.2g/kg BM, surplus kaloryczny 200–300 kcal.`,
     fat_loss:
-      `Plan redukcyjny łączący maksymalne zachowanie mięśni z deficytem kalorycznym. Wysoka objętość (${totalSets} serii) i krótkie przerwy (45–75 sek) maksymalizują efekt EPOC — podwyższone spalanie przez 24–48h po treningu. Priorytet: zachowanie siły = zachowanie mięśni przy deficycie.\n\n📋 Kluczowe zasady: deficyt max 500 kcal/dzień, białko 2.2–2.4g/kg (wyższe przy redukcji), ${prefs.includeCardio ? 'cardio po siłówce gdy glikogen wyczerpany,' : ''} waga rano na czczo 1×/tydzień.`,
+      `Plan redukcyjny łączący maksymalne zachowanie mięśni z deficytem kalorycznym. Wysoka objętość (${totalSets} serii) i krótkie przerwy (45–75 sek) maksymalizują efekt EPOC — podwyższone spalanie przez 24–48h po treningu. Priorytet: zachowanie siły = zachowanie mięśni przy deficycie.\n\nKluczowe zasady: deficyt max 500 kcal/dzień, białko 2.2–2.4g/kg (wyższe przy redukcji), ${prefs.includeCardio ? 'cardio po siłówce gdy glikogen wyczerpany,' : ''} waga rano na czczo 1×/tydzień.`,
     strength:
-      `Plan siłowy oparty na liniowej periodyzacji (Texas Method / 5×5 principles). Zakresy 3–6 powt. przy 85–95% 1RM trenują adaptacje neurologiczne: rekrutację jednostek motorycznych, synchronizację i koordinację między mięśniami. Przerwy 3–5 min OBOWIĄZKOWE — fosfokreatyna wymaga 3 min do pełnej resynttezy.\n\n📋 Kluczowe zasady: +2.5kg/sesję na dolne partie, +1.25kg na górne, deload co 4–6 tygodni (redukcja objętości o 40%), sen 8–9h, kreatyna 3–5g/dzień potwierdzona naukowo.`,
+      `Plan siłowy oparty na liniowej periodyzacji (Texas Method / 5×5 principles). Zakresy 3–6 powt. przy 85–95% 1RM trenują adaptacje neurologiczne: rekrutację jednostek motorycznych, synchronizację i koordinację między mięśniami. Przerwy 3–5 min OBOWIĄZKOWE — fosfokreatyna wymaga 3 min do pełnej resynttezy.\n\nKluczowe zasady: +2.5kg/sesję na dolne partie, +1.25kg na górne, deload co 4–6 tygodni (redukcja objętości o 40%), sen 8–9h, kreatyna 3–5g/dzień potwierdzona naukowo.`,
     endurance:
-      `Plan wytrzymałościowy budujący pojemność aerobową (VO2max), gęstość mitochondriów i odporność mięśni na zmęczenie. Wysoka objętość powtórzeń (15–25) z krótkimi przerwami (30–60 sek) symuluje warunki długotrwałego wysiłku. Duże obciążenie całkowite tygodniowe dla adaptacji metabolicznych.\n\n📋 Kluczowe zasady: nawodnienie 2.5–3L/dzień, węglowodany przed treningiem (30–60g), suplement beta-alanina może opóźnić zmęczenie mięśni, periodicznie zwiększaj dystans/czas o max 10%/tydzień.`,
+      `Plan wytrzymałościowy budujący pojemność aerobową (VO2max), gęstość mitochondriów i odporność mięśni na zmęczenie. Wysoka objętość powtórzeń (15–25) z krótkimi przerwami (30–60 sek) symuluje warunki długotrwałego wysiłku. Duże obciążenie całkowite tygodniowe dla adaptacji metabolicznych.\n\nKluczowe zasady: nawodnienie 2.5–3L/dzień, węglowodany przed treningiem (30–60g), suplement beta-alanina może opóźnić zmęczenie mięśni, periodicznie zwiększaj dystans/czas o max 10%/tydzień.`,
     general_fitness:
-      `Zrównoważony plan dla ogólnej sprawności — łączy siłę, wytrzymałość i mobilność w optymalnych proporcjach. Idealne jako plan startowy lub utrzymaniowy. Technika i zakres ruchu zawsze priorytetowe nad ciężarem.\n\n📋 Kluczowe zasady: gdy ćwiczenie jest komfortowe przez 2 tygodnie → zwiększ ciężar lub objętość (nigdy jednocześnie), 150 min aktywności/tydzień = minimum WHO dla zdrowia, rozciąganie 10 min po każdym treningu.`,
+      `Zrównoważony plan dla ogólnej sprawności — łączy siłę, wytrzymałość i mobilność w optymalnych proporcjach. Idealne jako plan startowy lub utrzymaniowy. Technika i zakres ruchu zawsze priorytetowe nad ciężarem.\n\nKluczowe zasady: gdy ćwiczenie jest komfortowe przez 2 tygodnie → zwiększ ciężar lub objętość (nigdy jednocześnie), 150 min aktywności/tydzień = minimum WHO dla zdrowia, rozciąganie 10 min po każdym treningu.`,
   };
 
   // Dokładne obliczenie kalorii (MET × masa × czas)
@@ -1159,7 +1159,7 @@ function getPlanMeta(prefs: GeneratorPreferences, totalSets: number) {
 
   return {
     name,
-    description: `${descriptions[prefs.goal]}\n\n📊 ${levelLabels[prefs.fitnessLevel]} | ${styleLabels[prefs.trainingStyle]} | ~${prefs.sessionDuration} min/sesję`,
+    description: `${descriptions[prefs.goal]}\n\n${levelLabels[prefs.fitnessLevel]} | ${styleLabels[prefs.trainingStyle]} | ~${prefs.sessionDuration} min/sesję`,
     estimatedCalories,
   };
 }
@@ -1267,7 +1267,7 @@ export function generatePlan(prefs: GeneratorPreferences, excludedIds: Set<strin
   // Statystyki
   const totalExercises = allDays.reduce((s, d) =>
     s + d.exercises.filter(e =>
-      e.name !== '🔥 Rozgrzewka specyficzna' &&
+      e.name !== 'Rozgrzewka specyficzna' &&
       e.muscleGroup !== 'Cardio'
     ).length, 0
   );

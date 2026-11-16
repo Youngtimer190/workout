@@ -10,7 +10,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { WorkoutDay } from '../types';
 import { loadAllWeeksLocal } from '../store/weekStore';
 import { fetchAllWeekPlans } from '../lib/syncService';
-import { computeWorkoutStats, WeeksMap, WorkoutStats } from '../lib/stats';
+import {
+  buildDashboardHistory,
+  computeWorkoutStats,
+  DashboardHistory,
+  WeeksMap,
+  WorkoutStats,
+} from '../lib/stats';
 import { isSupabaseConfigured } from '../lib/supabase';
 
 /** Liczba zaliczonych serii w tygodniu. */
@@ -101,6 +107,18 @@ export function useWorkoutStats(
     [weeks]
   );
 
+  /**
+   * Historia dla górnej sekcji pulpitu: porównania z poprzednim okresem,
+   * seria dni z rzędu i szeregi do mini-wykresów.
+   *
+   * Liczone z TEJ SAMEJ mapy tygodni co statystyki — więc historia z chmury
+   * i z urządzenia są zawsze spójne.
+   */
+  const history = useMemo<DashboardHistory>(
+    () => buildDashboardHistory(weeks),
+    [weeks]
+  );
+
   /** Ponowne przeliczenie (np. po zapisaniu tygodnia). */
   const refreshLocal = useCallback(() => {
     const local = loadAllWeeksLocal();
@@ -141,5 +159,5 @@ export function useWorkoutStats(
     return () => { cancelled = true; };
   }, [userId, refreshLocal, active]);
 
-  return { stats: stats ?? EMPTY_STATS, loading, refresh: refreshLocal };
+  return { stats: stats ?? EMPTY_STATS, history, loading, refresh: refreshLocal };
 }

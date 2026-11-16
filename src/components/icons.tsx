@@ -415,6 +415,26 @@ export function TrendIcon(props: IconProps) {
   );
 }
 
+/** Strzałka w górę — delta „+4 vs poprzedni tydzień". */
+export function TrendUpIcon(props: IconProps) {
+  return (
+    <svg {...svgProps(props)}>
+      <path d="M3 17 9 11l4 4 8-8" />
+      <path d="M15 7h6v6" />
+    </svg>
+  );
+}
+
+/** Strzałka w dół — delta „−2 vs poprzedni tydzień". */
+export function TrendDownIcon(props: IconProps) {
+  return (
+    <svg {...svgProps(props)}>
+      <path d="M3 7 9 13l4-4 8 8" />
+      <path d="M15 17h6v-6" />
+    </svg>
+  );
+}
+
 export function FlameIcon(props: IconProps) {
   return (
     <svg {...svgProps(props)}>

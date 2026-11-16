@@ -222,11 +222,10 @@ export function computeWorkoutStats(weeks: WeeksMap, now: Date = new Date()): Wo
   const month = now.getMonth();
   const year = now.getFullYear();
 
-  let monthWorkouts = 0;
   let totalVolume = 0;
   let totalCardioMinutes = 0;
 
-  for (const [weekKey, days] of Object.entries(weeks)) {
+  for (const [, days] of Object.entries(weeks)) {
     if (!days) continue;
     for (const day of days) {
       if (!day.exercises || day.exercises.length === 0) continue;
@@ -238,14 +237,11 @@ export function computeWorkoutStats(weeks: WeeksMap, now: Date = new Date()): Wo
       for (const ex of day.exercises) {
         totalCardioMinutes += cardioMinutes(ex);
       }
-
-      // Zaliczone treningi w bieżącym miesiącu.
-      const date = dayDate(weekKey, day.dayIndex);
-      if (date && date.getMonth() === month && date.getFullYear() === year && isDayCompleted(day)) {
-        monthWorkouts++;
-      }
     }
   }
+
+  // Zaliczone treningi w bieżącym miesiącu.
+  const monthWorkouts = monthMetrics(weeks, year, month).workouts;
 
   // ── Passa: kolejne zaliczone tygodnie ──
   // Bieżący, niedokończony tydzień jest POMIJANY — w poniedziałek rano
@@ -292,6 +288,248 @@ export function countStreak(weeks: WeeksMap, now: Date = new Date()): number {
   }
 
   return streak;
+}
+
+/**
+ * Liczba ćwiczeń ukończonych w tygodniu.
+ *
+ * Ćwiczenie jest ukończone, gdy ma choćby jedną ukończoną serię — dokładnie
+ * tak, jak liczy zaliczenie dnia. Cardio bez zapisu nie ma serii, więc nie
+ * wchodzi do licznika.
+ */
+export function completedExercisesInWeek(days: WorkoutDay[]): number {
+  return (days ?? [])
+    .flatMap(d => d.exercises ?? [])
+    .filter(isExerciseDone).length;
+}
+
+/** Wartości wybranego okresu — do porównań „vs poprzedni tydzień/miesiąc". */
+export interface PeriodMetrics {
+  /** Czy w okresie są JAKIEKOLWIEK dane (plan albo trening). */
+  exists: boolean;
+  /** Ukończone dni treningowe. */
+  workouts: number;
+  /** Ukończone ćwiczenia. */
+  exercises: number;
+  /** Wolumen (kg). */
+  volume: number;
+}
+
+/** Metryki tygodnia (tygodnia, do którego należy `monday`). */
+export function weekMetrics(weeks: WeeksMap, monday: Date): PeriodMetrics {
+  const key = getWeekKey(monday);
+  const days = weeks[key];
+  if (!days) return { exists: false, workouts: 0, exercises: 0, volume: 0 };
+  return {
+    exists: true,
+    workouts: days.filter(isDayCompleted).length,
+    exercises: completedExercisesInWeek(days),
+    volume: weekVolume(days),
+  };
+}
+
+/**
+ * Metryki miesiąca.
+ *
+ * `exists` odpowiada na pytanie „czy w tym miesiącu cokolwiek było
+ * zaplanowane” — bez tego nie odróżnilibyśmy „spadło z 6 do 0” (realna
+ * zmiana) od „pierwszy miesiąc w aplikacji” (brak danych do porównania).
+ */
+export function monthMetrics(weeks: WeeksMap, year: number, month: number): PeriodMetrics {
+  let workouts = 0;
+  let exercises = 0;
+  let volume = 0;
+  let exists = false;
+
+  for (const [weekKey, days] of Object.entries(weeks)) {
+    if (!days) continue;
+    const monday = mondayOfWeekKey(weekKey);
+    if (!monday) continue;
+
+    for (const day of days) {
+      // Data dnia = poniedziałek tygodnia + indeks dnia.
+      const date = new Date(monday);
+      date.setDate(monday.getDate() + day.dayIndex);
+      if (date.getMonth() !== month || date.getFullYear() !== year) continue;
+
+      exists = true;
+      if (!day.exercises || day.exercises.length === 0) continue;
+      if (isDayCompleted(day)) workouts++;
+      exercises += day.exercises.filter(isExerciseDone).length;
+      volume += dayVolume(day);
+    }
+  }
+
+  return { exists, workouts, exercises, volume };
+}
+
+/** Czy dany dzień był dniem treningowym (ma ukończoną serię). */
+function isTrainingDay(weeks: WeeksMap, date: Date): boolean {
+  const monday = getMondayOf(date);
+  const days = weeks[getWeekKey(monday)];
+  if (!days) return false;
+  const index = dayOffsetInWeek(date, monday);
+  const day = days.find(d => d.dayIndex === index);
+  return !!day && isDayCompleted(day);
+}
+
+/** Numer dnia w tygodniu (0 = poniedziałek) dla podanej daty. */
+function dayOffsetInWeek(date: Date, monday: Date): number {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return Math.round((d.getTime() - monday.getTime()) / 86400000);
+}
+
+/**
+ * Seria dni z rzędu (kończąca się w dniu `date`).
+ *
+ * Liczymy wstecz: dzień z ukończoną serią to +1, dzień bez ukończonej
+ * serii zeruje passę.
+ */
+export function streakEndingAt(weeks: WeeksMap, date: Date): number {
+  const cursor = new Date(date);
+  cursor.setHours(0, 0, 0, 0);
+
+  let streak = 0;
+  for (let i = 0; i < 730; i++) {
+    if (!isTrainingDay(weeks, cursor)) break;
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+/**
+ * Seria dni z rzędu (dla dnia dzisiejszego).
+ *
+ * Jeśli **dziś** jeszcze nie trenowałeś, seria się nie zeruje — zaczynamy
+ * od wczoraj. Passa pęka dopiero po całym dniu bez treningu (tak samo, jak
+ * w aplikacjach typu Streaks).
+ */
+export function dailyStreak(weeks: WeeksMap, now: Date = new Date()): number {
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+
+  if (isTrainingDay(weeks, today)) return streakEndingAt(weeks, today);
+
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  return streakEndingAt(weeks, yesterday);
+}
+
+/**
+ * Historia passy dziennej — wartość passy na koniec każdego z ostatnich
+ * `count` dni (od najstarszego). Do wykresu liniowego.
+ *
+ * Ostatni punkt (dziś) używa tej samej łagodnej reguły co `dailyStreak()` —
+ * dzień, w którym jeszcze nie trenowano, nie zeruje passy. Dzięki temu
+ * wykres nie „zjeżdża do zera” w południe, przed pierwszym treningiem dnia.
+ */
+export function dailyStreakHistory(
+  weeks: WeeksMap,
+  count: number,
+  now: Date = new Date()
+): number[] {
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+
+  const out: number[] = [];
+  for (let i = count - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    out.push(i === 0 ? dailyStreak(weeks, now) : streakEndingAt(weeks, d));
+  }
+  return out;
+}
+
+/** Metryka serii tygodniowej. */
+export type SeriesMetric = 'workouts' | 'exercises' | 'volume';
+
+/**
+ * Szereg wartości z ostatnich `count` tygodni (od najstarszego).
+ *
+ * Puste tygodnie wchodzą w szereg jako zera — dzięki temu wykres pokazuje
+ * przerwy, a nie „przeskakuje” je.
+ */
+export function weeklySeries(
+  weeks: WeeksMap,
+  metric: SeriesMetric,
+  count: number,
+  now: Date = new Date()
+): number[] {
+  const monday = getMondayOf(now);
+  const out: number[] = [];
+
+  for (let i = count - 1; i >= 0; i--) {
+    const d = new Date(monday);
+    d.setDate(d.getDate() - i * 7);
+    const days = weeks[getWeekKey(d)] ?? [];
+    if (metric === 'workouts') out.push(days.filter(isDayCompleted).length);
+    else if (metric === 'exercises') out.push(completedExercisesInWeek(days));
+    else out.push(weekVolume(days));
+  }
+  return out;
+}
+
+/** Historia potrzebna do górnej sekcji pulpitu. */
+export interface DashboardHistory {
+  /** Ukończone dni treningowe w bieżącym miesiącu. */
+  monthWorkouts: number;
+  /** Poprzedni miesiąc — do porównania. */
+  previousMonth: PeriodMetrics;
+  /** Ukończone ćwiczenia w bieżącym tygodniu. */
+  weekExercises: number;
+  /** Poprzedni tydzień — do porównania. */
+  previousWeek: PeriodMetrics;
+  /** Wolumen bieżącego tygodnia (kg). */
+  weekVolume: number;
+  /** Seria dni z rzędu. */
+  dailyStreak: number;
+  /** Seria tygodni z rzędu. */
+  weekStreak: number;
+  /** Szeregi do mini-wykresów. */
+  series: {
+    workouts: number[];
+    exercises: number[];
+    volume: number[];
+    streak: number[];
+  };
+}
+
+/**
+ * Buduje historię dla górnej sekcji pulpitu.
+ *
+ * Liczone po WSZYSTKICH zapisanych tygodniach — dzięki temu porównania
+ * („vs poprzedni tydzień”) działają nawet wtedy, gdy użytkownik otworzył
+ * dany tydzień dopiero teraz.
+ */
+export function buildDashboardHistory(
+  weeks: WeeksMap,
+  now: Date = new Date()
+): DashboardHistory {
+  const monday = getMondayOf(now);
+  const current = weekMetrics(weeks, monday);
+
+  const prevMonday = new Date(monday);
+  prevMonday.setDate(prevMonday.getDate() - 7);
+
+  const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+  return {
+    monthWorkouts: monthMetrics(weeks, now.getFullYear(), now.getMonth()).workouts,
+    previousMonth: monthMetrics(weeks, prevMonthDate.getFullYear(), prevMonthDate.getMonth()),
+    weekExercises: current.exercises,
+    previousWeek: weekMetrics(weeks, prevMonday),
+    weekVolume: current.volume,
+    dailyStreak: dailyStreak(weeks, now),
+    weekStreak: countStreak(weeks, now),
+    series: {
+      workouts: weeklySeries(weeks, 'workouts', 8, now),
+      exercises: weeklySeries(weeks, 'exercises', 8, now),
+      volume: weeklySeries(weeks, 'volume', 8, now),
+      streak: dailyStreakHistory(weeks, 14, now),
+    },
+  };
 }
 
 /** Formatowanie liczby z separatorem tysięcy (12 480). */

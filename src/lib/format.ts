@@ -173,3 +173,53 @@ export function formatRelativePL(iso: string | null | undefined): { text: string
   }
   return { text: `${d.getDate()} ${month} ${d.getFullYear()}`, title };
 }
+
+/* ── Delta na pulpitach (porównanie z poprzednim okresem) ─────────────────── */
+
+/** Dane do zbudowania tekstu delty. */
+export interface DeltaInput {
+  /** Zmiana względem poprzedniego okresu (liczba albo procent). */
+  change: number | null;
+  /** Czy poprzedni okres w ogóle ma dane (plan albo trening). */
+  hasBaseline: boolean;
+  /** Nazwa okresu: „poprzedni tydzień”. */
+  period: string;
+  /** Czy zmiana ma być podana w procentach. */
+  percent?: boolean;
+  /** Jednostka — używana, gdy procent nie da się policzyć (baza = 0). */
+  unit?: string;
+}
+
+/** Gotowy tekst delty + kierunek (do koloru i ikony strzałki). */
+export interface DeltaView {
+  tekst: string;
+  kierunek: 'up' | 'down' | 'flat' | 'brak';
+}
+
+/**
+ * Buduje tekst delty („+4 vs poprzedni tydzień").
+ *
+ * Brak danych do porównania (poprzedni okres nie istnieje) jest ODMIENNY
+ * od zera — inaczej nowy użytkownik zobaczyłby „+6 vs poprzedni miesiąc",
+ * co sugerowałoby wzrost, choć to po prostu pierwszy miesiąc w aplikacji.
+ */
+export function formatDelta(input: DeltaInput): DeltaView {
+  const { change, hasBaseline, period, percent, unit } = input;
+
+  if (!hasBaseline || change === null) {
+    return { tekst: 'brak danych do porównania', kierunek: 'brak' };
+  }
+
+  if (change === 0) {
+    return { tekst: `bez zmian vs ${period}`, kierunek: 'flat' };
+  }
+
+  const znak = change > 0 ? '+' : '−';
+  const wartosc = Math.abs(change);
+  const jednostka = percent ? '%' : unit ? ` ${unit}` : '';
+
+  return {
+    tekst: `${znak}${wartosc}${jednostka} vs ${period}`,
+    kierunek: change > 0 ? 'up' : 'down',
+  };
+}
