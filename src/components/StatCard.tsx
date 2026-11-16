@@ -91,8 +91,13 @@ export default function StatCard({
         )}
       </p>
 
-      {/* ── Podpis ── */}
-      <p className="mt-1 h-4 truncate text-[11px] leading-tight text-slate-500">{sub ?? ''}</p>
+      {/* ── Podpis ──
+          NIE jest przycinany kropkami — przy wąskiej karcie tekst zawija
+          się na drugą linię (max 2). Dzięki temu zawsze wiadomo, co
+          napisano, zamiast zgadywać po trzech kropkach. */}
+      <p className="mt-1 min-h-[1.05rem] text-[11px] leading-tight text-slate-500 line-clamp-2">
+        {sub ?? ''}
+      </p>
 
       {/* ── Delta + mini-wykres ──
           Na telefonie wykres schodzi POD deltę (delta + wykres nie mieszczą

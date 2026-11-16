@@ -109,12 +109,15 @@ export default function Dashboard({
    * Reguła passy: tydzień jest zaliczony, gdy ma choćby jeden wykonany dzień,
    * a bieżący (niedokończony) tydzień jest pomijany — więc w poniedziałek
    * rano passa nie zerwie się przez sam brak treningu.
+   *
+   * Teksty są ZAWSZE zakończone — „bieżący tydzień jeszcze nie" brzmiało
+   * jak obcięte zdanie i nie było wiadomo, o co chodzi.
    */
   const weekStreakLabel = !maPlan
-    ? 'brak zaplanowanych ćwiczeń'
+    ? 'brak planu na ten tydzień'
     : weekCompletedDays > 0
     ? 'bieżący tydzień zaliczony'
-    : 'bieżący tydzień jeszcze nie';
+    : 'bieżący tydzień w toku';
 
   /* ── Karty statystyk ──────────────────────────────────────────────────────
      Każda karta ma: ikonę + etykietę, wartość, podpis oraz porównanie
