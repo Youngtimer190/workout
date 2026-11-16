@@ -83,6 +83,11 @@ export default function Dashboard({
   const totalCardioMinutes = stats?.totalCardioMinutes ?? 0;
   const monthLabel = stats?.monthLabel ?? '';
 
+  /**
+   * Wykonane dni w bieżącym tygodniu — potrzebne do opisu passy tygodniowej.
+   */
+  const weekCompletedDays = days.filter(isDayCompleted).length;
+
   /* ── Powitanie i podpis ────────────────────────────────────────────────── */
 
   const imie = (displayName ?? '').trim().split(/\s+/)[0] ?? '';
@@ -97,6 +102,19 @@ export default function Dashboard({
     : 'Regularność buduje formę. Trenuj konsekwentnie!';
 
   const etykietaCTA = maPlan ? 'Edytuj plan' : 'Zaplanuj trening';
+
+  /**
+   * Stan bieżącego tygodnia w kontekście passy tygodniowej.
+   *
+   * Reguła passy: tydzień jest zaliczony, gdy ma choćby jeden wykonany dzień,
+   * a bieżący (niedokończony) tydzień jest pomijany — więc w poniedziałek
+   * rano passa nie zerwie się przez sam brak treningu.
+   */
+  const weekStreakLabel = !maPlan
+    ? 'brak zaplanowanych ćwiczeń'
+    : weekCompletedDays > 0
+    ? 'bieżący tydzień zaliczony'
+    : 'bieżący tydzień jeszcze nie';
 
   /* ── Karty statystyk ──────────────────────────────────────────────────────
      Każda karta ma: ikonę + etykietę, wartość, podpis oraz porównanie
@@ -141,10 +159,10 @@ export default function Dashboard({
     },
     {
       ikona: <FlameIcon className="h-4 w-4" />,
-      etykieta: 'Dni z rzędu',
-      wartosc: hist?.dailyStreak ?? 0,
-      jednostka: ` ${pluralPl(hist?.dailyStreak ?? 0, 'dzień', 'dni', 'dni')}`,
-      podpis: `${pluralPl(streakWeeks, 'tydzień', 'tygodnie', 'tygodni')} z rzędu`,
+      etykieta: 'Tygodnie z rzędu',
+      wartosc: streakWeeks,
+      jednostka: ` ${pluralPl(streakWeeks, 'tydzień', 'tygodnie', 'tygodni')}`,
+      podpis: weekStreakLabel,
       seria: hist?.series.streak,
       typSerii: 'line' as const,
     },

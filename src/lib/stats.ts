@@ -363,81 +363,43 @@ export function monthMetrics(weeks: WeeksMap, year: number, month: number): Peri
   return { exists, workouts, exercises, volume };
 }
 
-/** Czy dany dzień był dniem treningowym (ma ukończoną serię). */
-function isTrainingDay(weeks: WeeksMap, date: Date): boolean {
-  const monday = getMondayOf(date);
-  const days = weeks[getWeekKey(monday)];
-  if (!days) return false;
-  const index = dayOffsetInWeek(date, monday);
-  const day = days.find(d => d.dayIndex === index);
-  return !!day && isDayCompleted(day);
-}
-
-/** Numer dnia w tygodniu (0 = poniedziałek) dla podanej daty. */
-function dayOffsetInWeek(date: Date, monday: Date): number {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return Math.round((d.getTime() - monday.getTime()) / 86400000);
-}
-
 /**
- * Seria dni z rzędu (kończąca się w dniu `date`).
- *
- * Liczymy wstecz: dzień z ukończoną serią to +1, dzień bez ukończonej
- * serii zeruje passę.
+ * Seria tygodni z rzędu kończąca się w tygodniu `monday`.
  */
-export function streakEndingAt(weeks: WeeksMap, date: Date): number {
-  const cursor = new Date(date);
-  cursor.setHours(0, 0, 0, 0);
-
+export function streakEndingWeek(weeks: WeeksMap, monday: Date): number {
   let streak = 0;
-  for (let i = 0; i < 730; i++) {
-    if (!isTrainingDay(weeks, cursor)) break;
+  const cursor = new Date(monday);
+
+  for (let i = 0; i < 520; i++) {
+    const days = weeks[getWeekKey(cursor)];
+    if (!days || !isWeekCompleted(days)) break;
     streak++;
-    cursor.setDate(cursor.getDate() - 1);
+    cursor.setDate(cursor.getDate() - 7);
   }
+
   return streak;
 }
 
 /**
- * Seria dni z rzędu (dla dnia dzisiejszego).
+ * Historia passy tygodniowej — liczba kolejnych zaliconych tygodni na koniec
+ * każdego z ostatnich `count` tygodni (od najstarszego). Do wykresu liniowego.
  *
- * Jeśli **dziś** jeszcze nie trenowałeś, seria się nie zeruje — zaczynamy
- * od wczoraj. Passa pęka dopiero po całym dniu bez treningu (tak samo, jak
- * w aplikacjach typu Streaks).
+ * Ostatni punkt (bieżący tydzień) używa tej samej reguły co `countStreak()`
+ * — niedokończony bieżący tydzień jest pomijany, więc passa nie zerwie się
+ * w poniedziałek rano.
  */
-export function dailyStreak(weeks: WeeksMap, now: Date = new Date()): number {
-  const today = new Date(now);
-  today.setHours(0, 0, 0, 0);
-
-  if (isTrainingDay(weeks, today)) return streakEndingAt(weeks, today);
-
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-  return streakEndingAt(weeks, yesterday);
-}
-
-/**
- * Historia passy dziennej — wartość passy na koniec każdego z ostatnich
- * `count` dni (od najstarszego). Do wykresu liniowego.
- *
- * Ostatni punkt (dziś) używa tej samej łagodnej reguły co `dailyStreak()` —
- * dzień, w którym jeszcze nie trenowano, nie zeruje passy. Dzięki temu
- * wykres nie „zjeżdża do zera” w południe, przed pierwszym treningiem dnia.
- */
-export function dailyStreakHistory(
+export function weeklyStreakHistory(
   weeks: WeeksMap,
   count: number,
   now: Date = new Date()
 ): number[] {
-  const today = new Date(now);
-  today.setHours(0, 0, 0, 0);
-
+  const monday = getMondayOf(now);
   const out: number[] = [];
+
   for (let i = count - 1; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    out.push(i === 0 ? dailyStreak(weeks, now) : streakEndingAt(weeks, d));
+    const d = new Date(monday);
+    d.setDate(d.getDate() - i * 7);
+    out.push(i === 0 ? countStreak(weeks, now) : streakEndingWeek(weeks, d));
   }
   return out;
 }
@@ -483,8 +445,6 @@ export interface DashboardHistory {
   previousWeek: PeriodMetrics;
   /** Wolumen bieżącego tygodnia (kg). */
   weekVolume: number;
-  /** Seria dni z rzędu. */
-  dailyStreak: number;
   /** Seria tygodni z rzędu. */
   weekStreak: number;
   /** Szeregi do mini-wykresów. */
@@ -521,13 +481,12 @@ export function buildDashboardHistory(
     weekExercises: current.exercises,
     previousWeek: weekMetrics(weeks, prevMonday),
     weekVolume: current.volume,
-    dailyStreak: dailyStreak(weeks, now),
     weekStreak: countStreak(weeks, now),
     series: {
       workouts: weeklySeries(weeks, 'workouts', 8, now),
       exercises: weeklySeries(weeks, 'exercises', 8, now),
       volume: weeklySeries(weeks, 'volume', 8, now),
-      streak: dailyStreakHistory(weeks, 14, now),
+      streak: weeklyStreakHistory(weeks, 12, now),
     },
   };
 }

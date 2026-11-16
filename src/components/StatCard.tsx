@@ -108,7 +108,10 @@ export default function StatCard({
             {deltaView.kierunek === 'down' && (
               <TrendDownIcon className="h-3.5 w-3.5 flex-shrink-0" />
             )}
-            <span className="whitespace-nowrap leading-tight">{deltaView.tekst}</span>
+            {/* Tekst NIE jest przycinany — na wąskim ekranie (albo przy
+                powiększonej czcionce systemowej) zawija się na drugą
+                linię zamiast wychodzić poza kartę. */}
+            <span className="leading-tight">{deltaView.tekst}</span>
           </span>
         )}
         {series && series.length > 0 && (
