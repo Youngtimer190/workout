@@ -205,7 +205,13 @@ export type PushCancelReason =
   /** Nowa przerwa zastąpiła poprzednią. */
   | 'zastapienie'
   /** Przerwa zdążyła się zakończyć, zanim serwer odpowiedział. */
-  | 'zakonczona';
+  | 'zakonczona'
+  /**
+   * Harmonogram przestał być aktualny, zanim do nas dotarła odpowiedź serwera
+   * (przerwa anulowana albo zastąpiona nową) — wygaszamy go, żeby nie
+   * przyszło powiadomienie dla przerwy, która już nie istnieje.
+   */
+  | 'nieaktualny';
 
 /**
  * Anuluje zaplanowane powiadomienie (gdy timer zatrzymano przed czasem).

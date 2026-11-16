@@ -430,10 +430,20 @@ async function planPushForRest(endsAt: number): Promise<void> {
   const zarejestrowana = await registerSubscription();
   const wynik = await scheduleRestTimerPush(endsAt);
 
-  // Odpowiedź serwera mogła przyjść PO tym, jak zaczęła się kolejna
-  // przerwa albo gdy ta już się zakończyła — wtedy ten identyfikator
-  // już niczego nie dotyczy i nie wolno go zapamiętać.
-  if (generation !== pushScheduleGeneration) return;
+  // Harmonogram mógł przestać być aktualny, ZANIM do nas dotarła odpowiedź
+  // serwera — przerwa została wtedy anulowana albo zastąpiona nową.
+  //
+  // Wtedy NATYCHMIAST kasujemy właśnie zamówione powiadomienie. Bez tego
+  // zostawałoby żywe na serwerze i doszedłoby do użytkownika jako alarm
+  // po przerwie, która już nie istnieje (albo którą właśnie anulował).
+  //
+  // To zdarza się przy dwóch przerwach startowanych w odstępie ułamka
+  // sekundy — np. zaznaczenie serii (autostart) i wciśnięcie „Start przerwy"
+  // w oknie czasu.
+  if (generation !== pushScheduleGeneration) {
+    if (wynik.ok) void cancelRestTimerPush(wynik.id, 'nieaktualny');
+    return;
+  }
 
   if (!wynik.ok) {
     setState({ pushProblem: wynik.powod });
@@ -467,6 +477,10 @@ export function pauseRestTimer(): void {
   // powiadomienie by i tak trafiłoby w zły moment. Anulujemy je — wznowienie
   // zaplanuje nowe, na nowy czas końca.
   if (state.pushScheduleId) void cancelRestTimerPush(state.pushScheduleId, 'pauza');
+  // Każde anulowanie unieważnia harmonogram, który jest właśnie w drodze:
+  // bez tego plan doszedłby do serwera i zamówił push dla przerwy, która
+  // właśnie wstrzymano.
+  pushScheduleGeneration++;
   setState({ paused: true, pausedRemainingMs: remaining, pushScheduleId: null });
 }
 
@@ -540,6 +554,10 @@ export function stopRestTimer(): void {
   // niezależnie od tego, czy ekran był włączony. To jedyna ścieżka, która
   // ma prawo uciszyć push bez względu na stan ekranu.
   if (state.pushScheduleId) void cancelRestTimerPush(state.pushScheduleId, 'uzytkownik');
+  // Unieważniamy też harmonogram, który jest właśnie w drodze — inaczej
+  // doszedłby do serwera i zamówił push dla przerwy, którą właśnie
+  // zatrzymano.
+  pushScheduleGeneration++;
   setState({
     endsAt: null,
     startedAt: null,
