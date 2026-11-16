@@ -40,8 +40,6 @@ interface StatCardProps {
   series?: number[];
   /** Wariant mini-wykresu. */
   seriesType?: 'bars' | 'line';
-  /** Czy karta ma być wyróżniona (obwódka + poświata). */
-  highlighted?: boolean;
 }
 
 export default function StatCard({
@@ -53,27 +51,14 @@ export default function StatCard({
   delta,
   series,
   seriesType = 'bars',
-  highlighted = false,
 }: StatCardProps) {
   const deltaView = delta ? formatDelta(delta) : null;
 
   return (
-    <div
-      className={`relative flex flex-col overflow-hidden rounded-2xl border p-3.5 transition-colors sm:p-4 ${
-        highlighted
-          ? 'border-cyan-400/50 bg-gradient-to-br from-cyan-500/[0.12] to-transparent shadow-[0_18px_45px_-22px_rgba(34,211,238,0.85)]'
-          : 'border-cyan-400/15 bg-white hover:border-cyan-400/30'
-      }`}
-    >
+    <div className="relative flex flex-col overflow-hidden rounded-2xl border border-cyan-400/15 bg-white p-3.5 transition-colors hover:border-cyan-400/30 sm:p-4">
       {/* ── Nagłówek: ikona + etykieta ── */}
       <div className="flex items-center gap-2">
-        <span
-          className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg border ${
-            highlighted
-              ? 'border-cyan-400/40 bg-cyan-500/15 text-cyan-200'
-              : 'border-cyan-400/25 bg-cyan-500/10 text-cyan-300'
-          }`}
-        >
+        <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg border border-cyan-400/25 bg-cyan-500/10 text-cyan-300">
           {icon}
         </span>
         <span className="text-[11px] font-semibold leading-tight text-slate-300 sm:text-xs">

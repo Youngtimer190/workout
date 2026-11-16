@@ -158,7 +158,6 @@ export default function Dashboard({
         period: 'poprzedni tydzień',
       },
       seria: hist?.series.exercises,
-      wyróżniona: true,
     },
     {
       ikona: <FlameIcon className="h-4 w-4" />,
@@ -240,7 +239,6 @@ export default function Dashboard({
             delta={k.delta}
             series={k.seria}
             seriesType={k.typSerii}
-            highlighted={k.wyróżniona}
           />
         ))}
       </div>
