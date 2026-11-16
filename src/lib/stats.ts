@@ -303,3 +303,188 @@ export function formatNumberPL(value: number): string {
 export function formatVolumePL(value: number): string {
   return `${formatNumberPL(value)} kg`;
 }
+
+/* ── Podsumowanie tygodnia (sekcja „Plan tygodnia" w pulpicie) ─────────────
+   Dashboard pokazuje stan tygodnia liczonym na trzy różne sposoby:
+   ćwiczenia, serie i dni treningowe. Wszystkie liczymy tutaj, żeby
+   pulpitem i pasek boczny pokazywały te same liczby.
+
+   Zasada: **liczymy to, co da się zmierzyć**. Cardio bez zapisu (dane sprzed
+   wprowadzenia oznaczenia cardio) nie ma serii, więc nie wchodzi ani do
+   licznika, ani do mianownika — nie karamy użytkownika za brak danych. */
+
+/** Status dnia w podsumowaniu tygodnia. */
+export type DayStatus = 'done' | 'partial' | 'none' | 'rest';
+
+/** Stan jednego ćwiczenia w dniu — do mini-wykresu w podsumowaniu tygodnia. */
+export interface ExerciseProgress {
+  /** Czy ćwiczenie ma co najmniej jedną ukończoną serię. */
+  done: boolean;
+  /** Udział ukończonych serii w zaplanowanych (0–1). */
+  progress: number;
+}
+
+/** Podsumowanie jednego dnia tygodnia. */
+export interface DaySummary {
+  dayIndex: number;
+  name: string;
+  isRestDay: boolean;
+  /** Czy to dzisiaj. */
+  isToday: boolean;
+  /** Data dnia (null, gdy nie znamy tygodnia). */
+  date: Date | null;
+  /** Liczba ćwiczeń, które da się zmierzyć (ma serie). */
+  planned: number;
+  /** Liczba ćwiczeń z co najmniej jedną ukończoną serią. */
+  done: number;
+  /** Zaplanowane serie w dniu. */
+  setsPlanned: number;
+  /** Ukończone serie w dniu. */
+  setsDone: number;
+  /** Udział ukończonych serii w zaplanowanych (0–1). */
+  setProgress: number;
+  /** Stan dnia — steruje „chipem" w interfejsie. */
+  status: DayStatus;
+  /** Stan poszczególnych ćwiczeń — jeden słupek mini-wykresu na ćwiczenie. */
+  exercises: ExerciseProgress[];
+}
+
+/** Podsumowanie całego tygodnia. */
+export interface WeekSummary {
+  days: DaySummary[];
+  /** Ćwiczenia: zaplanowane / ukończone. */
+  plannedExercises: number;
+  doneExercises: number;
+  /** Serie: zaplanowane / ukończone. */
+  plannedSets: number;
+  doneSets: number;
+  /** Dni treningowe: zaplanowane / ukończone. */
+  plannedTrainingDays: number;
+  doneTrainingDays: number;
+}
+
+/**
+ * Liczba serii zaplanowanych w ćwiczeniu.
+ *
+ * Zgodnie z tym, jak liczy sam tracker: jeśli są zapisane serie, bierzemy
+ * ich liczbę; jeśli nie, bierzemy planowaną liczbę serii ćwiczenia.
+ */
+export function plannedSetsOf(exercise: Exercise): number {
+  const logs = exercise.setLogs ?? [];
+  if (logs.length > 0) return logs.length;
+  if (isCardioExercise(exercise)) return 0;
+  return exercise.sets ?? 0;
+}
+
+/** Liczba ukończonych serii w ćwiczeniu. */
+export function doneSetsOf(exercise: Exercise): number {
+  return (exercise.setLogs ?? []).filter(log => log.done).length;
+}
+
+/**
+ * Czy ćwiczenie da się zmierzyć.
+ *
+ * Siłowe bez serii i bez zaplanowanej liczby serii nie ma czego liczyć.
+ * Cardio bez serii to dane sprzed oznaczenia cardio — również niemierzalne.
+ */
+export function isMeasurableExercise(exercise: Exercise): boolean {
+  return plannedSetsOf(exercise) > 0;
+}
+
+/**
+ * Podsumowanie tygodnia dla pulpitu.
+ *
+ * `todayIndex` to indeks dzisiejszego dnia (0 = poniedziałek). `weekKey`
+ * służy wyłącznie do wyliczenia dat — bez niego daty są `null`, a reszta
+ * podsumowania działa tak samo.
+ */
+export function summarizeWeek(
+  days: WorkoutDay[],
+  todayIndex: number,
+  weekKey?: string | null
+): WeekSummary {
+  const summary: DaySummary[] = days.map((day, dayIndex) => {
+    const measurable = (day.exercises ?? []).filter(isMeasurableExercise);
+    const done = measurable.filter(isExerciseDone).length;
+    const setsPlanned = measurable.reduce((acc, ex) => acc + plannedSetsOf(ex), 0);
+    const setsDone = measurable.reduce((acc, ex) => acc + doneSetsOf(ex), 0);
+
+    const exercises: ExerciseProgress[] = measurable.map(ex => {
+      const planowane = plannedSetsOf(ex);
+      const zrobione = doneSetsOf(ex);
+      return {
+        done: isExerciseDone(ex),
+        progress: planowane > 0 ? Math.min(1, zrobione / planowane) : 0,
+      };
+    });
+
+    let status: DayStatus;
+    if (day.isRestDay) status = 'rest';
+    else if (measurable.length === 0) status = 'none';
+    else if (done === 0) status = 'none';
+    else if (done < measurable.length) status = 'partial';
+    else status = 'done';
+
+    return {
+      dayIndex,
+      name: day.name,
+      isRestDay: day.isRestDay,
+      isToday: dayIndex === todayIndex,
+      date: weekKey ? dayDate(weekKey, dayIndex) : null,
+      planned: measurable.length,
+      done,
+      setsPlanned,
+      setsDone,
+      setProgress: setsPlanned > 0 ? Math.min(1, setsDone / setsPlanned) : 0,
+      status,
+      exercises,
+    };
+  });
+
+  const plannedExercises = summary.reduce((acc, d) => acc + d.planned, 0);
+  const doneExercises = summary.reduce((acc, d) => acc + d.done, 0);
+  const plannedSets = summary.reduce((acc, d) => acc + d.setsPlanned, 0);
+  const doneSets = summary.reduce((acc, d) => acc + d.setsDone, 0);
+  const plannedTrainingDays = summary.filter(d => !d.isRestDay && d.planned > 0).length;
+  const doneTrainingDays = summary.filter(d => !d.isRestDay && d.done > 0).length;
+
+  return {
+    days: summary,
+    plannedExercises,
+    doneExercises,
+    plannedSets,
+    doneSets,
+    plannedTrainingDays,
+    doneTrainingDays,
+  };
+}
+
+/**
+ * „Cień tygodniowy" — gdzie tydzień się skończy przy obecnym tempie.
+ *
+ * Liczymy z wykonanych ćwiczeń i liczby dni, które już minęły:
+ * `done / elapsed × 7`.
+ *
+ * Wynik **przycinamy do liczby zaplanowanych ćwiczeń**: tydzień nie może
+ * się skończyć liczbą ćwiczeń, których nie ma w planie. Bez przycinania
+ * w poniedziałek po jednym treningu wyszłoby „42 ćw." przy planie na 10 —
+ * to szum, a nie informacja. Docięty cień mówi wtedy dwie rzeczy:
+ *  • równo planowi → „zamkniesz plan" (suwak pokazuje, ile już jest),
+ *  • poniżej planu → „zabraknie Ci X ćwiczeń".
+ *
+ * Zwraca `null`, gdy prognoza nie ma sensu:
+ *  • nie minął jeszcze żaden dzień (poniedziałek przed treningiem),
+ *  • nic nie zrobiono,
+ *  • tydzień się skończył (wtedy pokazujemy fakt, nie prognozę).
+ */
+export function projectWeekShadow(
+  done: number,
+  elapsedDays: number,
+  planned?: number
+): number | null {
+  if (elapsedDays <= 0 || elapsedDays >= 7) return null;
+  if (done <= 0) return null;
+  const cien = Math.round((done / elapsedDays) * 7);
+  if (typeof planned === 'number' && planned > 0) return Math.min(cien, planned);
+  return cien;
+}

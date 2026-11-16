@@ -707,6 +707,7 @@ export default function App() {
       case 'dashboard': return (
         <Dashboard
           days={days}
+          weekKey={weekKey}
           stats={workoutStats.stats}
           onGoToPlanner={() => handleViewChange('planner')}
           onGoToDay={handleGoToDay}

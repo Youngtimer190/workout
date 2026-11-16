@@ -1,6 +1,7 @@
 import { WorkoutDay } from '../types';
 import { formatNumberPL, formatVolumePL, isDayCompleted, WorkoutStats } from '../lib/stats';
 import { muscleGroupBgColors } from '../data/exercises';
+import WeekPlanPanel from './WeekPlanPanel';
 import {
   ChartIcon,
   DumbbellIcon,
@@ -12,6 +13,8 @@ import {
 
 interface DashboardProps {
   days: WorkoutDay[];
+  /** Klucz bieżącego tygodnia — potrzebny do dat w „Plan tygodnia". */
+  weekKey?: string | null;
   /** Statystyki z historii tygodni (treningi w miesiącu, passa, wolumen). */
   stats?: WorkoutStats;
   onGoToPlanner: () => void;
@@ -23,7 +26,7 @@ const todayIndex = today === 0 ? 6 : today - 1;
 
 /* ── Ikony (spójne z ekranem logowania) ─────────────────────────────────── */
 
-export default function Dashboard({ days, stats, onGoToPlanner, onGoToDay }: DashboardProps) {
+export default function Dashboard({ days, weekKey, stats, onGoToPlanner, onGoToDay }: DashboardProps) {
   const totalExercises = days.reduce((acc, d) => acc + (d.exercises?.length ?? 0), 0);
   const trainingDays = days.filter(d => !d.isRestDay && (d.exercises?.length ?? 0) > 0).length;
 
@@ -156,50 +159,12 @@ export default function Dashboard({ days, stats, onGoToPlanner, onGoToDay }: Das
       </div>
 
       {/* Week Overview */}
-      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-cyan-400/15">
-        <h2 className="text-base font-bold text-white mb-4">Plan tygodnia</h2>
-        <div className="grid grid-cols-7 gap-1 sm:gap-2">
-          {days.map((day, i) => {
-            const isToday = i === todayIndex;
-            return (
-              <div
-                key={day.id}
-                onClick={onGoToDay ? () => onGoToDay(i) : undefined}
-                className={`flex flex-col items-center gap-1 sm:gap-1.5 ${onGoToDay ? 'cursor-pointer hover:scale-[1.02] transition-transform' : ''}`}
-                title={onGoToDay ? 'Kliknij, aby przejść do planera' : undefined}
-              >
-                <span className={`text-[10px] sm:text-xs font-semibold ${isToday ? 'text-cyan-300' : 'text-slate-500'}`}>
-                  {day.name.substring(0, 2)}
-                </span>
-                <div
-                  className={`w-full aspect-square rounded-lg sm:rounded-xl flex items-center justify-center text-xs font-bold transition-all ${
-                    isToday
-                      ? 'bg-gradient-to-br from-cyan-600 to-cyan-700 text-white shadow-[0_10px_24px_-12px_rgba(6,182,212,1)]'
-                      : day.isRestDay
-                      ? 'bg-white/[0.05] text-slate-500'
-                      : day.exercises.length > 0
-                      ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-400/25'
-                      : 'bg-white/[0.03] text-slate-600 border border-white/5'
-                  }`}
-                >
-                  <span className="text-[10px] sm:text-xs">
-                    {day.isRestDay ? (
-                      <MoonIcon className="mx-auto h-4 w-4" />
-                    ) : day.exercises.length > 0 ? (
-                      day.exercises.length
-                    ) : (
-                      '–'
-                    )}
-                  </span>
-                </div>
-                <span className="text-[9px] sm:text-[10px] text-slate-500 text-center leading-tight">
-                  {day.isRestDay ? 'Odp.' : day.exercises.length > 0 ? `${day.exercises.length} ćw.` : 'Pusty'}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      <WeekPlanPanel
+        days={days}
+        weekKey={weekKey}
+        todayIndex={todayIndex}
+        onGoToDay={onGoToDay}
+      />
 
       {/* Muscle Distribution */}
       {topMuscles.length > 0 && (
