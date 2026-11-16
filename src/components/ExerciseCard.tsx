@@ -132,14 +132,17 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
         {/* ── Main row ── */}
         <div className="flex items-start gap-2.5 p-3">
 
-          {/* Status indicator */}
+          {/* Status indicator
+              Kolory podpowiadają kontrast: biały na bursztynie dawał
+              ~1,9:1 (liczba była ledwo czytelna), więc na żółtym tle
+              dajemy ciemny tekst, a na zielonym ciemniejszy odcień. */}
           <div className="flex-shrink-0 mt-0.5">
             {!isCardio && setLogs.length > 0 ? (
               <div className={`w-7 h-7 rounded-full flex items-center justify-center ${
                 isFullyDone
-                  ? 'bg-emerald-500 text-white'
+                  ? 'bg-emerald-600 text-white'
                   : completedSets > 0
-                  ? 'bg-amber-400 text-white'
+                  ? 'bg-amber-400 text-slate-900'
                   : 'bg-slate-100 text-slate-400'
               }`}>
                 {isFullyDone ? (

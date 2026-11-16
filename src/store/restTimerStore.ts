@@ -10,7 +10,7 @@ import {
   vibrateDone,
   vibrateTick,
 } from '../lib/restAudio';
-import { cancelRestTimerPush, scheduleRestTimerPush } from '../lib/pushClient';
+import { cancelRestTimerPush, registerSubscription, scheduleRestTimerPush } from '../lib/pushClient';
 
 /**
  * Globalny stan timera odpoczynku.
@@ -65,6 +65,13 @@ export interface RestTimerState {
    */
   restLabel: string | null;
   /**
+   * Problem z powiadomieniem systemowym — `null`, gdy wszystko działa.
+   *
+   * Bez tego użytkownik widziałby po prostu brak powiadomienia i nie miał
+   * skąd wiedzieć, dlaczego. Teraz aplikacja mówi wprost, co nie gra.
+   */
+  pushProblem: 'brak-subskrypcji' | 'blad-serwera' | null;
+  /**
    * Aktualny czas (ms) — odświeżany raz na sekundę, gdy timer działa.
    *
    * Komponenty liczą z tego pozostały czas, zamiast wołać `Date.now()`
@@ -95,6 +102,7 @@ const INITIAL_STATE: RestTimerState = {
   finishedAt: null,
   pushScheduleId: null,
   restLabel: null,
+  pushProblem: null,
   now: Date.now(),
 };
 
@@ -160,6 +168,7 @@ function loadState(): RestTimerState {
       finishedAt: null,
       pushScheduleId: null,
       restLabel: typeof p.restLabel === 'string' ? p.restLabel : null,
+      pushProblem: null,
       now: Date.now(),
     };
   } catch {
@@ -399,6 +408,7 @@ export function startRestTimer(durationMs: number, label?: string | null): void 
     finishedAt: null,
     pushScheduleId: null,
     restLabel: label ?? null,
+    pushProblem: null,
   });
 
   ensureTicking();
@@ -410,20 +420,42 @@ export function startRestTimer(durationMs: number, label?: string | null): void 
   // Powiadomienie systemowe jako zabezpieczenie na wypadek uśpienia apki.
   if (settings.pushEnabled) {
     const generation = ++pushScheduleGeneration;
-    void scheduleRestTimerPush(now + duration).then(id => {
+    void (async () => {
+      // Najpierw odświeżamy subskrypcję. Subskrypcja w przeglądarce potrafi
+      // zniknąć (przeinstalowanie PWA, wyczyszczenie danych witryny) albo
+      // wygasnąć po stronie APNs — wtedy serwer trzyma martwy endpoint,
+      // powiadomienia nie dochodzą, a użytkownik nie ma jak się o tym
+      // dowiedzieć.
+      //
+      // UWAGA: nieudana rejestracja NIE blokuje planowania — serwer może
+      // mieć poprawną subskrypcję z poprzedniej sesji, a chwilowy błąd
+      // sieciowy nie powinien odbierać użytkownikowi alarmu. O tym, że
+      // przeglądarka nie ma subskrypcji, powiemy wprost w ustawieniach.
+      const zarejestrowana = await registerSubscription();
+
+      const wynik = await scheduleRestTimerPush(now + duration);
+
       // Odpowiedź serwera mogła przyjść PO tym, jak zaczęła się kolejna
       // przerwa albo gdy ta już się zakończyła — wtedy ten identyfikator
       // już niczego nie dotyczy i nie wolno go zapamiętać.
-      if (!id || generation !== pushScheduleGeneration) return;
+      if (generation !== pushScheduleGeneration) return;
 
-      if (state.endsAt == null) {
-        // Przerwa zdążyła się zakończyć — anulujemy, żeby push nie przyszedł.
-        void cancelRestTimerPush(id);
+      if (!wynik.ok) {
+        setState({ pushProblem: wynik.powod });
         return;
       }
 
-      setState({ pushScheduleId: id });
-    });
+      if (state.endsAt == null) {
+        // Przerwa zdążyła się zakończyć — anulujemy, żeby push nie przyszedł.
+        void cancelRestTimerPush(wynik.id);
+        return;
+      }
+
+      setState({
+        pushScheduleId: wynik.id,
+        pushProblem: zarejestrowana ? null : 'brak-subskrypcji',
+      });
+    })();
   }
 }
 

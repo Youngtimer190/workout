@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { TimerIcon } from '../icons';
+import { TimerIcon, WarningIcon } from '../icons';
 import { describeDuration, formatDuration, REST_PRESETS } from '../../lib/restTimer';
 import {
   RestTimerSettings as RestTimerSettingsType,
+  useRestTimer,
   useRestTimerSettings,
 } from '../../store/restTimerStore';
 import { requestPushPermission, registerSubscription } from '../../lib/pushClient';
@@ -29,6 +30,7 @@ export default function RestTimerSettingsView({
   userId,
 }: RestTimerSettingsViewProps) {
   const { settings, update } = useRestTimerSettings();
+  const { pushProblem } = useRestTimer();
   const [pushMessage, setPushMessage] = useState<string | null>(null);
   const [pushBusy, setPushBusy] = useState(false);
 
@@ -236,6 +238,20 @@ export default function RestTimerSettingsView({
         {pushMessage && (
           <p className="mt-3 rounded-xl border border-cyan-400/25 bg-cyan-500/10 px-3 py-2.5 text-xs font-semibold text-cyan-200">
             {pushMessage}
+          </p>
+        )}
+
+        {/* Problem wykryty w trakcie użycia — bez tego użytkownik
+            widziałby po prostu brak powiadomienia i nie wiedziałby,
+            dlaczego go nie ma. */}
+        {settings.pushEnabled && pushProblem && (
+          <p className="mt-3 flex items-start gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2.5 text-xs font-semibold text-amber-200">
+            <WarningIcon className="mt-px h-4 w-4 flex-shrink-0 text-amber-300" />
+            <span>
+              {pushProblem === 'brak-subskrypcji'
+                ? 'Powiadomienie systemowe nie zadziała — przeglądarka nie ma zapisanej subskrypcji. Wyłącz i włącz powyższy przełącznik, żeby ją odnowić.'
+                : 'Powiadomienie systemowe nie zadziała — nie udało się połączyć z serwerem powiadomień. Sprawdź połączenie z internetem i zacznij przerwę ponownie.'}
+            </span>
           </p>
         )}
       </section>

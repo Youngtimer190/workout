@@ -17,10 +17,15 @@ export const VAPID_SUBJECT = 'mailto:angelika_pawelek@wp.pl';
 export const PUSH_FUNCTION = 'rest-timer-push';
 
 /**
- * Najdłuższa przerwa, dla której powiadomienie systemowe zdąży się wysłać.
+ * Najdłuższa przerwa, dla której zamawiamy powiadomienie systemowe.
  *
  * Edge Function ma limit czasu ściany: 150 s (plan darmowy) albo 400 s
- * (plany płatne). Funkcja budzi się w tle, czeka do końca przerwy i dopiero
- * wtedy wysyła powiadomienie — poza tym oknem wiadomość nie dotrze.
+ * (plany płatne) — dlatego długie przerwy realizowane są **łańcuchem
+ * wywołań** (funkcja budzi się po 90 s i przekazuje pilnowanie dalej).
+ * Dzięki temu powiadomienie działa dla DOWOLNEGO czasu przerwy, a nie tylko
+ * dla krótszych niż 2 minuty.
+ *
+ * Limit klienta to jedynie górna granica — najdłuższa przerwa w aplikacji
+ * to 15 minut.
  */
-export const MAX_PUSH_DELAY_MS = 120_000;
+export const MAX_PUSH_DELAY_MS = 16 * 60_000;

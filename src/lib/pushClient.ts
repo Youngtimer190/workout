@@ -67,6 +67,10 @@ export async function requestPushPermission(): Promise<NotificationPermission | 
 export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
   if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return null;
   try {
+    // Jeśli worker już jest zarejestrowany, nie ruszamy go — `register()`
+    // przy każdym wywołaniu to zbędne dotknięcie workera.
+    const existing = await navigator.serviceWorker.getRegistration('/');
+    if (existing) return existing;
     return await navigator.serviceWorker.register('/sw.js', { scope: '/' });
   } catch {
     return null;
@@ -98,41 +102,79 @@ export async function getPushSubscription(): Promise<PushSubscription | null> {
   }
 }
 
-/** Wysyła subskrypcję do serwera (Edge Function zapisuje ją w bazie). */
-export async function registerSubscription(): Promise<boolean> {
-  if (!isSupabaseConfigured) return false;
-  const sub = await getPushSubscription();
-  if (!sub) return false;
-
-  const json = sub.toJSON();
-  if (!json.endpoint || !json.keys?.auth || !json.keys?.p256dh) return false;
-
-  const { error } = await supabase.functions.invoke(PUSH_FUNCTION, {
-    body: {
-      action: 'subscribe',
-      subscription: {
-        endpoint: json.endpoint,
-        keys: { auth: json.keys.auth, p256dh: json.keys.p256dh },
-      },
-    },
-  });
-
-  return !error;
+/**
+ * Czeka na wynik, ale nie dłużej niż `ms`.
+ *
+ * Po przekroczeniu limitu zwracamy `null` — a obiecany obiekt w tle
+ * dalej pracuje (nic się nie psuje).
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
+  return Promise.race([
+    promise,
+    new Promise<null>(resolve => setTimeout(() => resolve(null), ms)),
+  ]);
 }
+
+/**
+ * Wysyła subskrypcję do serwera (Edge Function zapisuje ją w bazie).
+ *
+ * To zarówno „zapisz", jak i „odśwież" — upsert po `endpoint` jest
+ * idempotentny. Wywołujemy to **przed każdym planowaniem powiadomienia**,
+ * bo subskrypcja w przeglądarce potrafi zniknąć (przeinstalowanie PWA,
+ * wyczyszczenie danych witryny) albo wygasnąć po stronie APNs. Serwer
+ * trzymałby wtedy martwy endpoint, powiadomienia nie dochodziłyby,
+ * a użytkownik nie miałby jak się o tym dowiedzieć.
+ *
+ * `timeoutMs` chroni przed zawieszeniem: tworzenie nowej subskrypcji w FCM
+ * potrafi trwać kilka sekund, a planowania powiadomienia nie wolno z tego
+ * powodu opóźniać — wolno je **pominąć**, nie wolno go **zatrzymać**.
+ */
+export async function registerSubscription(timeoutMs = 2500): Promise<boolean> {
+  if (!isSupabaseConfigured) return false;
+
+  const wynik = await withTimeout(
+    (async () => {
+      const sub = await getPushSubscription();
+      if (!sub) return false;
+
+      const json = sub.toJSON();
+      if (!json.endpoint || !json.keys?.auth || !json.keys?.p256dh) return false;
+
+      const { error } = await supabase.functions.invoke(PUSH_FUNCTION, {
+        body: {
+          action: 'subscribe',
+          subscription: {
+            endpoint: json.endpoint,
+            keys: { auth: json.keys.auth, p256dh: json.keys.p256dh },
+          },
+        },
+      });
+
+      return !error;
+    })(),
+    timeoutMs,
+  );
+
+  return wynik === true;
+}
+
+/** Wynik planowania powiadomienia — z powodem porażki. */
+export type PushPlanResult =
+  | { ok: true; id: string }
+  | { ok: false; powod: 'brak-subskrypcji' | 'blad-serwera' };
 
 /**
  * Prosi serwer o powiadomienie w chwili `endsAt`.
  *
- * Zwraca identyfikator harmonogramu (do późniejszego anulowania) albo `null`,
- * gdy powiadomienie nie zostało zaplanowane.
+ * Zwraca identyfikator harmonogramu (do późniejszego anulowania) albo
+ * powód, dla którego powiadomienia nie dało się zamówić — żeby aplikacja
+ * mogła powiedzieć o tym wprost, zamiast milczeć.
  */
-export async function scheduleRestTimerPush(endsAt: number): Promise<string | null> {
-  if (!isSupabaseConfigured) return null;
+export async function scheduleRestTimerPush(endsAt: number): Promise<PushPlanResult> {
+  if (!isSupabaseConfigured) return { ok: false, powod: 'brak-subskrypcji' };
 
   const delay = endsAt - Date.now();
-  // Poza oknem, w którym Edge Function może czekać — powiadomienie
-  // i tak nie zdążyłoby dotrzeć. Lepiej nie obiecywać niczego.
-  if (delay <= 0 || delay > MAX_PUSH_DELAY_MS) return null;
+  if (delay <= 0 || delay > MAX_PUSH_DELAY_MS) return { ok: false, powod: 'brak-subskrypcji' };
 
   try {
     const { data, error } = await supabase.functions.invoke(PUSH_FUNCTION, {
@@ -143,11 +185,12 @@ export async function scheduleRestTimerPush(endsAt: number): Promise<string | nu
         body: 'Przerwa minęła — możesz zacząć kolejną serię.',
       },
     });
-    if (error) return null;
+    if (error) return { ok: false, powod: 'blad-serwera' };
     const id = (data as { id?: string } | null)?.id;
-    return typeof id === 'string' ? id : null;
+    if (typeof id !== 'string') return { ok: false, powod: 'blad-serwera' };
+    return { ok: true, id };
   } catch {
-    return null;
+    return { ok: false, powod: 'blad-serwera' };
   }
 }
 
