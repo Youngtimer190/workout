@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react';
 import { clampDuration, DEFAULT_REST_MS } from '../lib/restTimer';
 import {
   acquireWakeLock,
-  canPlayBell,
+  canRingAlarm,
   cancelPendingBell,
   playBell,
   prepareBell,
@@ -272,42 +272,20 @@ function tick() {
     if (settings.vibrationEnabled) vibrateTick();
   }
 
-  // Tuż przed końcem przerwy zgłaszamy serwerowi, że alarm odbierze
-  // LOKALNY dzwonek — i prosimy o rezygnację z powiadomienia systemowego.
+  // Tuż przed końcem przerwy NIE anulujemy powiadomienia systemowego.
   //
-  // Robimy to z wyprzedzeniem (a nie w momencie zakończenia), żeby serwer
-  // nie musiał czekać długiego „okna” na anulowanie. Dzięki temu
-  // powiadomienie na ZABLOKOWANYM telefonie (gdzie nikt nie anuluje)
-  // przychodzi o ~1,2 s wcześniej.
+  // Dawniej robiliśmy to 700 ms przed końcem, gdy dzwonek był gotowy —
+  // ale to było zgadywanie: „zaraz zadzwoni, więc push się nie przyda".
+  // Przy ZGASZONYM ekranie dzwonek nie zagra (iPhone nie ma wibracji),
+  // więc push był jedynym alarmem — a mimo to go wyciszaliśmy. Efekt:
+  // przy krótkiej przerwie (5 s) aplikacja zdążyła anulować push, zanim
+  // telefon w ogóle zdążył się zablokować, i alarm zniknął całkowicie.
   //
-  // Warunek: dzwonek musi być gotowy — inaczej wyciszylibyśmy push,
-  // a alarm i tak by nie zagrał.
-  if (
-    state.pushScheduleId &&
-    left > 0 &&
-    left <= PUSH_SELF_ALARM_LEAD_MS &&
-    !pushSelfAlarmSignalled &&
-    canPlayBell()
-  ) {
-    pushSelfAlarmSignalled = true;
-    void cancelRestTimerPush(state.pushScheduleId);
-  }
+  // Teraz decyzja zapada w chwili, gdy przerwa się FAKTYCZNIE kończy
+  // (patrz `finish()`): tam wiadomo, czy alarm lokalny zagrał.
 
   if (left <= 0) finish();
 }
-
-/**
- * Ile wcześniej (przed końcem przerwy) zgłaszamy serwerowi, że alarm
- * odbierze lokalny dzwonek.
- *
- * Dzięki temu powiadomienie systemowe nie dubluje się z dzwonkiem, a serwer
- * nie musi czekać długiego „okna” na anulowanie — czyli powiadomienie
- * na zablokowanym telefonie przychodzi szybciej.
- */
-const PUSH_SELF_ALARM_LEAD_MS = 700;
-
-/** Czy zgłosiliśmy już serwerowi, że alarm odbierze dzwonek. */
-let pushSelfAlarmSignalled = false;
 
 /**
  * Numer generacji harmonogramu push.
@@ -343,16 +321,29 @@ function finish() {
   // jej alarmem było powiadomienie systemowe.
   const userWasWaiting = overdueMs <= MAX_ALARM_LAG_MS;
 
+  // Czy alarm lokalny NAPRAWDĘ doszedł do użytkownika?
+  //
+  // Dźwięk słyszalny jest tylko przy włączonym ekranie — przy zgaszonym
+  // telefonie (albo zablokowanym) iPhone i tak nic nie zagra, a wibracji
+  // nie ma. Wtedy powiadomienie systemowe jest jedynym sygnałem i musi
+  // zostać wysłane.
+  const dzwiekSlyszany = userWasWaiting && settings.soundEnabled && canRingAlarm();
+
   if (userWasWaiting) {
     if (settings.soundEnabled) playBell();
     if (settings.vibrationEnabled) vibrateDone();
   }
 
-  // Powiadomienie systemowe: jeśli aplikacja była w tle, lokalny dźwięk
-  // nie zagrał — wtedy powiadomienie zostawiamy (push sam się wyśle).
-  // Jeśli aplikacja była na wierzchu, anulujemy push, żeby nie dublować.
-  if (wasActive && state.pushScheduleId) {
-    void cancelRestTimerPush(state.pushScheduleId);
+  // Powiadomienie systemowe anulujemy WYŁĄCZNIE wtedy, gdy alarm lokalny
+  // faktycznie zagrał — żeby nie było podwójnego alarmu.
+  //
+  // W każdym innym przypadku zostawiamy push do wysłania:
+  //  • ekran zgaszony / telefon zablokowany → dzwonek milczał, a push jest
+  //    jedynym sposobem, żeby dać znać o końcu przerwy,
+  //  • użytkownik sam anulował przerwę → anulowanie idzie osobną ścieżką
+  //    (`stopRestTimer()`) i wygasza push niezależnie od widoczności ekranu.
+  if (wasActive && state.pushScheduleId && dzwiekSlyszany) {
+    void cancelRestTimerPush(state.pushScheduleId, 'samoalarm');
   }
 
   void releaseWakeLock();
@@ -382,7 +373,6 @@ export function startRestTimer(durationMs: number, label?: string | null): void 
   // Nowa przerwa → żaden dzwonek z poprzedniej nie może się jeszcze odezwać
   // (np. z przerwy zakończonej, gdy aplikacja była w tle).
   cancelPendingBell();
-  pushSelfAlarmSignalled = false;
 
   // Poprzednia przerwa została ZASTĄPIONA nową — jej powiadomienie
   // systemowe nie może już dotrzeć. Bez tego użytkownik dostawałby alarm
@@ -390,7 +380,7 @@ export function startRestTimer(durationMs: number, label?: string | null): void 
   // identyfikator ginął w sklepie (zastępowała go nowa przerwa).
   const previousPushId = state.pushScheduleId;
   if (previousPushId) {
-    void cancelRestTimerPush(previousPushId);
+    void cancelRestTimerPush(previousPushId, 'zastapienie');
   }
 
   // Dźwięk przygotowujemy przy starcie — to gest użytkownika, więc
@@ -418,45 +408,48 @@ export function startRestTimer(durationMs: number, label?: string | null): void 
   if (settings.keepScreenOn) void acquireWakeLock();
 
   // Powiadomienie systemowe jako zabezpieczenie na wypadek uśpienia apki.
-  if (settings.pushEnabled) {
-    const generation = ++pushScheduleGeneration;
-    void (async () => {
-      // Najpierw odświeżamy subskrypcję. Subskrypcja w przeglądarce potrafi
-      // zniknąć (przeinstalowanie PWA, wyczyszczenie danych witryny) albo
-      // wygasnąć po stronie APNs — wtedy serwer trzyma martwy endpoint,
-      // powiadomienia nie dochodzą, a użytkownik nie ma jak się o tym
-      // dowiedzieć.
-      //
-      // UWAGA: nieudana rejestracja NIE blokuje planowania — serwer może
-      // mieć poprawną subskrypcję z poprzedniej sesji, a chwilowy błąd
-      // sieciowy nie powinien odbierać użytkownikowi alarmu. O tym, że
-      // przeglądarka nie ma subskrypcji, powiemy wprost w ustawieniach.
-      const zarejestrowana = await registerSubscription();
+  if (settings.pushEnabled) void planPushForRest(now + duration);
+}
 
-      const wynik = await scheduleRestTimerPush(now + duration);
+/**
+ * Planuje powiadomienie systemowe na koniec przerwy.
+ *
+ * Odświeża przy okazji subskrypcję — potrafi zniknąć (przeinstalowanie PWA,
+ * wyczyszczenie danych witryny) albo wygasnąć po stronie APNs. Wtedy serwer
+ * trzyma martwy endpoint, powiadomienia nie dochodzą, a użytkownik nie ma
+ * jak się o tym dowiedzieć.
+ *
+ * UWAGA: nieudana rejestracja NIE blokuje planowania — serwer może mieć
+ * poprawną subskrypcję z poprzedniej sesji, a chwilowy błąd sieciowy nie
+ * powinien odbierać użytkownikowi alarmu. O tym, że przeglądarka nie ma
+ * subskrypcji, powiemy wprost w ustawieniach.
+ */
+async function planPushForRest(endsAt: number): Promise<void> {
+  const generation = ++pushScheduleGeneration;
 
-      // Odpowiedź serwera mogła przyjść PO tym, jak zaczęła się kolejna
-      // przerwa albo gdy ta już się zakończyła — wtedy ten identyfikator
-      // już niczego nie dotyczy i nie wolno go zapamiętać.
-      if (generation !== pushScheduleGeneration) return;
+  const zarejestrowana = await registerSubscription();
+  const wynik = await scheduleRestTimerPush(endsAt);
 
-      if (!wynik.ok) {
-        setState({ pushProblem: wynik.powod });
-        return;
-      }
+  // Odpowiedź serwera mogła przyjść PO tym, jak zaczęła się kolejna
+  // przerwa albo gdy ta już się zakończyła — wtedy ten identyfikator
+  // już niczego nie dotyczy i nie wolno go zapamiętać.
+  if (generation !== pushScheduleGeneration) return;
 
-      if (state.endsAt == null) {
-        // Przerwa zdążyła się zakończyć — anulujemy, żeby push nie przyszedł.
-        void cancelRestTimerPush(wynik.id);
-        return;
-      }
-
-      setState({
-        pushScheduleId: wynik.id,
-        pushProblem: zarejestrowana ? null : 'brak-subskrypcji',
-      });
-    })();
+  if (!wynik.ok) {
+    setState({ pushProblem: wynik.powod });
+    return;
   }
+
+  if (state.endsAt == null) {
+    // Przerwa zdążyła się zakończyć — anulujemy, żeby push nie przyszedł.
+    void cancelRestTimerPush(wynik.id, 'zakonczona');
+    return;
+  }
+
+  setState({
+    pushScheduleId: wynik.id,
+    pushProblem: zarejestrowana ? null : 'brak-subskrypcji',
+  });
 }
 
 /** Startuje przerwę z domyślnym czasem. */
@@ -470,21 +463,28 @@ export function pauseRestTimer(): void {
   const remaining = Math.max(0, state.endsAt - Date.now());
   stopTicking();
   void releaseWakeLock();
-  setState({ paused: true, pausedRemainingMs: remaining });
+  // Wstrzymana przerwa nie zakończy się o ustalonym czasie, więc stare
+  // powiadomienie by i tak trafiłoby w zły moment. Anulujemy je — wznowienie
+  // zaplanuje nowe, na nowy czas końca.
+  if (state.pushScheduleId) void cancelRestTimerPush(state.pushScheduleId, 'pauza');
+  setState({ paused: true, pausedRemainingMs: remaining, pushScheduleId: null });
 }
 
 /** Wznawia wstrzymaną przerwę. */
 export function resumeRestTimer(): void {
   if (!state.paused || state.pausedRemainingMs == null) return;
   const now = Date.now();
+  const endsAt = now + state.pausedRemainingMs;
   setState({
-    endsAt: now + state.pausedRemainingMs,
+    endsAt,
     startedAt: now,
     paused: false,
     pausedRemainingMs: null,
   });
   ensureTicking();
   if (settings.keepScreenOn) void acquireWakeLock();
+  // Po wznowieniu koniec przerwy przesuwa się — planujemy nowe powiadomienie.
+  if (settings.pushEnabled) void planPushForRest(endsAt);
 }
 
 /** Dodaje (lub odejmuje) sekundy do bieżącej przerwy. */
@@ -536,7 +536,10 @@ export function stopRestTimer(): void {
   void releaseWakeLock();
   // Anulujemy też oczekujący dzwonek — zatrzymana przerwa nie zadzwoni.
   cancelPendingBell();
-  if (state.pushScheduleId) void cancelRestTimerPush(state.pushScheduleId);
+  // Jawne anulowanie przez użytkownika WYGAŚZA powiadomienie systemowe
+  // niezależnie od tego, czy ekran był włączony. To jedyna ścieżka, która
+  // ma prawo uciszyć push bez względu na stan ekranu.
+  if (state.pushScheduleId) void cancelRestTimerPush(state.pushScheduleId, 'uzytkownik');
   setState({
     endsAt: null,
     startedAt: null,

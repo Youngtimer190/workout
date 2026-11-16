@@ -302,6 +302,31 @@ export function canPlayBell(): boolean {
 }
 
 /**
+ * Czy strona jest widoczna (ekran włączony, aplikacja na wierzchu).
+ *
+ * Gdy ekran jest zgaszony albo telefon zablokowany, przeglądarka ustawia
+ * `visibilityState` na „hidden". To najpewniejszy sygnał, że **dźwięku nie
+ * da się usłyszeć** — iPhone dodatkowo nie ma wibracji, więc przy zgaszonym
+ * ekranie alarm lokalny po prostu nie istnieje.
+ */
+export function isPageVisible(): boolean {
+  if (typeof document === 'undefined') return true;
+  return document.visibilityState === 'visible';
+}
+
+/**
+ * Czy alarm lokalny na pewno dotrze do użytkownika.
+ *
+ * Sam kontekst audio nie wystarczy — przy zgaszonym ekranie i tak nic nie
+ * słychać. Wtedy jedynym sygnałem zostaje powiadomienie systemowe i
+ * **nie wolno go wyciszyć**.
+ */
+export function canRingAlarm(): boolean {
+  if (!isPageVisible()) return false;
+  return canPlayBell();
+}
+
+/**
  * Odgrywa dzwonek końca przerwy.
  */
 export function playBell(): void {

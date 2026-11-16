@@ -52,14 +52,19 @@ const MAX_SLEEP_MS = 90_000;
 /**
  * Ile czekamy po terminie, zanim wyślemy powiadomienie.
  *
- * To okno na anulowanie: gdy aplikacja jest na wierzchu, gra lokalny
- * dzwonek i w tym samym momencie prosi serwer o anulowanie powiadomienia.
- * Bez tej przerwy użytkownik dostałby dzwonek ORAZ powiadomienie.
+ * To okno na anulowanie. Klient zgłasza je w chwili, gdy przerwa się
+ * kończy — czyli tuż PO terminie (dzwonek musi być pewny, a nie
+ * przewidywany). Przy tych kilkuset milisekundach anulowanie zawsze
+ * zdąża do nas, a powiadomienie na zablokowanym telefonie przychodzi
+ * z niewielkim opóźnieniem.
  *
- * Gdy telefon jest zablokowany, nikt nie anuluje — powiadomienie wychodzi
- * (z opóźnieniem 0,6 s, którego nikt nie zauważy).
+ * UWAGA: to okno NIE służy do wyciszania pusha, gdy alarm odbierze
+ * lokalny dzwonek. Klient zgłasza „samoalarm" tylko wtedy, gdy dzwonek
+ * NAPRAWDĘ zagra (ekran włączony). Przy zgaszonym ekranie nikt nic nie
+ * zgłasza, więc powiadomienie wychodzi — inaczej użytkownik zostałby
+ * bez alarmu wcale.
  */
-const SEND_GRACE_MS = 600;
+const SEND_GRACE_MS = 900;
 
 /** Ile harmonogramów trzymamy dla jednego użytkownika. */
 const MAX_SCHEDULES_PER_USER = 20;
@@ -419,6 +424,12 @@ Deno.serve(async req => {
     const id = String(body.id ?? '');
     if (!id) return json({ error: 'Brak identyfikatora.' }, 400);
 
+    // Powód anulowania — mówi, kto wyciszył powiadomienie:
+    //  • „uzytkownik"  — przerwę zatrzymano ręcznie (push nie wychodzi),
+    //  • „samoalarm"   — alarm odbierze lokalny dzwonek,
+    //  • „pauza" / „zastapienie" — przerwa zmieniła termin.
+    const powod = String(body.powod ?? 'nieokreslony');
+
     const { data: existing } = await admin
       .from('push_schedules')
       .select('ends_at, cancelled')
@@ -437,6 +448,7 @@ Deno.serve(async req => {
     console.log(
       JSON.stringify({
         zdarzenie: 'anulowanie_doszedlo',
+        powod,
         wzgledem_konca_ms: endsAtMs ? Date.now() - endsAtMs : null,
         juz_anulowane: existing?.cancelled ?? null,
       }),

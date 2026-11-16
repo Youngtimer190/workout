@@ -194,12 +194,33 @@ export async function scheduleRestTimerPush(endsAt: number): Promise<PushPlanRes
   }
 }
 
-/** Anuluje zaplanowane powiadomienie (gdy timer zatrzymano przed czasem). */
-export async function cancelRestTimerPush(id: string): Promise<void> {
+/** Powód anulowania zaplanowanego powiadomienia. */
+export type PushCancelReason =
+  /** Użytkownik sam zatrzymał przerwę — push nie zostanie wysłany. */
+  | 'uzytkownik'
+  /** Alarm odbierze lokalny dzwonek (aplikacja na wierzchu). */
+  | 'samoalarm'
+  /** Przerwa została wstrzymana. */
+  | 'pauza'
+  /** Nowa przerwa zastąpiła poprzednią. */
+  | 'zastapienie'
+  /** Przerwa zdążyła się zakończyć, zanim serwer odpowiedział. */
+  | 'zakonczona';
+
+/**
+ * Anuluje zaplanowane powiadomienie (gdy timer zatrzymano przed czasem).
+ *
+ * Powód idzie razem z żądaniem — serwer zapisuje go w logach, więc widać
+ * potem, czy push został wyciszony przez użytkownika, czy przez dzwonek.
+ */
+export async function cancelRestTimerPush(
+  id: string,
+  powod: PushCancelReason = 'uzytkownik'
+): Promise<void> {
   if (!isSupabaseConfigured) return;
   try {
     await supabase.functions.invoke(PUSH_FUNCTION, {
-      body: { action: 'cancel', id },
+      body: { action: 'cancel', id, powod },
     });
   } catch {
     /* anulowanie jest najlepsze-effort — jeśli się nie uda, powiadomienie

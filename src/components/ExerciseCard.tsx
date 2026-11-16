@@ -133,16 +133,18 @@ export default function ExerciseCard({ exercise, onRemove, onUpdate, onReplace }
         <div className="flex items-start gap-2.5 p-3">
 
           {/* Status indicator
-              Kolory podpowiadają kontrast: biały na bursztynie dawał
-              ~1,9:1 (liczba była ledwo czytelna), więc na żółtym tle
-              dajemy ciemny tekst, a na zielonym ciemniejszy odcień. */}
+              UWAGA na kolor: motyw ciemny PRZEMAPOWUJE skalę `slate` na
+              jasne odcienie (`text-slate-900` → jasny tekst główny), więc
+              `text-slate-900` NIE znaczy tu „ciemny tekst". Do ciemnego
+              numeru na żółtym używamy wartości dowolnej, której motyw
+              nie dotyka. */}
           <div className="flex-shrink-0 mt-0.5">
             {!isCardio && setLogs.length > 0 ? (
               <div className={`w-7 h-7 rounded-full flex items-center justify-center ${
                 isFullyDone
                   ? 'bg-emerald-600 text-white'
                   : completedSets > 0
-                  ? 'bg-amber-400 text-slate-900'
+                  ? 'bg-amber-400 text-[#0f172a]'
                   : 'bg-slate-100 text-slate-400'
               }`}>
                 {isFullyDone ? (
