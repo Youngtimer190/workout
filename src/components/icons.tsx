@@ -86,6 +86,63 @@ export function CircleDotIcon(props: IconProps) {
 
 /* ── Nawigacja ────────────────────────────────────────────────────────────── */
 
+/** Kafelki — „Przegląd" (kokpit aplikacji). */
+export function GridIcon(props: IconProps) {
+  return (
+    <svg {...svgProps(props)}>
+      <rect x="2.5" y="2.5" width="8" height="8" rx="2" fill="currentColor" stroke="none" />
+      <rect x="13.5" y="2.5" width="8" height="8" rx="2" fill="currentColor" stroke="none" />
+      <rect x="2.5" y="13.5" width="8" height="8" rx="2" fill="currentColor" stroke="none" />
+      <rect x="13.5" y="13.5" width="8" height="8" rx="2" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+/** Kalendarz z wpisem — „Planer". */
+export function CalendarPlanIcon(props: IconProps) {
+  return (
+    <svg {...svgProps(props)}>
+      <rect x="3" y="4.5" width="18" height="16" rx="2.5" />
+      <path d="M8 2.5v4M16 2.5v4" />
+      <rect x="7.5" y="11" width="9" height="6" rx="1.6" />
+    </svg>
+  );
+}
+
+/** Hantla poziomo — „Ćwiczenia". */
+export function DumbbellFlatIcon(props: IconProps) {
+  return (
+    <svg {...svgProps(props)}>
+      <rect x="2.5" y="9" width="3.6" height="6" rx="1.5" />
+      <rect x="7" y="10.5" width="2.6" height="3" rx="1" />
+      <path d="M9.6 12h4.8" />
+      <rect x="14.4" y="10.5" width="2.6" height="3" rx="1" />
+      <rect x="17.9" y="9" width="3.6" height="6" rx="1.5" />
+    </svg>
+  );
+}
+
+/** Folder z kartą — „Moje treningi" (szablony). */
+export function FolderIcon(props: IconProps) {
+  return (
+    <svg {...svgProps(props)}>
+      <path d="M3 8.5A2.5 2.5 0 015.5 6h3.4l2 2.6h7.6A2.5 2.5 0 0121 11.1V17a2.5 2.5 0 01-2.5 2.5h-13A2.5 2.5 0 013 17Z" />
+      <rect x="7.5" y="11.5" width="9" height="6" rx="1.5" />
+    </svg>
+  );
+}
+
+/** Wykres w ramce — „Statystyki". */
+export function TrendChartIcon(props: IconProps) {
+  return (
+    <svg {...svgProps(props)}>
+      <rect x="3" y="4" width="18" height="16" rx="2.5" />
+      <path d="M7 15.5l3.6-4.2 3 2.4L18 9" />
+      <path d="M15.2 9H18v2.8" />
+    </svg>
+  );
+}
+
 export function ArrowLeftIcon(props: IconProps) {
   return (
     <svg {...svgProps(props)}>

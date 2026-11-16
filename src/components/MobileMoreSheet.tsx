@@ -1,19 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { View } from '../types';
+import athleteUrl from '../assets/sidebar-athlete.jpg';
 import {
   ArrowRightIcon,
-  CalendarIcon,
-  ChartIcon,
   ChevronRightIcon,
   CircleHelpIcon,
   ClockIcon,
-  DumbbellIcon,
+  LayersIcon,
   LogOutIcon,
   SettingsIcon,
+  ShareIcon,
   StarIcon,
   SunIcon,
   TimerIcon,
   TrophyIcon,
+  TrendChartIcon,
   XIcon,
 } from './icons';
 
@@ -95,7 +96,6 @@ export default function MobileMoreSheet({
 
   const rowClass =
     'flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-slate-200 transition-colors hover:bg-white/[0.07] active:bg-white/[0.1]';
-
   const sectionLabel =
     'px-1 pt-5 pb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500';
 
@@ -142,10 +142,24 @@ export default function MobileMoreSheet({
       {/* Arkusz — uchwyt przyklejony u góry, treść przewijana osobno */}
       <div
         ref={sheetRef}
-        className={`absolute bottom-0 left-0 right-0 flex max-h-[88dvh] flex-col overflow-hidden rounded-t-3xl border-t border-cyan-400/20 bg-[#0c1733]/97 shadow-[0_-24px_60px_-20px_rgba(0,0,0,0.9)] backdrop-blur-2xl ${
+        className={`absolute bottom-0 left-0 right-0 flex max-h-[88dvh] flex-col overflow-hidden rounded-t-3xl border-t border-cyan-400/20 bg-[#0a1a3d]/97 shadow-[0_-24px_60px_-20px_rgba(0,0,0,0.9)] backdrop-blur-2xl ${
           closing ? '' : 'animate-sheet-up'
         }`}
       >
+        {/* Fotografia w tle — ta sama co w desktopowym pasku, mocniej
+            przygaszona, żeby nie przeszkadzała w czytaniu pozycji. */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+          <div className="absolute inset-0 bg-[radial-gradient(420px_260px_at_88%_-6%,rgba(34,211,238,0.18),transparent_70%)]" />
+          <div className="absolute inset-x-0 top-0 h-[46%] overflow-hidden">
+            <img
+              src={athleteUrl}
+              alt=""
+              className="h-full w-full object-cover object-[52%_18%] opacity-[0.35]"
+            />
+            <div className="absolute inset-0 bg-[#08183a]/40" />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,26,61,0.35)_0%,rgba(10,26,61,0.90)_78%,rgba(10,26,61,1)_100%)]" />
+          </div>
+        </div>
         {/* Uchwyt — jedyny element obsługujący gest zamknięcia */}
         <div
           onTouchStart={onHandleTouchStart}
@@ -165,12 +179,12 @@ export default function MobileMoreSheet({
         </div>
 
         {/* Treść — przewijana niezależnie od gestu zamykania */}
-        <div className="sheet-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <div className="sheet-scroll relative min-h-0 flex-1 overflow-y-auto overscroll-contain">
 
           {/* Konto */}
           {user && (
             <div className="mx-4 mt-2 flex items-center gap-3 rounded-2xl border border-cyan-400/15 bg-white/[0.04] p-4">
-              <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 text-sm font-bold text-white shadow-[0_8px_20px_-10px_rgba(6,182,212,1)]">
+              <span className="flex h-11 min-w-[4rem] flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-400 to-cyan-600 px-3.5 text-sm font-bold text-white shadow-[0_6px_18px_-8px_rgba(45,212,191,0.9)]">
                 {initials}
               </span>
               <div className="min-w-0">
@@ -184,17 +198,17 @@ export default function MobileMoreSheet({
           <p className={sectionLabel}>Planowanie</p>
           <div className="space-y-1 px-4">
             <button onClick={() => go('templates')} className={rowClass}>
-              <DumbbellIcon className="h-[18px] w-[18px] flex-shrink-0 text-cyan-300" />
+              <LayersIcon className="h-[18px] w-[18px] flex-shrink-0 text-cyan-300" />
               <span className="flex-1">Moje treningi</span>
               <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />
             </button>
             <button onClick={() => go('stats')} className={rowClass}>
-              <ChartIcon className="h-[18px] w-[18px] flex-shrink-0 text-cyan-300" />
+              <TrendChartIcon className="h-[18px] w-[18px] flex-shrink-0 text-cyan-300" />
               <span className="flex-1">Statystyki</span>
               <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />
             </button>
             <button onClick={() => go('shares')} className={rowClass}>
-              <CalendarIcon className="h-[18px] w-[18px] flex-shrink-0 text-cyan-300" />
+              <ShareIcon className="h-[18px] w-[18px] flex-shrink-0 text-cyan-300" />
               <span className="flex-1">Udostępnienia</span>
               {pendingCount > 0 && (
                 <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-cyan-400 text-white text-[10px] font-bold flex items-center justify-center">
@@ -209,7 +223,7 @@ export default function MobileMoreSheet({
           <p className={sectionLabel}>Szybki dostęp</p>
           <div className="space-y-1 px-4">
             <button onClick={() => go('favorites')} className={rowClass}>
-              <StarIcon className="h-[18px] w-[18px] flex-shrink-0 text-amber-300" />
+              <StarIcon className="h-[18px] w-[18px] flex-shrink-0 text-cyan-300" />
               <span className="flex-1">Ulubione ćwiczenia</span>
               <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-500" />
             </button>

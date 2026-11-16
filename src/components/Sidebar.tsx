@@ -1,18 +1,26 @@
 import React, { useState } from 'react';
 import { View } from '../types';
 import logoUrl from '../assets/fitplanner-logo.png';
+import athleteUrl from '../assets/sidebar-athlete.jpg';
 import MobileMoreSheet from './MobileMoreSheet';
 import {
   ArrowRightIcon,
+  CalendarPlanIcon,
   ChevronDownIcon,
   ChevronRightIcon,
   CircleHelpIcon,
   ClockIcon,
+  DumbbellFlatIcon,
+  FolderIcon,
+  GridIcon,
   LogOutIcon,
   MoreIcon,
   SettingsIcon,
+  ShareIcon,
+  SparklesIcon,
   StarIcon,
   SunIcon,
+  TrendChartIcon,
   TrophyIcon,
 } from './icons';
 
@@ -54,91 +62,55 @@ interface SidebarProps {
   onGoToLastWorkout?: () => void;
 }
 
+/**
+ * Nawigacja główna.
+ *
+ * Ikony pochodzą ze wspólnego zestawu (`icons.tsx`) — dzięki temu mają
+ * ten sam obrys (1.8), ten sam styl i tę samą wagę wizualną co reszta
+ * aplikacji. Wcześniej nawigacja miała własne, „wtopione" SVG.
+ */
 const navItems: { id: View; label: string; shortLabel: string; icon: React.ReactNode }[] = [
   {
     id: 'dashboard',
     label: 'Przegląd',
     shortLabel: 'Start',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-        <rect x="3" y="3" width="7" height="7" rx="1" />
-        <rect x="14" y="3" width="7" height="7" rx="1" />
-        <rect x="3" y="14" width="7" height="7" rx="1" />
-        <rect x="14" y="14" width="7" height="7" rx="1" />
-      </svg>
-    ),
+    icon: <GridIcon className="h-[22px] w-[22px]" />,
   },
   {
     id: 'generator',
     label: 'Generator',
     shortLabel: 'Generator',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-        <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-      </svg>
-    ),
+    icon: <SparklesIcon className="h-[22px] w-[22px]" />,
   },
   {
     id: 'planner',
     label: 'Planer',
     shortLabel: 'Planer',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-        <rect x="3" y="4" width="18" height="18" rx="2" />
-        <path d="M16 2v4M8 2v4M3 10h18" />
-      </svg>
-    ),
+    icon: <CalendarPlanIcon className="h-[22px] w-[22px]" />,
   },
   {
     id: 'library',
     label: 'Ćwiczenia',
     shortLabel: 'Baza',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-        <path d="M4 6h16M4 10h16M4 14h10" />
-        <circle cx="17" cy="17" r="3" />
-        <path d="M21 21l-1.5-1.5" />
-      </svg>
-    ),
+    icon: <DumbbellFlatIcon className="h-[22px] w-[22px]" />,
   },
   {
     id: 'templates',
     label: 'Moje treningi',
     shortLabel: 'Treningi',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-        <polyline points="14 2 14 8 20 8" />
-        <line x1="16" y1="13" x2="8" y2="13" />
-        <line x1="16" y1="17" x2="8" y2="17" />
-        <polyline points="10 9 9 9 8 9" />
-      </svg>
-    ),
+    icon: <FolderIcon className="h-[22px] w-[22px]" />,
   },
   {
     id: 'stats',
     label: 'Statystyki',
     shortLabel: 'Stats',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-        <path d="M3 3v18h18" />
-        <path d="M18 9l-5 5-4-4-3 3" />
-      </svg>
-    ),
+    icon: <TrendChartIcon className="h-[22px] w-[22px]" />,
   },
   {
     id: 'shares',
     label: 'Udostępnienia',
     shortLabel: 'Udost.',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-        <circle cx="18" cy="5" r="3" />
-        <circle cx="6" cy="12" r="3" />
-        <circle cx="18" cy="19" r="3" />
-        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-      </svg>
-    ),
+    icon: <ShareIcon className="h-[22px] w-[22px]" />,
   },
 ];
 
@@ -245,24 +217,51 @@ export default function Sidebar({
     <>
       {/* ── Desktop Sidebar ── */}
       <aside
-        className="hidden md:flex flex-col w-72 bg-[#0b1533]/85 backdrop-blur-xl border-r border-cyan-400/15 fixed left-0 top-0 z-20"
+        className="hidden md:flex flex-col w-[var(--sidebar-width)] bg-[linear-gradient(180deg,#0b1a3d_0%,#071231_48%,#061a30_100%)] border-r border-cyan-400/15 fixed left-0 top-0 z-20 overflow-hidden"
         style={{ height: '100dvh' }}
       >
-        {/* ── 1. Panel z logo ── */}
-        <div className="relative mx-3 mt-3 mb-5 overflow-hidden rounded-2xl border border-cyan-400/25 bg-gradient-to-br from-cyan-500/12 via-white/[0.02] to-cyan-400/10 px-4 py-4 flex-shrink-0">
-          {/* poświata w prawym górnym rogu */}
-          <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-cyan-500/30 blur-2xl" />
-          <div className="relative flex items-center gap-3">
+        {/* ── Warstwa dekoracyjna: poświata + fotografia mężczyzny ──
+            Warstwa leży POD treścią (`pointer-events-none`), a gradienty
+            na wierzchu pilnują czytelności napisów. */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+          {/* poświata akcentu w prawym górnym rogu */}
+          <div className="absolute inset-0 bg-[radial-gradient(620px_380px_at_88%_-12%,rgba(34,211,238,0.22),transparent_70%)]" />
+
+          {/* Fotografia mężczyzny — dolna część panelu, jak w designie.
+              `isolate` izoluje mieszanie kolorów, żeby poświaty nie
+              oddziaływały na treść panelu. */}
+          <div className="absolute inset-x-0 bottom-0 top-[44%] overflow-hidden isolate">
             <img
-              src={logoUrl}
+              src={athleteUrl}
               alt=""
-              aria-hidden="true"
-              className="h-11 w-auto flex-shrink-0 drop-shadow-[0_0_18px_rgba(6,182,212,0.65)]"
+              className="sidebar-photo h-full w-full object-cover object-center opacity-[0.95]"
             />
-            <div className="min-w-0">
-              <p className="font-extrabold text-white text-lg leading-none tracking-tight">FitPlanner</p>
-              <p className="text-[11px] text-slate-400 leading-tight mt-1.5">Twój osobisty trener w kieszeni</p>
-            </div>
+            {/* przyciemnienie pod kolumnę tekstu + rozjaśnienie na prawej */}
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(6,17,42,0.93)_0%,rgba(6,17,42,0.74)_38%,rgba(6,17,42,0.26)_68%,rgba(6,17,42,0)_100%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,17,42,0.55)_0%,rgba(6,17,42,0.10)_10%,rgba(6,17,42,0)_42%,rgba(6,17,42,0.66)_100%)]" />
+          </div>
+        </div>
+
+        <div className="relative z-10 flex min-h-0 flex-1 flex-col">
+        {/* ── 1. Panel z logo ── */}
+        <div className="relative flex items-center gap-3 px-4 pt-5 pb-4 flex-shrink-0 xl:px-5 xl:pt-6">
+          {/* poświata w prawym górnym rogu */}
+          <div className="pointer-events-none absolute left-2 top-2 h-24 w-24 rounded-full bg-cyan-500/20 blur-2xl" />
+          <img
+            src={logoUrl}
+            alt=""
+            aria-hidden="true"
+            className="relative h-10 w-auto flex-shrink-0 drop-shadow-[0_0_18px_rgba(6,182,212,0.65)] xl:h-12"
+          />
+          <div className="relative min-w-0">
+            <p className="font-extrabold text-white text-lg leading-none tracking-tight xl:text-xl">
+              FitPlanner
+            </p>
+            {/* Podpis schodzi przy węższych panelach (tablety) — tam
+                nie ma miejsca, a wiersz potrafi się zawijać. */}
+            <p className="hidden xl:block text-[11px] text-slate-400 leading-tight mt-1.5">
+              Twój osobisty trener w kieszeni
+            </p>
           </div>
         </div>
 
@@ -275,20 +274,28 @@ export default function Sidebar({
                 key={item.id}
                 onClick={() => onViewChange(item.id)}
                 aria-current={isActive ? 'page' : undefined}
-                className={`group relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all duration-200 cursor-pointer ${
+                className={`group relative flex items-center gap-3 rounded-full px-3 py-1.5 text-sm font-medium transition-all duration-200 cursor-pointer ${
                   isActive
-                    ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-[0_10px_28px_-12px_rgba(6,182,212,1)]'
-                    : 'text-slate-400 hover:bg-white/[0.06] hover:text-white'
+                    ? 'bg-gradient-to-r from-cyan-400 to-cyan-600 text-white shadow-[0_10px_30px_-10px_rgba(34,211,238,0.8)]'
+                    : 'text-slate-300 hover:bg-white/[0.07] hover:text-white'
                 }`}
               >
-                {/* znacznik aktywnej pozycji przy prawej krawędzi */}
+                {/* znacznik aktywnej pozycji przy lewej krawędzi.
+                    UWAGA: `bg-white` jest w motywie ciemnym przekolorowywane
+                    na granat (`.app-theme .bg-white`) — tu potrzebny jest
+                    jawny biały. */}
                 {isActive && (
-                  <span className="absolute -right-1 top-1/2 h-6 w-1 -translate-y-1/2 rounded-full bg-white/80" />
+                  <span className="absolute -left-1 top-1/2 h-6 w-1 -translate-y-1/2 rounded-full bg-[#ffffff]" />
                 )}
-                <span className="relative flex-shrink-0">
+                {/* ikona w kółku — aktywna pozycja dostaje ciemne tło */}
+                <span
+                  className={`relative flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-colors duration-200 ${
+                    isActive ? 'bg-black/25' : ''
+                  }`}
+                >
                   {item.icon}
                   {item.id === 'shares' && pendingCount > 0 && (
-                    <span className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] px-1 rounded-full bg-cyan-400 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-[#0b1533]">
+                    <span className="absolute -top-1 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-cyan-400 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-[#0b1a3d]">
                       {pendingCount > 9 ? '9+' : pendingCount}
                     </span>
                   )}
@@ -305,7 +312,7 @@ export default function Sidebar({
           <div className="flex flex-col gap-1.5">
             <button
               onClick={() => go('favorites')}
-              className="flex w-full items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3.5 py-2.5 text-left transition-all duration-200 cursor-pointer hover:border-cyan-400/30 hover:bg-white/[0.06]"
+              className="flex w-full items-center gap-3 rounded-2xl border border-white/[0.12] bg-[#0a1a3d]/75 px-3.5 py-2.5 text-left backdrop-blur-md transition-all duration-200 cursor-pointer hover:border-cyan-400/40 hover:bg-[#0d2046]/80"
             >
               <StarIcon className="h-[18px] w-[18px] text-cyan-300 flex-shrink-0" />
               <span className="flex-1 text-sm font-medium text-slate-200">
@@ -322,13 +329,13 @@ export default function Sidebar({
               title={lastWorkout ? `Przejdź do: ${lastWorkout.dayName}` : 'Brak zarejestrowanych treningów'}
               className={`flex w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-all duration-200 ${
                 lastWorkout
-                  ? 'border-white/[0.07] bg-white/[0.03] cursor-pointer hover:border-cyan-400/30 hover:bg-white/[0.06]'
-                  : 'border-white/[0.04] bg-white/[0.02] cursor-not-allowed opacity-50'
+                  ? 'border-white/[0.12] bg-[#0a1a3d]/75 cursor-pointer hover:border-cyan-400/40 hover:bg-[#0d2046]/80'
+                  : 'border-white/[0.06] bg-[#0a1a3d]/70 cursor-not-allowed'
               }`}
             >
-              <ClockIcon className="h-[18px] w-[18px] text-slate-300 flex-shrink-0" />
+              <ClockIcon className="h-[18px] w-[18px] text-slate-400 flex-shrink-0" />
               <span className="flex-1 min-w-0">
-                <span className="block text-sm font-medium text-slate-200">Ostatni trening</span>
+                <span className="block text-sm font-medium text-slate-300">Ostatni trening</span>
                 {lastWorkout && (
                   <span className="block text-[11px] leading-tight text-slate-500 truncate">{lastWorkout.dayName}</span>
                 )}
@@ -337,8 +344,10 @@ export default function Sidebar({
             </button>
           </div>
 
-          {/* ── 4. Falująca linia (przyciśnięta do dołu sekcji) ── */}
-          <div className="mt-auto pt-4 flex-shrink-0" aria-hidden="true">
+          {/* ── 4. Falująca linia (przyciśnięta do dołu sekcji) ──
+              Na krótkich ekranach (laptop w orientacji poziomej, tablet)
+              fala jest zbędna — karta postępu musi się zmieścić. */}
+          <div className="mt-auto pt-4 flex-shrink-0 [@media(max-height:880px)]:hidden" aria-hidden="true">
             <svg viewBox="0 0 260 40" preserveAspectRatio="none" className="h-10 w-full">
               <defs>
                 <linearGradient id="sidebar-wave" x1="0" y1="0" x2="1" y2="0">
@@ -358,7 +367,7 @@ export default function Sidebar({
           </div>
 
           {/* ── 5. Karta postępu ── */}
-          <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.04] p-4 mb-4 flex-shrink-0">
+          <div className="relative overflow-hidden rounded-2xl border border-white/[0.10] bg-[#0a1a3d]/75 p-3.5 mb-4 flex-shrink-0 backdrop-blur-md xl:p-4 [@media(max-height:880px)]:p-3">
             <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-cyan-500/20 blur-2xl" />
             <div className="relative flex items-center gap-3">
               <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-amber-400/25 bg-amber-400/15 text-amber-300">
@@ -385,8 +394,10 @@ export default function Sidebar({
           </div>
         </nav>
 
-        {/* ── 6. Sekcja konta ── */}
-        <div className="border-t border-cyan-400/10 px-3 py-3 flex-shrink-0">
+        {/* ── 6. Sekcja konta ──
+            Ma własne, pełne tło — fotografia z tła kończy się dokładnie
+            na linii rozdzielającej, tak jak w designie. */}
+        <div className="border-t border-cyan-400/25 bg-[#081632] px-3 py-3 flex-shrink-0">
           {isSignedIn ? (
             <>
               <button
@@ -396,7 +407,7 @@ export default function Sidebar({
                   menuOpen ? 'bg-white/[0.06]' : 'hover:bg-white/[0.05]'
                 }`}
               >
-                <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 text-xs font-bold text-white shadow-[0_8px_20px_-10px_rgba(6,182,212,1)]">
+                <span className="flex h-9 min-w-[3.25rem] flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-400 to-cyan-600 px-3 text-xs font-bold text-white shadow-[0_6px_18px_-8px_rgba(45,212,191,0.9)]">
                   {initials}
                 </span>
                 <span className="min-w-0 flex-1 text-left">
@@ -409,9 +420,9 @@ export default function Sidebar({
               </button>
 
               {menuOpen && (
-                <div className="mt-2 max-h-[55vh] overflow-y-auto overscroll-contain overflow-hidden rounded-2xl border border-cyan-400/20 bg-[#0f1f42]/95 backdrop-blur-xl shadow-2xl animate-fade-in">
+                <div className="mt-2 max-h-[55vh] overflow-y-auto overscroll-contain overflow-hidden rounded-2xl border border-cyan-400/20 bg-[#0a1a3d]/95 backdrop-blur-xl shadow-2xl animate-fade-in">
                   <div className="flex items-center gap-3 border-b border-cyan-400/10 px-4 py-3">
-                    <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 text-sm font-bold text-white">
+                    <span className="flex h-10 min-w-[3.5rem] flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-400 to-cyan-600 px-3 text-sm font-bold text-white">
                       {initials}
                     </span>
                     <div className="min-w-0">
@@ -431,6 +442,7 @@ export default function Sidebar({
             <p className="text-xs text-slate-500 text-center py-2">© 2026 FitPlanner</p>
           )}
         </div>
+        </div>
       </aside>
 
       {/* ── Mobile Bottom Dock (pływający) ── */}
@@ -438,7 +450,7 @@ export default function Sidebar({
         className="md:hidden fixed left-3 right-3 z-30"
         style={{ bottom: 'max(12px, env(safe-area-inset-bottom))' }}
       >
-        <div className="flex items-stretch gap-1 rounded-3xl border border-white/10 bg-[#0b1533]/92 px-1.5 py-1.5 shadow-[0_18px_45px_-18px_rgba(0,0,0,0.9)] backdrop-blur-2xl">
+        <div className="flex items-stretch gap-1 rounded-3xl border border-white/10 bg-[#0a1a3d]/92 px-1.5 py-1.5 shadow-[0_18px_45px_-18px_rgba(0,0,0,0.9)] backdrop-blur-2xl">
           {mobileItems.map(item => {
             const isActive = activeView === item.id;
             return (
@@ -450,9 +462,9 @@ export default function Sidebar({
                 aria-current={isActive ? 'page' : undefined}
               >
                 <span
-                  className={`flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 ${
+                  className={`flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200 ${
                     isActive
-                      ? 'bg-gradient-to-br from-cyan-600 to-cyan-700 text-white shadow-[0_8px_20px_-8px_rgba(6,182,212,1)]'
+                      ? 'bg-gradient-to-br from-cyan-500 to-cyan-600 text-white shadow-[0_8px_20px_-8px_rgba(34,211,238,0.9)]'
                       : 'text-slate-400'
                   }`}
                 >
@@ -476,7 +488,7 @@ export default function Sidebar({
             aria-label="Więcej opcji"
             aria-expanded={moreOpen}
           >
-            <span className="relative flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition-all duration-200">
+            <span className="relative flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition-all duration-200">
               <MoreIcon className="h-5 w-5" />
               {pendingCount > 0 && (
                 <span className="absolute -right-0.5 -top-0.5 min-w-[16px] h-[16px] px-1 rounded-full bg-cyan-400 text-white text-[9px] font-bold flex items-center justify-center">

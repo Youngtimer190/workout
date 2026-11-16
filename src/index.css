@@ -37,7 +37,25 @@ body {
   --safe-left: env(safe-area-inset-left, 0px);
   --bottom-nav-height: 96px;
   --bottom-nav-total: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
-  --sidebar-width: 288px;
+  /* Szerokość paska bocznego — jedno źródło prawdy dla panelu i dla
+     marginesu treści (.main-content). Responsywność: na tabletach
+     (768–1279 px) panel jest węższy, żeby nie zjadał połowy ekranu;
+     od 1280 px wraca do pełnej szerokości. */
+  --sidebar-width: 244px;
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --sidebar-width: 288px;
+  }
+}
+
+/* ── Fotografia w tle paska bocznego ─────────────────────────────────────────
+   Górna krawędź zdjęcia rozpuszcza się w tle, dzięki czemu fotografia
+   wchodzi w panel płynnie, a nie „wklejona prostokątem". */
+.sidebar-photo {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 11%, #000 82%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 11%, #000 82%, transparent 100%);
 }
 
 /* ── Tap highlight off + manipulation ── */
