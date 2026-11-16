@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { WorkoutDay } from '../types';
 import {
   DayStatus,
@@ -16,21 +16,25 @@ import { CalendarPlanIcon, CheckIcon, MoonIcon, TimerIcon } from './icons';
  * dnia i czy dzień się liczy. Na dole — podsumowanie tygodnia i „cień
  * tygodniowy" (prognoza przy obecnym tempie).
  *
- * DWIE METRYKI (przełącznik w nagłówku)
- * ───────────────────────────────────
- *  • „Ćwiczenia" — liczba ukończonych ćwiczeń; stopka pokazuje
- *    „X / Y wykonanych ćwiczeń".
- *  • „Treningi" — liczba ukończonych serii w dniu; stopka pokazuje
- *    „X / Y ukończonych dni treningowych".
+ * JEDNA METRYKA
+ * ─────────────
+ * Sekcja liczy **ćwiczenia**. Przełącznik „Ćwiczenia | Treningi" został
+ * usunięty, bo:
+ *  • liczba dni treningowych jest już raportowana na tym samym ekranie
+ *    (kafelek „Dni treningowe" i dopisek „w tym tygodniu X z Y dni"),
+ *  • w trybie „Treningi" karty pokazywały serie, a stopka dni — dwie różne
+ *    jednostki w jednym widoku,
+ *  • na telefonie (gdzie jednostka pod liczbą nie mieściła się) liczby były
+ *    zupełnie niesamoznaczne.
  *
- * Karty dni mają w obu trybach tę samą strukturę, więc przełączanie nie
- * powoduje „skakania" układu.
+ * Jednostka jest widoczna ZAWSZE (także na telefonie) — liczba bez etykiety
+ * to nieporozumienie.
  *
  * RESPONSYWNOŚĆ
  * ─────────────
- *  • < 640 px — siedem wąskich kolumn: skrót dnia, liczba i mini-wykres.
- *    Data, jednostka i chip statusu nie mieściłyby się — stan dnia
- *    komunikuje wtedy kolor liczby i mini-wykresu.
+ *  • < 640 px — siedem wąskich kolumn: skrót dnia, liczba, jednostka i
+ *    mini-wykres. Data i chip statusu nie mieściłyby się — stan dnia
+ *    komunikują wtedy kolor liczby i mini-wykres.
  *  • ≥ 640 px — pełne karty: skrót, data, liczba, jednostka, wykres, chip.
  */
 
@@ -98,8 +102,6 @@ export default function WeekPlanPanel({
   todayIndex,
   onGoToDay,
 }: WeekPlanPanelProps) {
-  const [tryb, setTryb] = useState<'cwiczenia' | 'treningi'>('cwiczenia');
-
   const podsumowanie = useMemo(
     () => summarizeWeek(days, todayIndex, weekKey),
     [days, todayIndex, weekKey]
@@ -118,65 +120,23 @@ export default function WeekPlanPanel({
     podsumowanie.plannedExercises
   );
 
-  const toCwiczenia = tryb === 'cwiczenia';
-  const licznik = toCwiczenia
-    ? { wykonane: podsumowanie.doneExercises, planowane: podsumowanie.plannedExercises }
-    : { wykonane: podsumowanie.doneTrainingDays, planowane: podsumowanie.plannedTrainingDays };
   const procent =
-    licznik.planowane > 0 ? Math.round((licznik.wykonane / licznik.planowane) * 100) : 0;
-
-  const opisStopki = toCwiczenia
-    ? `${licznik.wykonane} / ${licznik.planowane} wykonanych ćwiczeń`
-    : `${licznik.wykonane} / ${licznik.planowane} ukończonych dni treningowych`;
+    podsumowanie.plannedExercises > 0
+      ? Math.round((podsumowanie.doneExercises / podsumowanie.plannedExercises) * 100)
+      : 0;
 
   return (
     <section className="rounded-2xl border border-cyan-400/15 bg-white p-4 sm:p-5">
       {/* ── Nagłówek ── */}
-      <div className="mb-4 flex items-start justify-between gap-2 sm:gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-cyan-400/25 bg-cyan-500/10 text-cyan-300">
-            <CalendarPlanIcon className="h-5 w-5" />
-          </span>
-          <div className="min-w-0">
-            <h2 className="text-base font-bold leading-tight text-white">Plan tygodnia</h2>
-            <p className="mt-0.5 hidden text-[11px] leading-tight text-slate-400 sm:block sm:text-xs">
-              Twoja aktywność w tym tygodniu
-            </p>
-          </div>
-        </div>
-
-        {/* Przełącznik metryki */}
-        <div
-          role="group"
-          aria-label="Metryka podsumowania tygodnia"
-          className="flex flex-shrink-0 items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] p-1"
-        >
-          <button
-            type="button"
-            onClick={() => setTryb('cwiczenia')}
-            aria-pressed={tryb === 'cwiczenia'}
-            className={`cursor-pointer rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors sm:px-3 sm:text-xs ${
-              tryb === 'cwiczenia'
-                ? 'bg-cyan-500 text-white shadow-[0_6px_16px_-8px_rgba(34,211,238,0.9)]'
-                : 'text-slate-400 hover:text-white'
-            }`}
-            style={{ WebkitTapHighlightColor: 'transparent' }}
-          >
-            Ćwiczenia
-          </button>
-          <button
-            type="button"
-            onClick={() => setTryb('treningi')}
-            aria-pressed={tryb === 'treningi'}
-            className={`cursor-pointer rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors sm:px-3 sm:text-xs ${
-              tryb === 'treningi'
-                ? 'bg-cyan-500 text-white shadow-[0_6px_16px_-8px_rgba(34,211,238,0.9)]'
-                : 'text-slate-400 hover:text-white'
-            }`}
-            style={{ WebkitTapHighlightColor: 'transparent' }}
-          >
-            Treningi
-          </button>
+      <div className="mb-4 flex items-center gap-3">
+        <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-cyan-400/25 bg-cyan-500/10 text-cyan-300">
+          <CalendarPlanIcon className="h-5 w-5" />
+        </span>
+        <div className="min-w-0">
+          <h2 className="text-base font-bold leading-tight text-white">Plan tygodnia</h2>
+          <p className="mt-0.5 text-[11px] leading-tight text-slate-400 sm:text-xs">
+            Twoja aktywność w tym tygodniu
+          </p>
         </div>
       </div>
 
@@ -186,7 +146,6 @@ export default function WeekPlanPanel({
           <DayTile
             key={d.dayIndex}
             day={d}
-            tryb={tryb}
             onClick={onGoToDay ? () => onGoToDay(d.dayIndex) : undefined}
           />
         ))}
@@ -203,7 +162,7 @@ export default function WeekPlanPanel({
       >
         <div className="flex items-baseline justify-between gap-3 sm:contents">
           <span className="order-1 whitespace-nowrap text-xs font-semibold text-white sm:text-sm">
-            {opisStopki}
+            {podsumowanie.doneExercises} / {podsumowanie.plannedExercises} wykonanych ćwiczeń
           </span>
           <span className="order-3 whitespace-nowrap text-xs font-bold text-slate-200 sm:text-sm">
             {procent}%
@@ -238,16 +197,11 @@ export default function WeekPlanPanel({
 
 function DayTile({
   day,
-  tryb,
   onClick,
 }: {
   day: DaySummary;
-  tryb: 'cwiczenia' | 'treningi';
   onClick?: () => void;
 }) {
-  const toCwiczenia = tryb === 'cwiczenia';
-  const liczba = toCwiczenia ? day.done : day.setsDone;
-  const jednostka = toCwiczenia ? 'ćwiczeń' : 'serii';
   const status = STATUS[day.status];
 
   const skrot = dayAbbr(day.name, day.dayIndex);
@@ -285,11 +239,13 @@ function DayTile({
             : 'text-slate-400'
         }`}
       >
-        {day.planned === 0 ? '–' : liczba}
+        {day.planned === 0 ? '–' : day.done}
       </span>
 
-      <span className="hidden text-[9px] leading-none text-slate-500 sm:block">
-        {day.planned === 0 ? '' : jednostka}
+      {/* Jednostka — widoczna ZAWSZE, także na telefonie. Bez niej liczba
+          jest nieczytelna. */}
+      <span className="text-[9px] leading-none text-slate-500">
+        {day.planned === 0 ? '' : 'ćwiczeń'}
       </span>
 
       {/* Mini-wykres — jeden słupek na zaplanowane ćwiczenie */}
